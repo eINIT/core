@@ -40,7 +40,6 @@ eINITMain =
 Core = element core {
   element settings {
     element configuration {
-      element on-line-modifications { attribute save-to { text } }? &
       element multi-node-variables { attribute allow { text } }?
     }? &
     element modules {
@@ -51,10 +50,6 @@ Core = element core {
       StringAttribute
     }? &
    element allow-code-unloading { BooleanAttribute }?
-  }* &
-  element module-logic {
-    element init.d-path { StringAttribute }? &
-    element maintain-init.d { StringAttribute, BooleanAttribute }?
   }* &
   element commands {
     element include {

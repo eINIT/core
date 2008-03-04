@@ -3,8 +3,6 @@
  <core>
   <settings>
    <configuration>
-    <on-line-modifications save-to="/etc/einit/local/on-line-modifications.xml" />
-
     <multi-node-variables allow="^(core-((commands-include-(file|directory))|settings-modules))|configuration-(storage-fstab-(node|node-order))$" />
    </configuration>
 
@@ -14,11 +12,6 @@
 
    <configuration-path s="/etc/einit/" />
   </settings>
-
-  <module-logic>
-   <init.d-path s="/etc/einit/init.d/" />
-   <maintain-init.d s="/lib/einit/scripts/einit.d_erc.sh" b="true" />
-  </module-logic>
 
   <commands>
    <include>

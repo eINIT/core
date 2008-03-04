@@ -129,7 +129,6 @@ int bootstrap_einit_configuration_xml_expat_configure (struct lmodule *this) {
 struct einit_xml_expat_user_data {
  uint32_t options;
  char *file, *prefix;
- enum einit_cfg_node_options type;
  uint32_t adds;
 };
 
@@ -181,9 +180,7 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
   if (strmatch (name, "mode")) {
 /* parse the information presented in the element as a mode-definition */
    struct cfgnode *newnode = ecalloc (1, sizeof (struct cfgnode));
-   newnode->type = ((struct einit_xml_expat_user_data *)userData)->type;
-
-   newnode->type |= einit_node_mode;
+   newnode->type = einit_node_mode;
    newnode->arbattrs = set_str_dup_stable ((char **)atts);
    for (; newnode->arbattrs[i] != NULL; i+=2) {
     if (strmatch (newnode->arbattrs[i], "id")) {
@@ -253,9 +250,7 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
    } else {
 /* parse the information presented in the element as a variable */
     struct cfgnode *newnode = ecalloc (1, sizeof (struct cfgnode));
-    newnode->type = ((struct einit_xml_expat_user_data *)userData)->type;
-
-    newnode->type |= einit_node_regular;
+    newnode->type = einit_node_regular;
 
     newnode->id = (char *)str_stabilise (((struct einit_xml_expat_user_data *)userData)->prefix);
     newnode->mode = curmode;
@@ -320,10 +315,6 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
  struct einit_xml_expat_user_data expatuserdata = {
   .options = 0,
   .prefix = NULL,
-  .type =
-    ((tmps = cfg_getstring ("core-settings-configuration-on-line-modifications/save-to", NULL)) &&
-    strmatch (configfile, tmps) ?
-    einit_node_modified : 0),
   .adds = 0
  };
 

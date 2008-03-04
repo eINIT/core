@@ -54,13 +54,11 @@ struct cfgnode;
 
 enum einit_cfg_node_options {
  einit_node_regular = 0x02,
- einit_node_mode = 0x08,
- einit_node_modified = 0x10
+ einit_node_mode = 0x08
 };
 
 enum einit_mode {
  einit_mode_init       = 0x0001,
- einit_mode_metadaemon = 0x0002,
  einit_mode_sandbox    = 0x0010,
  einit_mode_ipconly    = 0x0020,
  einit_core_exiting    = 0x1000

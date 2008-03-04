@@ -114,32 +114,6 @@ char module_logic_service_exists_p (const char *service) {
 
 /* the sorting bit and the ipc handler are pretty much verbatim copies of -v3 */
 
-void module_logic_update_init_d () {
- struct cfgnode *einit_d = cfg_getnode ("core-module-logic-maintain-init.d", NULL);
-
- if (einit_d && einit_d->flag && einit_d->svalue) {
-  char *init_d_path = cfg_getstring ("core-module-logic-init.d-path", NULL);
-
-  if (init_d_path) {
-   struct stree *cur;
-   emutex_lock (&module_logic_service_list_mutex);
-//  struct stree *module_logics_service_list;
-   cur = streelinear_prepare(module_logic_service_list);
-
-   while (cur) {
-    char tmp[BUFFERSIZE];
-    esprintf (tmp, BUFFERSIZE, "%s/%s", init_d_path, cur->key);
-
-    symlink (einit_d->svalue, tmp);
-
-    cur = streenext(cur);
-   }
-
-   emutex_unlock (&module_logic_service_list_mutex);
-  }
- }
-}
-
 void mod_sort_service_list_items_by_preference() {
  struct stree *cur;
 
