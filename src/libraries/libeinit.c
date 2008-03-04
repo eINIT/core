@@ -54,6 +54,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <fcntl.h>
 
+#ifdef __FreeBSD__
+#include <signal.h>
+#endif
+
 #ifdef estrdup
 #undef estrdup
 #endif
