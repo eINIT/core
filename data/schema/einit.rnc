@@ -65,7 +65,6 @@ Core = element core {
 
 Configuration = element configuration {
   element system {
-    element ctrl-alt-del { BooleanAttribute }* &
     element daemon-spawn-timeout { IntegerAttribute }* &
     element daemon-term-timeout-primary { IntegerAttribute }* &
     element daemon-term-timeout-secondary { IntegerAttribute }* &

@@ -35,7 +35,6 @@
    will take preference (unless it's something where all entries are loaded, like fstab-nodes).
    i.e.: you do not need to modify the entries in both files, only the one in local.xml! -->
   <system>
-   <ctrl-alt-del b="disabled" />
    <daemon-spawn-timeout i="20" />
    <daemon-term-timeout-primary i="10" />
    <daemon-term-timeout-secondary i="2" />

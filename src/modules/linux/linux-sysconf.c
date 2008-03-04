@@ -99,12 +99,8 @@ void linux_power_off () {
 }
 
 void linux_sysconf_ctrl_alt_del () {
- struct cfgnode *cfg = cfg_getnode ("configuration-system-ctrl-alt-del", NULL);
-
- if (cfg && !cfg->flag) {
-  if (reboot (LINUX_REBOOT_CMD_CAD_OFF) == -1)
-   notice (1, "I should've changed the CTRL+ALT+DEL action, but i couldn't: %s", strerror (errno));
- }
+ if (reboot (LINUX_REBOOT_CMD_CAD_OFF) == -1)
+  notice (1, "Couldn't change the CTRL+ALT+DEL handler: %s", strerror (errno));
 }
 
 void linux_sysconf_service_enabled(struct einit_event *ev) {
