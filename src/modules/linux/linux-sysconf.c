@@ -103,6 +103,30 @@ void linux_sysconf_ctrl_alt_del () {
   notice (1, "Couldn't change the CTRL+ALT+DEL handler: %s", strerror (errno));
 }
 
+void linux_sysconf_hwclock() {
+ char *options = cfg_getstring ("configuration-services-hwclock/options", NULL);
+ if (!options) options = "--utc";
+ char tmp [BUFFERSIZE];
+
+ esprintf (tmp, BUFFERSIZE, "/sbin/hwclock --hctosys %s", options);
+
+ qexec (tmp);
+}
+
+void linux_sysconf_shutdown_hwclock() {
+ char *options = cfg_getstring ("configuration-services-hwclock/options", NULL);
+ if (!options) options = "--utc";
+ char tmp [BUFFERSIZE];
+
+ esprintf (tmp, BUFFERSIZE, "/sbin/hwclock --systohc %s", options);
+
+ qexec (tmp);
+}
+
+void linux_sysconf_shutdown(struct einit_event *ev) {
+ linux_sysconf_shutdown_hwclock();
+}
+
 void linux_sysconf_make_timezone_symlink (void) {
  char *zoneinfo = cfg_getstring ("configuration-system-timezone", NULL);
  if (zoneinfo) {
@@ -124,7 +148,6 @@ void linux_sysconf_service_enabled(struct einit_event *ev) {
 }
 
 void linux_sysconf_fix_ttys() {
- struct stat st;
  struct cfgnode *filenode = cfg_getnode ("configuration-feedback-visual-std-io", NULL);
 
  if (filenode && filenode->arbattrs) {
@@ -251,6 +274,10 @@ void linux_sysconf_sysctl () {
  }
 }
 
+void linux_sysconf_boot_devices_available(struct einit_event *ev) {
+ linux_sysconf_sysctl();
+ linux_sysconf_hwclock();
+}
 
 void linux_sysconf_einit_core_mode_switch_done (struct einit_event *ev) {
  if (strmatch (ev->string, "power-down")) {
@@ -264,12 +291,15 @@ int linux_sysconf_configure (struct lmodule *irr) {
  module_init (irr);
 
  event_listen (einit_boot_early, linux_sysconf_ctrl_alt_del);
- event_listen (einit_boot_devices_available, linux_sysconf_sysctl);
+ event_listen (einit_boot_devices_available, linux_sysconf_boot_devices_available);
 
  event_listen (einit_boot_root_device_ok, linux_sysconf_root_ok);
 
  event_listen (einit_core_service_enabled, linux_sysconf_service_enabled);
  event_listen (einit_core_mode_switch_done, linux_sysconf_einit_core_mode_switch_done);
+
+ event_listen (einit_power_down_scheduled, linux_sysconf_shutdown);
+ event_listen (einit_power_reset_scheduled, linux_sysconf_shutdown);
 
  return 0;
 }
