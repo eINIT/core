@@ -101,22 +101,9 @@ char **xml_configuration_new_files = NULL;
 
 pthread_mutex_t xml_configuration_new_files_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-int bootstrap_einit_configuration_xml_expat_cleanup (struct lmodule *this) {
- function_unregister ("einit-configuration-converter-xml", 1, einit_config_xml_cfg_to_xml);
-
- event_ignore (einit_ipc_read, einit_config_xml_expat_ipc_read);
- event_ignore (einit_core_update_configuration, einit_config_xml_expat_event_handler_core_update_configuration);
-
- exec_cleanup (this);
-
- return 0;
-}
-
 int bootstrap_einit_configuration_xml_expat_configure (struct lmodule *this) {
  module_init(this);
  exec_configure (this);
-
- thismodule->cleanup = bootstrap_einit_configuration_xml_expat_cleanup;
 
  event_listen (einit_ipc_read, einit_config_xml_expat_ipc_read);
  event_listen (einit_core_update_configuration, einit_config_xml_expat_event_handler_core_update_configuration);
@@ -308,7 +295,6 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
  char *confpath = NULL;
  XML_Parser par;
  struct stat st;
- char *tmps = NULL;
 
  if (!configfile || stat (configfile, &st)) return 0;
 

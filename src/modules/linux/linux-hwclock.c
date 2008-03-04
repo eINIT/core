@@ -108,21 +108,9 @@ void linux_hwclock_shutdown() {
  }
 }
 
-int linux_hwclock_cleanup (struct lmodule *pa) {
- exec_cleanup(pa);
-
- event_ignore (einit_boot_devices_available, linux_hwclock_run);
- event_ignore (einit_power_down_scheduled, linux_hwclock_shutdown);
- event_ignore (einit_power_reset_scheduled, linux_hwclock_shutdown);
-
- return 0;
-}
-
 int linux_hwclock_configure (struct lmodule *pa) {
  module_init (pa);
  exec_configure(pa);
-
- pa->cleanup = linux_hwclock_cleanup;
 
  event_listen (einit_boot_devices_available, linux_hwclock_run);
  event_listen (einit_power_down_scheduled, linux_hwclock_shutdown);

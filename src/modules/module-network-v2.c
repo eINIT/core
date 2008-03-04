@@ -972,24 +972,11 @@ void einit_module_network_v2_interface_construct (struct einit_event *ev) {
 
 /* **************** end * dhcp code *****************************/
 
-int einit_module_network_v2_cleanup (struct lmodule *pa) {
- exec_cleanup(pa);
-
- event_ignore (einit_network_address_automatic, einit_module_network_v2_address_automatic);
- event_ignore (einit_network_interface_construct, einit_module_network_v2_interface_construct);
- event_ignore (einit_network_interface_update, einit_module_network_v2_interface_construct);
- event_ignore (einit_core_update_modules, einit_module_network_v2_scanmodules);
-
- return 0;
-}
-
 int einit_module_network_v2_configure (struct lmodule *pa) {
  module_init (pa);
  exec_configure(pa);
 
  event_listen (einit_core_update_modules, einit_module_network_v2_scanmodules);
-
- pa->cleanup = einit_module_network_v2_cleanup;
 
  event_listen (einit_network_address_automatic, einit_module_network_v2_address_automatic);
  event_listen (einit_network_interface_construct, einit_module_network_v2_interface_construct);

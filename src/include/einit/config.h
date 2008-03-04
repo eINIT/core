@@ -107,7 +107,6 @@ struct exported_function *cfg_prefix_fs;
 struct exported_function *cfg_callback_prefix_fs;
 
 #define config_configure() cfg_addnode_fs = NULL; cfg_findnode_fs = NULL; cfg_getstring_fs = NULL; cfg_getnode_fs = NULL; cfg_filter_fs = NULL; cfg_getpath_fs = NULL; cfg_prefix_fs = NULL;
-#define config_cleanup() cfg_addnode_fs = NULL; cfg_findnode_fs = NULL; cfg_getstring_fs = NULL; cfg_getnode_fs = NULL; cfg_filter_fs = NULL; cfg_getpath_fs = NULL; cfg_prefix_fs = NULL;
 
 #define cfg_addnode(node) function_call_by_name_use_data (int, "einit-configuration-node-add", 1, cfg_addnode_fs, -1, node)
 #define cfg_findnode(name, mode, node) function_call_by_name_use_data (struct cfgnode *, "einit-configuration-node-get-find", 1, cfg_findnode_fs, NULL, name, mode, node)
@@ -131,7 +130,6 @@ char *cfg_prefix_f (const char *);
 int cfg_callback_prefix_f (char *prefix, void (*callback)(struct cfgnode *));
 
 #define config_configure() ;
-#define config_cleanup() ;
 
 #define cfg_addnode(node) cfg_addnode_f (node)
 #define cfg_findnodenode(name, mode, node) cfg_addnode_f (name, mode, node)

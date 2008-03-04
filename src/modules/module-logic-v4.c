@@ -2024,27 +2024,8 @@ void module_logic_ipc_stat (struct einit_event *ev) {
  }
 }
 
-int einit_module_logic_v4_cleanup (struct lmodule *this) {
- event_ignore (einit_core_configuration_update, module_logic_einit_event_handler_core_configuration_update);
- event_ignore (einit_core_module_list_update, module_logic_einit_event_handler_core_module_list_update);
- event_ignore (einit_core_service_enabled, module_logic_einit_event_handler_core_service_enabled);
- event_ignore (einit_core_service_disabled, module_logic_einit_event_handler_core_service_disabled);
- event_ignore (einit_core_service_update, module_logic_einit_event_handler_core_service_update);
- event_ignore (einit_core_switch_mode, module_logic_einit_event_handler_core_switch_mode);
- event_ignore (einit_core_manipulate_services, module_logic_einit_event_handler_core_manipulate_services);
- event_ignore (einit_core_change_service_status, module_logic_einit_event_handler_core_change_service_status);
-
- event_ignore (einit_ipc_read, module_logic_ipc_read);
- event_ignore (einit_ipc_stat, module_logic_ipc_stat);
- event_ignore (einit_ipc_write, module_logic_ipc_write);
-
- return 0;
-}
-
 int einit_module_logic_v4_configure (struct lmodule *this) {
  module_init(this);
-
- thismodule->cleanup = einit_module_logic_v4_cleanup;
 
  event_listen (einit_core_configuration_update, module_logic_einit_event_handler_core_configuration_update);
  event_listen (einit_core_module_list_update, module_logic_einit_event_handler_core_module_list_update);

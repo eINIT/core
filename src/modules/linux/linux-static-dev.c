@@ -305,14 +305,6 @@ void linux_static_dev_boot_event_handler (struct einit_event *ev) {
  }
 }
 
-int linux_static_dev_cleanup (struct lmodule *pa) {
- exec_cleanup(pa);
-
- event_ignore (einit_boot_early, linux_static_dev_boot_event_handler);
-
- return 0;
-}
-
 int linux_static_dev_configure (struct lmodule *pa) {
  module_init (pa);
 
@@ -323,8 +315,6 @@ int linux_static_dev_configure (struct lmodule *pa) {
  }
 
  exec_configure(pa);
-
- pa->cleanup = linux_static_dev_cleanup;
 
  event_listen (einit_boot_early, linux_static_dev_boot_event_handler);
 

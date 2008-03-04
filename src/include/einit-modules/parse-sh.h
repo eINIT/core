@@ -69,14 +69,12 @@ sh_parser f_parse_sh;
 #define parse_sh(data, callback) parse_sh_ud(data, callback, NULL)
 
 #define parse_sh_configure(mod) f_parse_sh = NULL;
-#define parse_sh_cleanup(mod) f_parse_sh = NULL;
 
 #else
 
 int parse_sh_f (const char *, void (*)(const char **, uint8_t));
 
 #define parse_sh_configure(mod) ;
-#define parse_sh_cleanup(mod) ;
 
 #define parse_sh(data, callback) parse_sh_f(data, callback, NULL)
 #define parse_sh_ud(data, callback, user) parse_sh_f(data, callback, user)

@@ -208,7 +208,6 @@ struct lmodule {
  int (*enable)  (void *, struct einit_event *); /*!< Pointer to the module's enable()-function */
  int (*disable) (void *, struct einit_event *); /*!< Pointer to the module's disable()-function */
  int (*custom) (void *, char *, struct einit_event *); /*!< Pointer to the module's custom()-function */
- int (*cleanup) (struct lmodule *);             /*!< Pointer to the module's cleanup()-function */
 
  enum einit_module_status status;               /*!< Current module status (enabled, disabled, ...) */
  void *param;                                   /*!< Parameter for state-changing functions */

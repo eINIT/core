@@ -387,23 +387,9 @@ void linux_network_wpa_supplicant_scanmodules (struct einit_event *ev) {
  return;
 }
 
-int linux_network_wpa_supplicant_cleanup (struct lmodule *pa) {
- exec_cleanup (pa);
-
- event_ignore (einit_core_update_modules, linux_network_wpa_supplicant_scanmodules);
-
- event_ignore (einit_network_verify_carrier, linux_network_wpa_supplicant_verify_carrier);
- event_ignore (einit_network_interface_construct, linux_network_wpa_supplicant_interface_construct);
- event_ignore (einit_network_interface_update, linux_network_wpa_supplicant_interface_construct);
-
- return 0;
-}
-
 int linux_network_wpa_supplicant_configure (struct lmodule *pa) {
  module_init (pa);
  exec_configure (pa);
-
- pa->cleanup = linux_network_wpa_supplicant_cleanup;
 
  event_listen (einit_core_update_modules, linux_network_wpa_supplicant_scanmodules);
 

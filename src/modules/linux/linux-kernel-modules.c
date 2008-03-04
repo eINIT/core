@@ -78,7 +78,6 @@ module_register(einit_linux_kernel_modules_self);
 #endif
 
 int linux_kernel_modules_module_configure (struct lmodule *);
-int linux_kernel_modules_cleanup (struct lmodule *);
 
 char **linux_kernel_modules_get_modprobe_c () {
  char **rv = NULL;
@@ -617,16 +616,6 @@ void linux_kernel_modules_boot_event_handler_load_kernel_extensions (struct eini
  linux_kernel_modules_run(lkm_post_dev);
 }
 
-int linux_kernel_modules_cleanup (struct lmodule *this) {
- exec_cleanup (this);
-
- event_ignore (einit_boot_initramfs, linux_kernel_modules_boot_event_handler_initramfs);
- event_ignore (einit_boot_early, linux_kernel_modules_boot_event_handler_early);
- event_ignore (einit_boot_load_kernel_extensions, linux_kernel_modules_boot_event_handler_load_kernel_extensions);
-
- return 0;
-}
-
 int linux_kernel_modules_configure (struct lmodule *this) {
  module_init(this);
 
@@ -638,8 +627,6 @@ int linux_kernel_modules_configure (struct lmodule *this) {
  }
 
  exec_configure (this);
-
- thismodule->cleanup = linux_kernel_modules_cleanup;
 
  event_listen (einit_boot_initramfs, linux_kernel_modules_boot_event_handler_initramfs);
  event_listen (einit_boot_early, linux_kernel_modules_boot_event_handler_early);

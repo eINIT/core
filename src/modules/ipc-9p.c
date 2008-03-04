@@ -898,35 +898,14 @@ void einit_ipc_9p_ipc_stat (struct einit_event *ev) {
 }
 
 
-/*int einit_ipc_9p_cleanup (struct lmodule *this) {
- ipc_cleanup(irr);}*/
-
 const char *einit_ipc_9p_cl_address = NULL;
 
 void einit_ipc_9p_secondary_main_loop (struct einit_event *ev) {
  einit_ipc_9p_thread_function_address ((char *)einit_ipc_9p_cl_address);
 }
 
-int einit_ipc_9p_cleanup (struct lmodule *this) {
- event_ignore (einit_boot_load_kernel_extensions, einit_ipc_9p_boot_event_handler_root_device_ok);
- event_ignore (einit_power_down_imminent, einit_ipc_9p_power_event_handler);
- event_ignore (einit_power_reset_imminent, einit_ipc_9p_power_event_handler);
- event_ignore (einit_ipc_read, einit_ipc_9p_ipc_read);
- event_ignore (einit_ipc_stat, einit_ipc_9p_ipc_stat);
-
- event_ignore (einit_event_subsystem_any, einit_ipc_9p_generic_event_handler);
-
- if (einit_ipc_9p_cl_address) {
-  event_listen (einit_core_secondary_main_loop, einit_ipc_9p_secondary_main_loop);
- }
-
- return 0;
-}
-
 int einit_ipc_9p_configure (struct lmodule *irr) {
  module_init(irr);
-
- irr->cleanup = einit_ipc_9p_cleanup;
 
  event_listen (einit_boot_load_kernel_extensions, einit_ipc_9p_boot_event_handler_root_device_ok);
  event_listen (einit_power_down_imminent, einit_ipc_9p_power_event_handler);

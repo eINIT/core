@@ -321,14 +321,6 @@ void linux_mdev_boot_event_handler (struct einit_event *ev) {
  }
 }
 
-int linux_mdev_cleanup (struct lmodule *pa) {
- exec_cleanup(pa);
-
- event_ignore (einit_boot_early, linux_mdev_boot_event_handler);
-
- return 0;
-}
-
 int linux_mdev_configure (struct lmodule *pa) {
  module_init (pa);
 
@@ -339,8 +331,6 @@ int linux_mdev_configure (struct lmodule *pa) {
  }
 
  exec_configure(pa);
-
- pa->cleanup = linux_mdev_cleanup;
 
  event_listen (einit_boot_early, linux_mdev_boot_event_handler);
 

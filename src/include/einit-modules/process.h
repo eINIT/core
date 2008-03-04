@@ -124,7 +124,6 @@ process_tester_function f_pidrunning;
 #define pidexists(x) ((f_pidrunning || (f_pidrunning = function_find_one("einit-process-is-running", 1, NULL))) ? f_pidrunning(x) : 0)
 
 #define process_configure(mod) f_process_collector = NULL; f_e_kill = NULL; f_p_jktdb = NULL; f_pidrunning = NULL;
-#define process_cleanup(mod) f_process_collector = NULL; f_e_kill = NULL; f_p_jktdb = NULL; f_pidrunning = NULL;
 
 #endif
 

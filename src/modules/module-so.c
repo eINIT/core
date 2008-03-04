@@ -182,18 +182,10 @@ void einit_mod_so_scanmodules (struct einit_event *ev) {
  return;
 }
 
-int einit_mod_so_cleanup (struct lmodule *pa) {
- event_ignore (einit_core_update_modules, einit_mod_so_scanmodules);
-
- return 0;
-}
-
 int einit_mod_so_configure (struct lmodule *pa) {
  module_init (pa);
 
  event_listen (einit_core_update_modules, einit_mod_so_scanmodules);
-
- pa->cleanup = einit_mod_so_cleanup;
 
  einit_mod_so_scanmodules(NULL);
 

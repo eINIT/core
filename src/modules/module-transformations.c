@@ -385,13 +385,6 @@ void einit_module_transformations_einit_event_handler_update_module (struct eini
    }
 }
 
-int einit_module_transformations_cleanup (struct lmodule *r) {
- event_ignore (einit_core_update_module, einit_module_transformations_einit_event_handler_update_module);
- event_ignore (einit_core_configuration_update, einit_module_transformations_einit_event_handler_configuration_update);
-
- return 0;
-}
-
 int einit_module_transformations_configure (struct lmodule *r) {
  module_init (r);
 
@@ -429,8 +422,6 @@ int einit_module_transformations_configure (struct lmodule *r) {
   return status_configure_failed | status_not_in_use;
  }
 
-
- thismodule->cleanup = einit_module_transformations_cleanup;
 
  event_listen (einit_core_update_module, einit_module_transformations_einit_event_handler_update_module);
  event_listen (einit_core_configuration_update, einit_module_transformations_einit_event_handler_configuration_update);

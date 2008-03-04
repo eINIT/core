@@ -246,21 +246,8 @@ void compatibility_sysv_utmp_core_event_handler_core_service_enabled (struct ein
  }
 }
 
-int compatibility_sysv_utmp_cleanup (struct lmodule *irr) {
-// event_ignore (einit_event_subsystem_ipc, compatibility_sysv_utmp_ipc_event_handler);
- event_ignore (einit_boot_root_device_ok, compatibility_sysv_utmp_clean);
- event_ignore (einit_core_service_enabled, compatibility_sysv_utmp_core_event_handler_core_service_enabled);
-
- function_unregister ("einit-utmp-update", 1, updateutmp_f);
- utmp_cleanup (irr);
-
- return 0;
-}
-
 int compatibility_sysv_utmp_configure (struct lmodule *irr) {
  module_init (irr);
-
- thismodule->cleanup = compatibility_sysv_utmp_cleanup;
 
  utmp_configure (irr);
  function_register ("einit-utmp-update", 1, updateutmp_f);

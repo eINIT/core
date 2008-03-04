@@ -128,7 +128,6 @@ void einit_mount_event_boot_devices_available (struct einit_event *);
 void einit_mount_hotplug_event_handler_add (struct einit_event *);
 
 void einit_mount_scanmodules (struct einit_event *ev);
-int einit_mount_cleanup (struct lmodule *);
 void einit_mount_update_configuration ();
 unsigned char read_filesystem_flags_from_configuration (void *);
 void mount_add_filesystem (char *, char *, char **, char *, char *);
@@ -2172,32 +2171,10 @@ void einit_mount_einit_event_handler_crash_data (struct einit_event *ev) {
  }
 }
 
-int einit_mount_cleanup (struct lmodule *tm) {
- event_ignore (einit_core_crash_data, einit_mount_einit_event_handler_crash_data);
- event_ignore (einit_core_configuration_update, einit_mount_update_configuration);
- event_ignore (einit_core_module_list_update_complete, einit_mount_update_configuration);
- event_ignore (einit_power_down_imminent, eumount_root);
- event_ignore (einit_power_reset_imminent, eumount_root);
- event_ignore (einit_boot_devices_available, einit_mount_event_boot_devices_available);
-#if 0
- event_ignore (einit_ipc_request_generic, einit_mount_mount_ipc_handler);
-#endif
-
- event_ignore (einit_boot_root_device_ok, einit_mount_event_root_device_ok);
-
- function_unregister ("fs-mount", 1, (void *)emount);
- function_unregister ("fs-umount", 1, (void *)eumount);
-
- event_ignore (einit_core_update_modules, einit_mount_scanmodules);
-
- return 0;
-}
-
 int einit_mount_configure (struct lmodule *r) {
  struct stat st;
  module_init (r);
 
- thismodule->cleanup = einit_mount_cleanup;
  thismodule->recover = einit_mount_recover;
 
  /* pexec configuration */

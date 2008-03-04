@@ -321,18 +321,6 @@ void linux_udev_boot_event_handler (struct einit_event *ev) {
  }
 }
 
-int linux_udev_cleanup (struct lmodule *pa) {
- exec_cleanup(pa);
-
- event_ignore (einit_boot_early, linux_udev_boot_event_handler);
- event_ignore (einit_power_down_scheduled, linux_udev_shutdown);
- event_ignore (einit_power_reset_scheduled, linux_udev_shutdown);
- event_ignore (einit_power_down_imminent, linux_udev_shutdown_imminent);
- event_ignore (einit_power_reset_imminent, linux_udev_shutdown_imminent);
-
- return 0;
-}
-
 int linux_udev_configure (struct lmodule *pa) {
  module_init (pa);
 
@@ -343,8 +331,6 @@ int linux_udev_configure (struct lmodule *pa) {
  }
 
  exec_configure(pa);
-
- pa->cleanup = linux_udev_cleanup;
 
  event_listen (einit_boot_early, linux_udev_boot_event_handler);
  event_listen (einit_power_down_scheduled, linux_udev_shutdown);

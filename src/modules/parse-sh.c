@@ -86,13 +86,6 @@ module_register(einit_parse_sh_self);
 
 int parse_sh_f (const char *, void (*)(const char **, uint8_t, void *), void *);
 
-int einit_parse_sh_cleanup (struct lmodule *irr) {
- function_unregister ("einit-parse-sh", 1, parse_sh_f);
- parse_sh_cleanup (irr);
-
- return 0;
-}
-
 // parse sh-style files and call back for each line
 int parse_sh_f (const char *data, void (*callback)(const char **, uint8_t, void *), void *ud) {
  if (!data) return -1;
@@ -196,8 +189,6 @@ int parse_sh_f (const char *data, void (*callback)(const char **, uint8_t, void 
 
 int einit_parse_sh_configure (struct lmodule *irr) {
  module_init (irr);
-
- irr->cleanup = einit_parse_sh_cleanup;
 
  parse_sh_configure (irr);
  function_register ("einit-parse-sh", 1, parse_sh_f);

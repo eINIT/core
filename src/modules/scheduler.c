@@ -98,7 +98,6 @@ char sigint_called = 0;
 
 extern char shutting_down;
 
-int cleanup ();
 void sched_signal_sigalrm (int signal, siginfo_t *siginfo, void *context);
 
 time_t *sched_timer_data = NULL;
@@ -338,33 +337,6 @@ void sched_signal_sigalrm (int signal, siginfo_t *siginfo, void *context) {
  }
 
  return;
-}
-
-int scheduler_cleanup () {
- sem_t *sembck = signal_semaphore;
- stack_t curstack;
- signal_semaphore = NULL;
-
- if (!sigaltstack (NULL, &curstack) && !(curstack.ss_flags & SS_ONSTACK)) {
-  curstack.ss_size = SIGSTKSZ;
-  curstack.ss_flags = SS_DISABLE;
-  sigaltstack (&curstack, NULL);
-//  efree (curstack.ss_sp);
- } else {
-  notice (1, "schedule: no alternate signal stack or alternate stack in use; not cleaning up");
- }
-
-#if ((_POSIX_SEMAPHORES - 200112L) >= 0)
- sem_destroy (sembck);
-// efree (sembck);
-#elif defined(__APPLE__)
- sem_close (sembck);
-#else
- if (sem_destroy (sembck))
-  sem_close (sembck);
-#endif
-
- return 0;
 }
 
 int einit_scheduler_configure (struct lmodule *tm) {

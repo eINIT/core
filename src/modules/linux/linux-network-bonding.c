@@ -304,21 +304,9 @@ void linux_network_bonding_verify_carrier (struct einit_event *ev) {
  }
 }
 
-int linux_network_bonding_cleanup (struct lmodule *pa) {
- exec_cleanup (pa);
-
- event_ignore (einit_network_interface_construct, linux_network_bonding_interface_construct);
- event_ignore (einit_network_interface_update, linux_network_bonding_interface_construct);
- event_listen (einit_network_verify_carrier, linux_network_bonding_verify_carrier);
-
- return 0;
-}
-
 int linux_network_bonding_configure (struct lmodule *pa) {
  module_init (pa);
  exec_configure (pa);
-
- pa->cleanup = linux_network_bonding_cleanup;
 
  event_listen (einit_network_interface_construct, linux_network_bonding_interface_construct);
  event_listen (einit_network_interface_update, linux_network_bonding_interface_construct);

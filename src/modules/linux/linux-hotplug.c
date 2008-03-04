@@ -241,14 +241,6 @@ void linux_hotplug_hotplug_event_handler (struct einit_event *ev) {
  }
 }
 
-int linux_hotplug_cleanup (struct lmodule *tm) {
- exec_cleanup (tm);
-
- event_ignore (einit_event_subsystem_hotplug, linux_hotplug_hotplug_event_handler);
-
- return 1;
-}
-
 int linux_hotplug_configure (struct lmodule *tm) {
  module_init (tm);
  exec_configure (tm);

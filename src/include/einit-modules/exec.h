@@ -125,7 +125,6 @@ environment_function f_create_environment;
 variable_checkup_function f_check_variables;
 
 #define exec_configure(mod) f_pxe = NULL; f_start_daemon = NULL; f_stop_daemon = NULL; f_create_environment = NULL; f_check_variables = NULL;
-#define exec_cleanup(mod) f_pxe = NULL; f_start_daemon = NULL; f_stop_daemon = NULL; f_create_environment = NULL; f_check_variables = NULL;
 
 #define pexec(command, variables, uid, gid, user, group, local_environment, status) ((f_pxe || (f_pxe = function_find_one("einit-execute-command", 1, NULL)))? f_pxe(command, variables, uid, gid, user, group, local_environment, status) : status_failed)
 #define pexec_v1(command,variables,env,status) pexec (command, variables, 0, 0, NULL, NULL, env, status)
@@ -150,7 +149,6 @@ int stop_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status);
 char **create_environment_f (char **environment, const char **variables);
 
 #define exec_configure(mod) ;
-#define exec_cleanup(mod) ;
 
 #define pexec(command, variables, uid, gid, user, group, local_environment, status) pexec_f(command, variables, uid, gid, user, group, local_environment, status)
 #define pexec_v1(command,variables,env,status) pexec (command, variables, 0, 0, NULL, NULL, env, status)

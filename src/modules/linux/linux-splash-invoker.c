@@ -109,23 +109,8 @@ void linux_splash_invoker_exquisite_boot_devices_ok () {
  evstaticdestroy(eml);
 }
 
-int linux_splash_invoker_cleanup (struct lmodule *pa) {
- if (linux_splash_invoker_psplash_mode) {
-  event_ignore (einit_boot_load_kernel_extensions, linux_splash_invoker_psplash_boot_devices_ok);
- }
- if (linux_splash_invoker_usplash_mode) {
-  event_ignore (einit_boot_load_kernel_extensions, linux_splash_invoker_usplash_boot_devices_ok);
- }
- if (linux_splash_invoker_exquisite_mode) {
-  event_ignore (einit_boot_root_device_ok, linux_splash_invoker_exquisite_boot_devices_ok);
- }
-
- return 0;
-}
-
 int linux_splash_invoker_configure (struct lmodule *pa) {
  module_init (pa);
- pa->cleanup = linux_splash_invoker_cleanup;
 
  if (einit_initial_environment) {
   int i = 0;

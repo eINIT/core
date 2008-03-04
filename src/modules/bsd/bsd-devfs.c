@@ -117,21 +117,9 @@ void bsd_devfs_boot_event_handler_early (struct einit_event *ev) {
  }
 }
 
-int bsd_devfs_cleanup (struct lmodule *pa) {
- exec_cleanup(pa);
-
- event_ignore (einit_boot_early, bsd_devfs_boot_event_handler_early);
- event_ignore (einit_power_down_scheduled, bsd_devfs_shutdown);
- event_ignore (einit_power_reset_scheduled, bsd_devfs_shutdown);
-
- return 0;
-}
-
 int bsd_devfs_configure (struct lmodule *pa) {
  module_init (pa);
  exec_configure(pa);
-
- pa->cleanup = bsd_devfs_cleanup;
 
  event_listen (einit_boot_early, bsd_devfs_boot_event_handler_early);
  event_listen (einit_power_down_scheduled, bsd_devfs_shutdown);

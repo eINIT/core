@@ -503,22 +503,8 @@ void einit_tty_disable_feedback () {
  einit_tty_update ();
 }
 
-int einit_tty_cleanup (struct lmodule *this) {
- exec_cleanup(this);
- utmp_cleanup(this);
-
- event_ignore (einit_process_died, einit_tty_process_event_handler);
- event_ignore (einit_core_switching, einit_tty_update_switching);
- event_ignore (einit_core_done_switching, einit_tty_update_switch_done);
- event_ignore (einit_boot_devices_available, einit_tty_update);
-
- return 0;
-}
-
 int einit_tty_configure (struct lmodule *this) {
  module_init (this);
-
- thismodule->cleanup = einit_tty_cleanup;
 
  utmp_configure(this);
  exec_configure(this);

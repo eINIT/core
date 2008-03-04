@@ -576,32 +576,8 @@ int cfg_callback_prefix_f (char *prefix, void (*callback)(struct cfgnode *)) {
  return 1;
 }
 
-int bootstrap_einit_configuration_stree_cleanup (struct lmodule *tm) {
- cfg_free();
-
- event_ignore (einit_core_configuration_update, bootstrap_einit_configuration_stree_einit_event_handler_core_configuration_update);
-
- function_unregister ("einit-configuration-node-add", 1, cfg_addnode_f);
- function_unregister ("einit-configuration-node-get", 1, cfg_getnode_f);
- function_unregister ("einit-configuration-node-get-string", 1, cfg_getstring_f);
- function_unregister ("einit-configuration-node-get-find", 1, cfg_findnode_f);
- function_unregister ("einit-configuration-node-get-filter", 1, cfg_filter_f);
- function_unregister ("einit-configuration-node-get-path", 1, cfg_getpath_f);
- function_unregister ("einit-configuration-node-get-prefix", 1, cfg_prefix_f);
-
- function_unregister ("einit-configuration-callback-prefix", 1, cfg_callback_prefix_f);
-
- event_ignore (einit_ipc_read, bootstrap_einit_configuration_stree_ipc_read);
- event_ignore (einit_ipc_stat, bootstrap_einit_configuration_stree_ipc_stat);
- event_ignore (einit_ipc_write, bootstrap_einit_configuration_stree_ipc_write);
-
- return 0;
-}
-
 int bootstrap_einit_configuration_stree_configure (struct lmodule *tm) {
  module_init (tm);
-
- thismodule->cleanup = bootstrap_einit_configuration_stree_cleanup;
 
  event_listen (einit_core_configuration_update, bootstrap_einit_configuration_stree_einit_event_handler_core_configuration_update);
 

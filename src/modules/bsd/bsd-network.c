@@ -112,17 +112,8 @@ char **bsd_network_list_interfaces_ifconfig (int spawn_events) {
  return interfaces;
 }
 
-int bsd_network_cleanup (struct lmodule *pa) {
- function_unregister ("network-list-interfaces-bsd", 1, (void *)bsd_network_list_interfaces_ifconfig);
- function_unregister ("network-list-interfaces-generic", 1, (void *)bsd_network_list_interfaces_ifconfig);
-
- return 0;
-}
-
 int bsd_network_configure (struct lmodule *pa) {
  module_init (pa);
-
- pa->cleanup = bsd_network_cleanup;
 
  function_register ("network-list-interfaces-bsd", 1, (void *)bsd_network_list_interfaces_ifconfig);
  function_register ("network-list-interfaces-generic", 1, (void *)bsd_network_list_interfaces_ifconfig);

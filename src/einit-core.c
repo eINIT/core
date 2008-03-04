@@ -71,7 +71,6 @@ int sched_trace_target = STDOUT_FILENO;
 
 int main(int, char **, char **);
 int print_usage_info ();
-int cleanup ();
 
 pthread_key_t einit_function_macro_key;
 
@@ -102,24 +101,6 @@ int print_usage_info () {
   "mode=<mode>[:<mode>] a colon-separated list of modes to switch to.\n", stdout);
  return -1;
 }
-
-#if 0
-/* cleanups are only required to check for memory leaks, OS kernels will usually
-   clean up after a program terminates -- especially with an init this shouldn't be much of
-   a problem, since it's THE program that doesn't terminate. */
-int cleanup () {
- mod_freemodules ();
- config_cleanup();
-
-// bitch (BTCH_DL + BTCH_ERRNO);
-
- if (einit_startup_mode_switches != einit_default_startup_mode_switches) {
-  efree (einit_startup_mode_switches);
- }
-
- return 0;
-}
-#endif
 
 void core_einit_event_handler_configuration_update (struct einit_event *ev) {
  char *str;

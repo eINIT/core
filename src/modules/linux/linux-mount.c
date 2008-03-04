@@ -86,7 +86,6 @@ module_register(module_linux_mount_self);
 /* function declarations */
 unsigned char find_block_devices_proc (struct mount_control_block *);
 int linux_mount_configure (struct lmodule *);
-int linux_mount_cleanup (struct lmodule *);
 
 int linux_mount_do_mount_real (char *, char *, struct device_data *, struct mountpoint_data *, struct einit_event *);
 int linux_mount_do_mount_ntfs_3g (char *, char *, struct device_data *, struct mountpoint_data *, struct einit_event *);
@@ -319,41 +318,8 @@ int linux_mount_update_vboxsf (struct lmodule *lm, struct smodule *sm, struct de
  return 0;
 }
 
-int linux_mount_cleanup (struct lmodule *this) {
- function_unregister ("find-block-devices-proc", 1, (void *)find_block_devices_proc);
-
- function_unregister ("fs-mount-linux-nfs", 1, (void *)linux_mount_do_mount_real);
- function_unregister ("fs-mount-Linux-nfs", 1, (void *)linux_mount_do_mount_real);
- function_unregister ("fs-mount-generic-nfs", 1, (void *)linux_mount_do_mount_real);
-
- function_unregister ("fs-mount-linux-any-backup", 1, (void *)linux_mount_do_mount_real);
- function_unregister ("fs-mount-Linux-any-backup", 1, (void *)linux_mount_do_mount_real);
- function_unregister ("fs-mount-generic-any-backup", 1, (void *)linux_mount_do_mount_real);
-
- function_unregister ("fs-mount-linux-swap", 1, (void *)linux_mount_do_mount_swap);
- function_unregister ("fs-mount-Linux-swap", 1, (void *)linux_mount_do_mount_swap);
- function_unregister ("fs-mount-generic-swap", 1, (void *)linux_mount_do_mount_swap);
-
- function_unregister ("fs-umount-linux-swap", 1, (void *)linux_mount_do_umount_swap);
- function_unregister ("fs-umount-Linux-swap", 1, (void *)linux_mount_do_umount_swap);
- function_unregister ("fs-umount-generic-swap", 1, (void *)linux_mount_do_umount_swap);
-
- function_unregister ("fs-mount-linux-ntfs-3g", 1, (void *)linux_mount_do_mount_ntfs_3g);
- function_unregister ("fs-mount-Linux-ntfs-3g", 1, (void *)linux_mount_do_mount_ntfs_3g);
- function_unregister ("fs-mount-generic-ntfs-3g", 1, (void *)linux_mount_do_mount_ntfs_3g);
-
- function_unregister ("fs-update-generic-nfs", 1, (void *)linux_mount_update_nfs);
- function_unregister ("fs-update-generic-nfs4", 1, (void *)linux_mount_update_nfs4);
-
- exec_cleanup(this);
-
- return 0;
-}
-
 int linux_mount_configure (struct lmodule *this) {
  module_init (this);
-
- thismodule->cleanup = linux_mount_cleanup;
 
 /* pexec configuration */
  exec_configure (this);

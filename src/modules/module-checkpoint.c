@@ -46,7 +46,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/set.h>
 #include <einit/tree.h>
 
-int checkpoint_cleanup (struct lmodule *);
 int checkpoint_configure (struct lmodule *);
 
 #if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
@@ -96,14 +95,9 @@ int checkpoint_module_disable (uintptr_t cooldown, struct einit_event *status) {
  return status_ok;
 }
 
-int checkpoint_module_cleanup (struct lmodule *me) {
- return status_ok;
-}
-
 int checkpoint_module_configure (struct lmodule *me) {
  me->enable = (int (*)(void *, struct einit_event *))checkpoint_module_enable;
  me->disable = (int (*)(void *, struct einit_event *))checkpoint_module_disable;
- me->cleanup = checkpoint_module_cleanup;
 
  return status_ok;
 }
@@ -265,12 +259,6 @@ void checkpoint_scanmodules (struct einit_event *ev) {
  return;
 }
 
-int checkpoint_cleanup (struct lmodule *me) {
- event_ignore (einit_core_update_modules, checkpoint_scanmodules);
-
- return status_ok;
-}
-
 int checkpoint_configure (struct lmodule *me) {
  struct cfgnode *node = NULL;
 
@@ -293,8 +281,6 @@ int checkpoint_configure (struct lmodule *me) {
  }
 
  event_listen (einit_core_update_modules, checkpoint_scanmodules);
-
- me->cleanup = checkpoint_cleanup;
 
  checkpoint_scanmodules(NULL);
 

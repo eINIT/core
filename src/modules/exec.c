@@ -115,24 +115,6 @@ void einit_exec_process_event_handler (struct einit_event *);
 
 void *dexec_watcher (pid_t pid);
 
-int einit_exec_cleanup (struct lmodule *irr) {
- if (shell && (shell != dshell)) efree (shell);
- exec_cleanup (irr);
-
- function_unregister ("einit-execute-command", 1, pexec_f);
- function_unregister ("einit-execute-daemon", 1, start_daemon_f);
- function_unregister ("einit-stop-daemon", 1, stop_daemon_f);
- function_unregister ("einit-create-environment", 1, create_environment_f);
- function_unregister ("einit-check-variables", 1, check_variables_f);
- function_unregister ("einit-apply-envfile", 1, apply_envfile_f);
-
- function_unregister ("einit-execute-command-q", 1, qexec_f);
-
- event_ignore (einit_process_died, einit_exec_process_event_handler);
-
- return 0;
-}
-
 void einit_exec_update_daemons_from_pidfiles() {
  emutex_lock (&running_mutex);
  struct daemonst *cur = running;
@@ -1131,8 +1113,6 @@ int stop_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
 
 int einit_exec_configure (struct lmodule *irr) {
  module_init(irr);
-
- irr->cleanup = einit_exec_cleanup;
 
  struct cfgnode *node;
  if (!(shell = (char **)str2set (' ', cfg_getstring ("configuration-system-shell", NULL))))

@@ -186,16 +186,6 @@ void einit_shadow_exec_einit_event_handler_core_service_update (struct einit_eve
  }
 }
 
-int einit_shadow_exec_cleanup (struct lmodule *this) {
- event_ignore (einit_core_update_configuration, einit_shadow_exec_einit_event_handler_core_update_configuration);
- event_ignore (einit_core_mode_switching, einit_shadow_exec_einit_event_handler_core_update_configuration);
- event_ignore (einit_core_service_update, einit_shadow_exec_einit_event_handler_core_service_update);
-
- exec_cleanup(this);
-
- return 0;
-}
-
 int einit_shadow_exec_configure (struct lmodule *this) {
  module_init (this);
 
@@ -204,8 +194,6 @@ int einit_shadow_exec_configure (struct lmodule *this) {
  if (!(cur = cfg_getnode ("services-shadow", NULL))) {
   return status_configure_failed | status_not_in_use;
  }
-
- thismodule->cleanup = einit_shadow_exec_cleanup;
 
  exec_configure(this);
 

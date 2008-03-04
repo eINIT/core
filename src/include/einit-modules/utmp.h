@@ -93,8 +93,6 @@ utmp_function utmp_update_fp;
 #define update_utmp(options, record) ((utmp_update_fp || (utmp_update_fp = function_find_one("einit-utmp-update", 1, NULL))) ? utmp_update_fp(options, record) : -1)
 
 #define utmp_configure(mod) utmp_update_fp = NULL;
-#define utmp_cleanup(mod) utmp_update_fp = NULL;
-
 #ifdef __linux__
 #define create_utmp_record(record, utype, upid, uline, uid, uuser, uhost, ueterm, ueexit, usession) struct utmp record = { .ut_type = utype, \
   .ut_pid = upid,\

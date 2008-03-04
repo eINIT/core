@@ -461,16 +461,6 @@ void linux_bootchart_boot_event_handler (struct einit_event *ev) {
  linux_bootchart_switch ();
 }
 
-int linux_bootchart_cleanup (struct lmodule *pa) {
- exec_cleanup(irr);
-
- event_ignore (einit_core_done_switching, linux_bootchart_switch_done);
- event_ignore (einit_core_mode_switching, linux_bootchart_switch);
- event_ignore (einit_boot_early, linux_bootchart_boot_event_handler);
-
- return 0;
-}
-
 int linux_bootchart_configure (struct lmodule *tm) {
  module_init (tm);
  exec_configure(irr);

@@ -452,18 +452,8 @@ void einit_ipc_core_helpers_ipc_stat (struct einit_event *ev) {
  if (path != ev->para) efree (path);
 }
 
-int einit_ipc_core_helpers_cleanup (struct lmodule *irr) {
- event_ignore (einit_ipc_read, einit_ipc_core_helpers_ipc_read);
- event_ignore (einit_ipc_stat, einit_ipc_core_helpers_ipc_stat);
- event_ignore (einit_ipc_write, einit_ipc_core_helpers_ipc_write);
-
- return 0;
-}
-
 int einit_ipc_core_helpers_configure (struct lmodule *r) {
  module_init (r);
-
- thismodule->cleanup = einit_ipc_core_helpers_cleanup;
 
  event_listen (einit_ipc_read, einit_ipc_core_helpers_ipc_read);
  event_listen (einit_ipc_stat, einit_ipc_core_helpers_ipc_stat);

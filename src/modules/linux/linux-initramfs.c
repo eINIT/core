@@ -80,17 +80,8 @@ void linux_kernel_modules_boot_event_handler_initramfs_done (struct einit_event 
  }
 }
 
-int linux_initramfs_cleanup (struct lmodule *pa) {
- event_ignore (einit_boot_initramfs_check, linux_kernel_modules_boot_event_handler_early);
- event_ignore (einit_boot_initramfs_done, linux_kernel_modules_boot_event_handler_initramfs_done);
-
- return 0;
-}
-
 int linux_initramfs_configure (struct lmodule *pa) {
  module_init (pa);
-
- pa->cleanup = linux_initramfs_cleanup;
 
  event_listen (einit_boot_initramfs_check, linux_kernel_modules_boot_event_handler_early);
  event_listen (einit_boot_initramfs_done, linux_kernel_modules_boot_event_handler_initramfs_done);

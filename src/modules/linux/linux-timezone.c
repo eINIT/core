@@ -62,16 +62,8 @@ void linux_timezone_root_ok_handler (struct einit_event *ev) {
  linux_timezone_make_symlink();
 }
 
-int linux_timezone_cleanup (struct lmodule *pa) {
- event_ignore (einit_boot_root_device_ok, linux_timezone_root_ok_handler);
-
- return 0;
-}
-
 int linux_timezone_configure (struct lmodule *pa) {
  module_init (pa);
-
- pa->cleanup = linux_timezone_cleanup;
 
  event_listen (einit_boot_root_device_ok, linux_timezone_root_ok_handler);
 

@@ -140,13 +140,6 @@ void linux_cpufreq_switch_done () {
  }
 }
 
-int linux_cpufreq_cleanup (struct lmodule *pa) {
- event_ignore (einit_core_switching, linux_cpufreq_switch);
- event_ignore (einit_core_done_switching, linux_cpufreq_switch_done);
-
- return 0;
-}
-
 int linux_cpufreq_configure (struct lmodule *pa) {
  module_init (pa);
 
@@ -154,8 +147,6 @@ int linux_cpufreq_configure (struct lmodule *pa) {
  if (!node) {
   return status_configure_failed | status_not_in_use;
  }
-
- pa->cleanup = linux_cpufreq_cleanup;
 
  event_listen (einit_core_switching, linux_cpufreq_switch);
  event_listen (einit_core_done_switching, linux_cpufreq_switch_done);

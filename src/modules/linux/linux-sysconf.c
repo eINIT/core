@@ -250,20 +250,8 @@ void linux_sysconf_einit_core_mode_switch_done (struct einit_event *ev) {
  }
 }
 
-int linux_sysconf_cleanup (struct lmodule *this) {
- event_ignore (einit_boot_early, linux_sysconf_ctrl_alt_del);
- event_ignore (einit_boot_devices_available, linux_sysconf_sysctl);
-
- event_ignore (einit_core_service_enabled, linux_sysconf_service_enabled);
- event_ignore (einit_core_mode_switch_done, linux_sysconf_einit_core_mode_switch_done);
-
- return 0;
-}
-
 int linux_sysconf_configure (struct lmodule *irr) {
  module_init (irr);
-
- thismodule->cleanup = linux_sysconf_cleanup;
 
  event_listen (einit_boot_early, linux_sysconf_ctrl_alt_del);
  event_listen (einit_boot_devices_available, linux_sysconf_sysctl);

@@ -162,20 +162,8 @@ int pekill_f (struct pc_conditional **pcc) {
  return ekill (pcc, SIGKILL);
 }
 
-int einit_process_cleanup (struct lmodule *irr) {
- function_unregister ("einit-process-killing-spree", 1, pekill_f);
- function_unregister ("einit-process-ekill", 1, ekill_f);
- function_unregister ("einit-process-collect", 1, collect_processes);
- function_unregister ("einit-process-filter-cwd-below", 1, filter_processes_cwd_below);
- function_unregister ("einit-process-filter-cwd", 1, filter_processes_cwd);
- process_cleanup (irr);
-
- return 0;
-}
-
 int einit_process_configure (struct lmodule *irr) {
  module_init (irr);
- irr->cleanup = einit_process_cleanup;
 
  process_configure (irr);
  function_register ("einit-process-filter-cwd", 1, filter_processes_cwd);

@@ -180,16 +180,11 @@ int module_group_module_disable (char *nodename, struct einit_event *status) {
  return status_ok;
 }
 
-int module_group_module_cleanup (struct lmodule *tm) {
- return 0;
-}
-
 int module_group_module_configure (struct lmodule *tm) {
  module_init(tm);
 
  tm->enable = (int (*)(void *, struct einit_event *))module_group_module_enable;
  tm->disable = (int (*)(void *, struct einit_event *))module_group_module_disable;
- tm->cleanup = module_group_module_cleanup;
 
  return 0;
 }

@@ -753,34 +753,9 @@ void linux_network_verify_carrier (struct einit_event *ev) {
  }
 }
 
-int linux_network_cleanup (struct lmodule *pa) {
- exec_cleanup (pa);
-
- function_unregister ("network-list-interfaces-linux", 1, (void *)linux_network_list_interfaces_proc);
- function_unregister ("network-list-interfaces-generic", 1, (void *)linux_network_list_interfaces_proc);
- function_unregister ("network-has-carrier-linux", 1, (void *)linux_network_has_carrier);
- function_unregister ("network-has-carrier-generic", 1, (void *)linux_network_has_carrier);
- function_unregister ("network-get-link-speed-linux", 1, (void *)linux_network_get_link_speed);
- function_unregister ("network-get-link-speed-generic", 1, (void *)linux_network_get_link_speed);
-
-#if 0
- event_ignore (einit_network_interface_configure, linux_network_interface_configure);
-#endif
- event_ignore (einit_network_interface_construct, linux_network_interface_construct);
- event_ignore (einit_network_interface_update, linux_network_interface_construct);
- event_ignore (einit_network_address_static, linux_network_address_static);
- event_ignore (einit_network_interface_prepare, linux_network_interface_prepare);
- event_ignore (einit_network_interface_done, linux_network_interface_done);
- event_ignore (einit_network_verify_carrier, linux_network_verify_carrier);
-
- return 0;
-}
-
 int linux_network_configure (struct lmodule *pa) {
  module_init (pa);
  exec_configure (pa);
-
- pa->cleanup = linux_network_cleanup;
 
  function_register ("network-list-interfaces-linux", 1, (void *)linux_network_list_interfaces_proc);
  function_register ("network-list-interfaces-generic", 1, (void *)linux_network_list_interfaces_proc);

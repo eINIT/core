@@ -101,18 +101,10 @@ void module_bundle_scanmodules (struct einit_event *ev) {
  return;
 }
 
-int module_bundle_cleanup (struct lmodule *pa) {
- event_ignore (einit_core_update_modules, module_bundle_scanmodules);
-
- return 0;
-}
-
 int module_bundle_configure (struct lmodule *pa) {
  module_init (pa);
 
  event_listen (einit_core_update_modules, module_bundle_scanmodules);
-
- pa->cleanup = module_bundle_cleanup;
 
  module_bundle_scanmodules(NULL);
 
