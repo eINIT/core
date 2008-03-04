@@ -66,7 +66,7 @@ einitSysVD = env.Program ('einit-sysvd', CodeEinitSysVD, LIBS=['einit'], LIBPATH
 if uname != 'FreeBSD':
  libEinit = env.SharedLibrary ('einit', CodeLibEinit, LIBS=['ixp-local', 'pthread'], LIBPATH=['#libixp'], SHLINKFLAGS=linkflagsLibEinit)
 if uname == 'FreeBSD':
- libEinit = env.SharedLibrary ('einit', CodeLibEinit, LIBS=['ixp-local'], LIBPATH=['#libixp'], LDFLAGS='-shared', CFLAGS='-fPIC', CXXFLAGS = ['-D_THREAD_SAFE'], SHLINKFLAGS=linkflagsLibEinit)
+ libEinit = env.SharedLibrary ('einit', CodeLibEinit, LIBS=['ixp-local'], LIBPATH=['#libixp'], CFLAGS='-fPIC', CXXFLAGS = ['-D_THREAD_SAFE'], SHLINKFLAGS=linkflagsLibEinit)
 libEinitPP = env.SharedLibrary ('einit++', 'libraries/libeinit++.c++', LIBS=['einit'], LIBPATH=['.'], SHLINKFLAGS=linkflagsLibEinitPP)
 
 env.Install (InstallDirLibBin, einitCore)
