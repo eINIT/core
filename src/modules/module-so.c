@@ -117,6 +117,7 @@ void einit_mod_so_scanmodules (struct einit_event *ev) {
 
 /* load all new modules */
  if (modules) {
+  setsort ((void **)modules, set_sort_order_string_lexical, NULL);
   uint32_t z = 0;
 
   for (; modules[z]; z++) {
