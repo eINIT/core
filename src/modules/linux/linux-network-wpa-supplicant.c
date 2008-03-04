@@ -320,84 +320,67 @@ int linux_network_wpa_supplicant_module_configure (struct lmodule *this) {
  return 0;
 }
 
-void linux_network_wpa_supplicant_scanmodules (struct einit_event *ev) {
- struct stree *linux_network_wpa_supplicant_nodes = cfg_prefix(MPREFIX);
+void linux_network_wpa_supplicant_node_callback (struct cfgnode *node) {
+ char *interface = node->id + sizeof (MPREFIX) -1;
 
- if (linux_network_wpa_supplicant_nodes) {
-  struct stree *cur = streelinear_prepare(linux_network_wpa_supplicant_nodes);
+ char *configuration_file = "/etc/wpa_supplicant/wpa_supplicant.conf";
+ char *driver = "wext";
 
-  while (cur) {
-   char *interface = cur->key + sizeof (MPREFIX) -1;
-   struct cfgnode *node = cur->value;
+ int i = 0;
 
-   char *configuration_file = "/etc/wpa_supplicant/wpa_supplicant.conf";
-   char *driver = "wext";
-
-   int i = 0;
-
-   if (node->arbattrs) {
-    for (; node->arbattrs[i]; i += 2) {
-     if (strmatch (node->arbattrs[i], "configuration-file")) {
-      configuration_file = node->arbattrs[i+1];
-     } else if (strmatch (node->arbattrs[i], "driver")) {
-      driver = node->arbattrs[i+1];
-     }
-    }
+ if (node->arbattrs) {
+  for (; node->arbattrs[i]; i += 2) {
+   if (strmatch (node->arbattrs[i], "configuration-file")) {
+    configuration_file = node->arbattrs[i+1];
+   } else if (strmatch (node->arbattrs[i], "driver")) {
+    driver = node->arbattrs[i+1];
    }
-
-   char tmp[BUFFERSIZE];
-   struct lmodule *m;
-   struct smodule *sm;
-
-   esprintf (tmp, BUFFERSIZE, "linux-wpa-supplicant-%s", interface);
-
-   if ((m = mod_lookup_rid(tmp))) {
-    mod_update(m);
-    goto next;
-   }
-
-   sm = emalloc (sizeof(struct smodule));
-   memset (sm, 0, sizeof (struct smodule));
-
-   sm->rid = (char *)str_stabilise (tmp);
-
-   esprintf (tmp, BUFFERSIZE, "WPA Supplicant Supervisor (%s)", interface);
-   sm->name = (char *)str_stabilise (tmp);
-
-   sm->eiversion = EINIT_VERSION;
-   sm->eibuild = BUILDNUMBER;
-   sm->mode = einit_module | einit_feedback_job;
-
-   esprintf (tmp, BUFFERSIZE, "wpa-supplicant-%s", interface);
-   sm->si.provides = set_str_add (sm->si.provides, tmp);
-
-/* let's just assume that we'll need /var, /var/run, /usr, /usr/bin, /usr/sbin, /usr/local, /usr/local/bin and /usr/local/sbin */
-   sm->si.after = set_str_add (sm->si.after, "^fs-(root|var-run|var|usr(-local)?(-s?bin)?)$");
-
-   sm->configure = linux_network_wpa_supplicant_module_configure;
-
-   mod_add (NULL, sm);
-
-   next:
-
-   cur = streenext(cur);
   }
  }
 
- return;
+ char tmp[BUFFERSIZE];
+ struct lmodule *m;
+ struct smodule *sm;
+
+ esprintf (tmp, BUFFERSIZE, "linux-wpa-supplicant-%s", interface);
+
+ if ((m = mod_lookup_rid(tmp))) {
+  mod_update(m);
+  return;
+ }
+
+ sm = emalloc (sizeof(struct smodule));
+ memset (sm, 0, sizeof (struct smodule));
+
+ sm->rid = (char *)str_stabilise (tmp);
+
+ esprintf (tmp, BUFFERSIZE, "WPA Supplicant Supervisor (%s)", interface);
+ sm->name = (char *)str_stabilise (tmp);
+
+ sm->eiversion = EINIT_VERSION;
+ sm->eibuild = BUILDNUMBER;
+ sm->mode = einit_module | einit_feedback_job;
+
+ esprintf (tmp, BUFFERSIZE, "wpa-supplicant-%s", interface);
+ sm->si.provides = set_str_add (sm->si.provides, tmp);
+
+ /* let's just assume that we'll need /var, /var/run, /usr, /usr/bin, /usr/sbin, /usr/local, /usr/local/bin and /usr/local/sbin */
+ sm->si.after = set_str_add (sm->si.after, "^fs-(root|var-run|var|usr(-local)?(-s?bin)?)$");
+
+ sm->configure = linux_network_wpa_supplicant_module_configure;
+
+ mod_add (NULL, sm);
 }
 
 int linux_network_wpa_supplicant_configure (struct lmodule *pa) {
  module_init (pa);
  exec_configure (pa);
 
- event_listen (einit_core_update_modules, linux_network_wpa_supplicant_scanmodules);
-
  event_listen (einit_network_verify_carrier, linux_network_wpa_supplicant_verify_carrier);
  event_listen (einit_network_interface_construct, linux_network_wpa_supplicant_interface_construct);
  event_listen (einit_network_interface_update, linux_network_wpa_supplicant_interface_construct);
 
- linux_network_wpa_supplicant_scanmodules(NULL);
+ cfg_callback_prefix(MPREFIX, linux_network_wpa_supplicant_node_callback);
 
  return 0;
 }
