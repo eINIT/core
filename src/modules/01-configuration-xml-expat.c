@@ -1,5 +1,5 @@
 /*
- *  bootstrap-configuration-xml-expat.c
+ *  configuration-xml-expat.c
  *  einit
  *
  *  Created by Magnus Deininger on 06/02/2006.
@@ -65,30 +65,29 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define ECXE_MASTERTAG ( ECXE_MASTERTAG_EINIT | ECXE_MASTERTAG_MODULE | ECXE_MASTERTAG_NETWORK)
 
-int bootstrap_einit_configuration_xml_expat_configure (struct lmodule *);
+int einit_configuration_xml_expat_configure (struct lmodule *);
 
 void einit_config_xml_expat_event_handler_core_update_configuration (struct einit_event *);
 void einit_config_xml_expat_ipc_read (struct einit_event *);
-char *einit_config_xml_cfg_to_xml (struct stree *);
 
 #if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
-const struct smodule bootstrap_einit_configuration_xml_expat_self = {
+const struct smodule einit_configuration_xml_expat_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
  .mode      = 0,
  .name      = "Configuration Parser (XML, Expat)",
- .rid       = "einit-bootstrap-configuration-xml-expat",
+ .rid       = "einit-configuration-xml-expat",
  .si        = {
   .provides = NULL,
   .requires = NULL,
   .after    = NULL,
   .before   = NULL
  },
- .configure = bootstrap_einit_configuration_xml_expat_configure
+ .configure = einit_configuration_xml_expat_configure
 };
 
-module_register(bootstrap_einit_configuration_xml_expat_self);
+module_register(einit_configuration_xml_expat_self);
 
 #endif
 
@@ -100,18 +99,6 @@ time_t xml_configuration_files_highest_mtime = 0;
 char **xml_configuration_new_files = NULL;
 
 pthread_mutex_t xml_configuration_new_files_mutex = PTHREAD_MUTEX_INITIALIZER;
-
-int bootstrap_einit_configuration_xml_expat_configure (struct lmodule *this) {
- module_init(this);
- exec_configure (this);
-
- event_listen (einit_ipc_read, einit_config_xml_expat_ipc_read);
- event_listen (einit_core_update_configuration, einit_config_xml_expat_event_handler_core_update_configuration);
-
- function_register ("einit-configuration-converter-xml", 1, einit_config_xml_cfg_to_xml);
-
- return 0;
-}
 
 struct einit_xml_expat_user_data {
  uint32_t options;
@@ -307,18 +294,8 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
  if ((data = readfile (configfile))) {
   notice (9, "parsing \"%s\".\n", configfile);
 
-#ifdef DEBUG
-  time_t currenttime = time(NULL);
-  if (st.st_mtime > currenttime) {// sanity check mtime
-   notice (5, "file \"%s\" has mtime in the future\n", configfile);
-   if (st.st_mtime > xml_configuration_files_highest_mtime)
-    xml_configuration_files_highest_mtime = st.st_mtime;
-  } else if (st.st_mtime > xml_configuration_files_highest_mtime) // update combined mtime
-   xml_configuration_files_highest_mtime = st.st_mtime;
-#else
   if (st.st_mtime > xml_configuration_files_highest_mtime)
    xml_configuration_files_highest_mtime = st.st_mtime;
-#endif
 
   blen = strlen(data)+1;
   par = XML_ParserCreate (NULL);
@@ -501,75 +478,27 @@ void einit_config_xml_expat_ipc_read (struct einit_event *ev) {
  }
 }
 
-char *einit_config_xml_cfg_to_xml (struct stree *configuration) {
- char *ret = NULL;
- char *retval = NULL;
- char *xtemplate = "<?xml version=\"1.1\" encoding=\"UTF-8\" ?>\n<einit>\n%s</einit>\n";
- ssize_t sxlen;
- struct stree *cur = streelinear_prepare(configuration);
+extern char **einit_startup_configuration_files;
 
- while (cur) {
-  char *xtmp = NULL, *xattributes = NULL;
+int einit_configuration_xml_expat_configure (struct lmodule *this) {
+ module_init(this);
+ exec_configure (this);
 
-  if (cur->value) {
-   struct cfgnode *node = cur->value;
+ event_listen (einit_ipc_read, einit_config_xml_expat_ipc_read);
+ event_listen (einit_core_update_configuration, einit_config_xml_expat_event_handler_core_update_configuration);
 
-   if (node->arbattrs) {
-    ssize_t x = 0;
-    for (x = 0; node->arbattrs[x]; x+=2) {
-     char *key = node->arbattrs[x],
-          *value = escape_xml(node->arbattrs[x+1]);
-     ssize_t clen = strlen (key) + strlen(value) + 5;
-     char *ytmp = emalloc (clen);
+ /* emit events to read configuration files */
+ struct einit_event cev = evstaticinit(einit_core_update_configuration);
 
-     esprintf (ytmp, clen, "%s=\"%s\" ", key, value);
-
-     if (xattributes) xattributes = erealloc (xattributes, strlen (xattributes) + strlen (ytmp) +1);
-     else {
-      xattributes = emalloc (strlen (ytmp) +1);
-      *xattributes = 0;
-     }
-
-     xattributes = strcat (xattributes, ytmp);
-
-     efree (ytmp);
-     efree (value);
-    }
-   }
+ if (einit_startup_configuration_files) {
+  uint32_t rx = 0;
+  for (; einit_startup_configuration_files[rx]; rx++) {
+   cev.string = einit_startup_configuration_files[rx];
+   event_emit (&cev, einit_event_flag_broadcast);
   }
-
-  if (xattributes) {
-   if (cur->key && xattributes) {
-    ssize_t rxlen = strlen (cur->key) + strlen (xattributes) +7;
-    xtmp = emalloc (rxlen);
-    esprintf (xtmp, rxlen, " <%s %s/>\n", cur->key, xattributes);
-   }
-   efree (xattributes);
-  }
-
-  if (xtmp) {
-   if (retval) retval = erealloc (retval, strlen (retval) + strlen (xtmp) +1);
-   else {
-    retval = emalloc (strlen (xtmp) +1);
-    *retval = 0;
-   }
-
-   retval = strcat (retval, xtmp);
-
-   efree (xtmp);
-  }
-
-  cur = streenext(cur);
  }
 
- if (!retval) {
-  return estrdup ("");
- }
+ evstaticdestroy (cev);
 
- sxlen = strlen (retval) + strlen (xtemplate) +1;
- ret = emalloc (sxlen);
- esprintf (ret, sxlen, xtemplate, retval);
- efree (retval);
-
- return ret;
+ return 0;
 }

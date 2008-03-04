@@ -1,4 +1,4 @@
-Import(['env', 'InstallDirModules', 'InstallDirBootstrap', 'Modules', 'ModulesLinux', 'ExternalModules', 'ModulesBSD', 'uname', 'InternalModules', 'ModulesBase', 'ModulesLinuxNoBundle'])
+Import(['env', 'InstallDirModules', 'Modules', 'ModulesLinux', 'ExternalModules', 'ModulesBSD', 'uname', 'InternalModules', 'ModulesBase', 'ModulesLinuxNoBundle'])
 
 import os.path
 
@@ -8,9 +8,6 @@ CodeInternalModules = ['#build/core/module-configuration.c']
 
 def buildModule(name, location, e):
  e.Install(InstallDirModules, e.LoadableModule(name, location + '/' + name + '.c'))
-
-def buildModuleBootStrap(name, e):
- e.Install(InstallDirBootstrap, e.LoadableModule(name, name + '.c'))
 
 def buildInternalModule(name, location, e):
  tm = name.replace('-', '_')
@@ -65,13 +62,13 @@ def buildBundleET(target, name, items, dir, e):
   for x in items:
    mnames += [  dir + '/' + x ]
 
-  buildBundle(target, 'bundle-' + name, mnames, e)
+  buildBundle(target, name + '-bundle', mnames, e)
 
 def buildBundleE(name, items, dir, e):
  buildBundleET(InstallDirModules, name, items, dir, e)
 
-buildModuleBootStrap('bootstrap-configuration-stree', menv)
-buildModuleBootStrap('bootstrap-configuration-xml-expat', menv.Clone (LIBS = 'expat-local', LIBPATH=['#expat']))
+buildModule('00-configuration-stree', '.', menv)
+buildModule('01-configuration-xml-expat', '.', menv.Clone (LIBS = 'expat-local', LIBPATH=['#expat']))
 
 for x in Modules:
  buildModule(x, '.', menv)
@@ -79,10 +76,10 @@ for x in Modules:
 for x in ModulesLinuxNoBundle:
  buildModule(x, 'linux', menv)
 
-buildBundleE('01-bsd', ModulesBSD, 'bsd', menv)
-buildBundleE('01-linux', ModulesLinux, 'linux', menv)
+buildBundleE('02-bsd', ModulesBSD, 'bsd', menv)
+buildBundleE('02-linux', ModulesLinux, 'linux', menv)
 
-buildBundleE('02-base', ModulesBase, '.', menv)
+buildBundleE('03-base', ModulesBase, '.', menv)
 
 if 'ipc-9p' in ExternalModules:
  buildModule ('ipc-9p', '.', menv.Clone (LIBS=['ixp-local'], LIBPATH=['#libixp']))

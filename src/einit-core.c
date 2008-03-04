@@ -81,7 +81,7 @@ char **einit_startup_configuration_files = NULL;
 char *einit_default_startup_mode_switches[] = { "default", NULL };  // the list of modes to activate by default
 
 // the list of files to  parse by default
-char *einit_default_startup_configuration_files[] = { "/lib/einit/einit.xml", NULL };
+char *einit_default_startup_configuration_files[] = { EINIT_LIB_BASE "/einit.xml", NULL };
 
 struct lmodule *mlist;
 
@@ -100,12 +100,6 @@ int print_usage_info () {
   "Environment Variables (or key=value kernel parametres):\n"
   "mode=<mode>[:<mode>] a colon-separated list of modes to switch to.\n", stdout);
  return -1;
-}
-
-void core_einit_event_handler_configuration_update (struct einit_event *ev) {
- char *str;
-
- ev->chain_type = einit_core_update_modules;
 }
 
 pthread_mutex_t core_modules_update_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -220,7 +214,6 @@ int main(int argc, char **argv, char **environ) {
  uname (&osinfo);
  config_configure();
 
- event_listen (einit_core_configuration_update, core_einit_event_handler_configuration_update);
  event_listen (einit_core_update_modules, core_einit_event_handler_update_modules);
  event_listen (einit_core_recover, core_einit_event_handler_recover);
 
@@ -258,7 +251,11 @@ int main(int argc, char **argv, char **environ) {
      if (strmatch(argv[i], "--help"))
       return print_usage_info ();
      else if (strmatch(argv[i], "--sandbox")) {
-      einit_default_startup_configuration_files[0] = "lib/einit/einit.xml";
+      einit_default_startup_configuration_files[0] = EINIT_LIB_BASE "/einit.xml";
+
+      while (einit_default_startup_configuration_files[0][0] == '/')
+       einit_default_startup_configuration_files[0]++;
+
       coremode |= einit_mode_sandbox;
       need_recovery = 1;
      } else if (strmatch(argv[i], "--recover")) {
@@ -338,8 +335,6 @@ int main(int argc, char **argv, char **environ) {
   }
 
 /* actual system initialisation */
-  struct einit_event cev = evstaticinit(einit_core_update_configuration);
-
   if (!suppress_version) {
    eprintf (stdout, "eINIT " EINIT_VERSION_LITERAL ": Initialising: %s\n", osinfo.sysname);
   }
@@ -370,34 +365,6 @@ int main(int argc, char **argv, char **environ) {
     if (!suppress_version)
      eputs (" OK\n", stdout);
    }
-
-/* emit events to read configuration files */
-  if (einit_startup_configuration_files) {
-   uint32_t rx = 0;
-   for (; einit_startup_configuration_files[rx]; rx++) {
-    cev.string = einit_startup_configuration_files[rx];
-    event_emit (&cev, einit_event_flag_broadcast);
-   }
-
-   if (einit_startup_configuration_files != einit_default_startup_configuration_files) {
-    efree (einit_startup_configuration_files);
-   }
-  }
-
-  cev.string = NULL;
-  cev.type = einit_core_configuration_update;
-
-// make sure we keep updating until everything is sorted out
-  einit_new_node = 1;
-
-  while (einit_new_node) {
-   einit_new_node = 0;
-   fprintf (stderr, "stuff changed, updating configuration.\n");
-
-   cev.type = einit_core_update_configuration;
-   event_emit (&cev, einit_event_flag_broadcast);
-  }
-  evstaticdestroy(cev);
 
 /* update the process environment, just in case */
   update_local_environment();

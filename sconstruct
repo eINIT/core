@@ -63,7 +63,6 @@ RuntimeDirLib = prefix + libdir
 RuntimeDirLibEinit = prefix + libdir + '/einit'
 RuntimeDirLibBin = prefix + libdir + '/einit/bin'
 RuntimeDirModules = prefix + libdir + '/einit/modules'
-RuntimeDirBootstrap = prefix + libdir + '/einit/bootstrap'
 
 InstallDirSbin = destdir + RuntimeDirSbin
 InstallDirEtc = destdir + RuntimeDirEtc
@@ -71,7 +70,6 @@ InstallDirLib = destdir + RuntimeDirLib
 InstallDirLibEinit = destdir + RuntimeDirLibEinit
 InstallDirLibBin = destdir + RuntimeDirLibBin
 InstallDirModules = destdir + RuntimeDirModules
-InstallDirBootstrap = destdir + RuntimeDirBootstrap
 
 InstallDirInclude = destdir + '/usr/include'
 if prefix != '/':
@@ -86,7 +84,7 @@ if f:
 
 AssemblyDir = '#asm/' + arch + '-' + uname.lower() + '-' + libc
 
-SpecialModules = ['bootstrap-configuration-stree', 'bootstrap-configuration-xml-expat', 'ipc-9p', 'module-logic-v4']
+SpecialModules = ['00-configuration-stree', '01-configuration-xml-expat', 'ipc-9p', 'module-logic-v4']
 
 Modules = ['shadow-exec']
 
@@ -180,10 +178,6 @@ def build_configuration(target, source, env):
 
 #ifndef EINIT_MODULES_CONFIGURATION_H
 #define EINIT_MODULES_CONFIGURATION_H
-
-#define BOOTSTRAP_MODULE_PATH \"""" + RuntimeDirBootstrap + """/\"
-
-#define DO_BOOTSTRAP
 
 """)
 
@@ -297,8 +291,8 @@ env.EConfiguration('build/headers/einit-modules/configuration.h', 'modules')
 env.EConfiguration('build/core/module-configuration.c', 'module-configuration')
 
 Export(['env',
-        'RuntimeDirSbin', 'RuntimeDirEtc', 'RuntimeDirLib', 'RuntimeDirLibBin', 'RuntimeDirModules', 'RuntimeDirBootstrap', 'RuntimeDirLibEinit',
-        'InstallDirSbin', 'InstallDirEtc', 'InstallDirLib', 'InstallDirLibBin', 'InstallDirModules', 'InstallDirBootstrap', 'InstallDirLibEinit',
+        'RuntimeDirSbin', 'RuntimeDirEtc', 'RuntimeDirLib', 'RuntimeDirLibBin', 'RuntimeDirModules', 'RuntimeDirLibEinit',
+        'InstallDirSbin', 'InstallDirEtc', 'InstallDirLib', 'InstallDirLibBin', 'InstallDirModules', 'InstallDirLibEinit',
         'SpecialModules', 'Modules', 'ModulesBase', 'ModulesLinux', 'ModulesLinuxNoBundle', 'InternalModules',
         'ExternalModules', 'ModulesBSD', 'uname', 'libdir', 'prefix', 'destdir', 'InstallDirInclude', 'AssemblyDir', 'ASMFunctionsAvailable'])
 
@@ -309,6 +303,6 @@ InstallConfig = Alias ('install-config', [ InstallDirLibEinit + '/defaults', Ins
 env.Install (InstallDirInclude + '/einit', '#build/headers/einit/configuration.h')
 env.Install (InstallDirInclude + '/einit-modules', '#build/headers/einit-modules/configuration.h')
 
-InstallAliases += [InstallDirSbin, InstallDirLib, InstallDirLibBin, InstallDirModules, InstallDirBootstrap, InstallConfig, InstallDirLibEinit, InstallDirInclude, InstallDirInclude + '/einit', InstallDirInclude + '/einit-modules', InstallDirLibEinit + '/scripts']
+InstallAliases += [InstallDirSbin, InstallDirLib, InstallDirLibBin, InstallDirModules, InstallConfig, InstallDirLibEinit, InstallDirInclude, InstallDirInclude + '/einit', InstallDirInclude + '/einit-modules', InstallDirLibEinit + '/scripts']
 
 env.Alias('install', InstallAliases)

@@ -35,6 +35,8 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#define __USE_UNIX98
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <sys/types.h>
@@ -106,11 +108,7 @@ void einit_mod_so_scanmodules (struct einit_event *ev) {
 
  if (!modules) {
   modules = readdirfilter(cfg_getnode ("core-settings-modules", NULL),
-#ifdef DO_BOOTSTRAP
-                                 BOOTSTRAP_MODULE_PATH
-#else
-                                 "/lib/einit/modules/"
-#endif
+                                 EINIT_LIB_BASE "/modules/"
                                  , ".*\\.so", NULL, 0);
  }
 

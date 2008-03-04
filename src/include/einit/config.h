@@ -95,7 +95,7 @@ extern char **einit_argv;
 /* use this to define functions that take a tree of configuration nodes and turn it into a string (for saving) */
 typedef char *(*cfg_string_converter) (const struct stree *);
 
-#if (! defined(einit_modules_bootstrap_configuration_stree)) || (einit_modules_bootstrap_configuration_stree == 'm') || (einit_modules_bootstrap_configuration_stree == 'n')
+#if (! defined(einit_modules_00_configuration_stree)) || (einit_modules_00_configuration_stree == 'm') || (einit_modules_00_configuration_stree == 'n')
 
 struct exported_function *cfg_addnode_fs;
 struct exported_function *cfg_findnode_fs;

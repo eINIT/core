@@ -1,5 +1,5 @@
 /*
- *  bootstrap-configuration-stree.c
+ *  configuration-stree.c
  *  einit
  *
  *  Created by Magnus Deininger on 06/02/2006.
@@ -55,26 +55,26 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <regex.h>
 
-int bootstrap_einit_configuration_stree_configure (struct lmodule *);
+int einit_configuration_stree_configure (struct lmodule *);
 
 #if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
-const struct smodule bootstrap_einit_configuration_stree_self = {
+const struct smodule einit_configuration_stree_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
  .mode      = 0,
  .name      = "Core Configuration Storage and Retrieval (stree-based)",
- .rid       = "einit-bootstrap-configuration-stree",
+ .rid       = "einit-configuration-stree",
  .si        = {
   .provides = NULL,
   .requires = NULL,
   .after    = NULL,
   .before   = NULL
  },
- .configure = bootstrap_einit_configuration_stree_configure
+ .configure = einit_configuration_stree_configure
 };
 
-module_register(bootstrap_einit_configuration_stree_self);
+module_register(einit_configuration_stree_self);
 
 #endif
 
@@ -88,10 +88,10 @@ struct stree *hconfiguration = NULL;
 
 pthread_mutex_t
  cfg_stree_garbage_mutex = PTHREAD_MUTEX_INITIALIZER,
- bootstrap_einit_configuration_stree_callbacks_mutex = PTHREAD_MUTEX_INITIALIZER;
+ einit_configuration_stree_callbacks_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 struct stree *
- bootstrap_einit_configuration_stree_callbacks = NULL;
+ einit_configuration_stree_callbacks = NULL;
 
 void cfg_stree_garbage_add_chunk (void *chunk) {
  if (!chunk) return;
@@ -116,15 +116,15 @@ void cfg_stree_garbage_free () {
  emutex_unlock (&cfg_stree_garbage_mutex);
 }
 
-time_t bootstrap_einit_configuration_stree_garbage_free_timer = 0;
+time_t einit_configuration_stree_garbage_free_timer = 0;
 
 void cfg_run_callbacks_for_node (struct cfgnode *node) {
  if (!node || !node->id)
   return;
 
- emutex_lock (&bootstrap_einit_configuration_stree_callbacks_mutex);
- if (bootstrap_einit_configuration_stree_callbacks) {
-  struct stree *cur = streelinear_prepare(bootstrap_einit_configuration_stree_callbacks);
+ emutex_lock (&einit_configuration_stree_callbacks_mutex);
+ if (einit_configuration_stree_callbacks) {
+  struct stree *cur = streelinear_prepare(einit_configuration_stree_callbacks);
 
   while (cur) {
    if (strprefix (node->id, cur->key)) {
@@ -136,7 +136,7 @@ void cfg_run_callbacks_for_node (struct cfgnode *node) {
    cur = streenext(cur);
   }
  }
- emutex_unlock (&bootstrap_einit_configuration_stree_callbacks_mutex);
+ emutex_unlock (&einit_configuration_stree_callbacks_mutex);
 }
 
 int cfg_free () {
@@ -472,7 +472,7 @@ char *cfg_getpath_f (const char *id) {
  return svpath;
 }
 
-void bootstrap_einit_configuration_stree_einit_event_handler_core_configuration_update (struct einit_event *ev) {
+void einit_configuration_stree_einit_event_handler_core_configuration_update (struct einit_event *ev) {
 // update global environment here
  char **env = einit_global_environment;
  einit_global_environment = NULL;
@@ -489,7 +489,7 @@ void bootstrap_einit_configuration_stree_einit_event_handler_core_configuration_
  einit_global_environment = env;
 }
 
-void bootstrap_einit_configuration_stree_ipc_read (struct einit_event *ev) {
+void einit_configuration_stree_ipc_read (struct einit_event *ev) {
  char **path = ev->para;
 
  struct ipc_fs_node n;
@@ -505,7 +505,7 @@ void bootstrap_einit_configuration_stree_ipc_read (struct einit_event *ev) {
  }
 }
 
-void bootstrap_einit_configuration_stree_ipc_write (struct einit_event *ev) {
+void einit_configuration_stree_ipc_write (struct einit_event *ev) {
  char **path = ev->para;
 
  if (path && ev->set && ev->set[0] && path[0] && path[1] && strmatch (path[0], "configuration") && strmatch (path[0], "update")) {
@@ -525,7 +525,7 @@ void bootstrap_einit_configuration_stree_ipc_write (struct einit_event *ev) {
  }
 }
 
-void bootstrap_einit_configuration_stree_ipc_stat (struct einit_event *ev) {
+void einit_configuration_stree_ipc_stat (struct einit_event *ev) {
  char **path = ev->para;
 
  if (path && path[0]) {
@@ -553,20 +553,20 @@ int cfg_callback_prefix_f (char *prefix, void (*callback)(struct cfgnode *)) {
  if (!prefix || !callback)
   return 0;
 
- emutex_lock (&bootstrap_einit_configuration_stree_callbacks_mutex);
- bootstrap_einit_configuration_stree_callbacks =
-  streeadd (bootstrap_einit_configuration_stree_callbacks, prefix, callback, tree_value_noalloc, NULL);
+ emutex_lock (&einit_configuration_stree_callbacks_mutex);
+ einit_configuration_stree_callbacks =
+  streeadd (einit_configuration_stree_callbacks, prefix, callback, tree_value_noalloc, NULL);
 
  cfg_run_callback (prefix, callback);
- emutex_unlock (&bootstrap_einit_configuration_stree_callbacks_mutex);
+ emutex_unlock (&einit_configuration_stree_callbacks_mutex);
 
  return 1;
 }
 
-int bootstrap_einit_configuration_stree_configure (struct lmodule *tm) {
+int einit_configuration_stree_configure (struct lmodule *tm) {
  module_init (tm);
 
- event_listen (einit_core_configuration_update, bootstrap_einit_configuration_stree_einit_event_handler_core_configuration_update);
+ event_listen (einit_core_configuration_update, einit_configuration_stree_einit_event_handler_core_configuration_update);
 
  function_register ("einit-configuration-node-add", 1, cfg_addnode_f);
  function_register ("einit-configuration-node-get", 1, cfg_getnode_f);
@@ -578,9 +578,9 @@ int bootstrap_einit_configuration_stree_configure (struct lmodule *tm) {
 
  function_register ("einit-configuration-callback-prefix", 1, cfg_callback_prefix_f);
 
- event_listen (einit_ipc_read, bootstrap_einit_configuration_stree_ipc_read);
- event_listen (einit_ipc_stat, bootstrap_einit_configuration_stree_ipc_stat);
- event_listen (einit_ipc_write, bootstrap_einit_configuration_stree_ipc_write);
+ event_listen (einit_ipc_read, einit_configuration_stree_ipc_read);
+ event_listen (einit_ipc_stat, einit_configuration_stree_ipc_stat);
+ event_listen (einit_ipc_write, einit_configuration_stree_ipc_write);
 
  eregcomp (&cfg_storage_allowed_duplicates, ".*");
 
