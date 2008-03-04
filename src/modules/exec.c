@@ -53,7 +53,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit-modules/exec.h>
 #include <einit-modules/process.h>
 #include <ctype.h>
-#include <sys/stat.h> 
+#include <sys/stat.h>
 
 #include <einit-modules/parse-sh.h>
 
@@ -95,8 +95,6 @@ struct daemonst * running = NULL;
 
 char **shell = NULL;
 char *dshell[] = {"/bin/sh", "-c", NULL};
-
-char *safe_environment[] = { "PATH=/bin:/sbin:/usr/bin:/usr/sbin", "TERM=dumb", NULL };
 
 extern char shutting_down;
 
@@ -421,8 +419,6 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
    for (; optx[x]; x++) {
     if (strmatch (optx[x], "no-pipe")) {
      options |= pexec_option_nopipe;
-    } else if (strmatch (optx[x], "safe-environment")) {
-     options |= pexec_option_safe_environment;
     } else if (strmatch (optx[x], "dont-close-stdin")) {
      options |= pexec_option_dont_close_stdin;
     }
@@ -522,11 +518,7 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
    dup2 (2, 1);
   }
 
-  if (options & pexec_option_safe_environment) {
-   execve (exvec[0], exvec, safe_environment);
-  } else {
-   execve (exvec[0], exvec, exec_environment);
-  }
+  execve (exvec[0], exvec, exec_environment);
  } else {
   FILE *fx;
 

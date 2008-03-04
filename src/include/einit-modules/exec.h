@@ -51,8 +51,7 @@ extern "C" {
 
 enum pexec_options {
  pexec_option_nopipe = 0x1,
- pexec_option_safe_environment = 0x2,
- pexec_option_dont_close_stdin = 0x4,
+ pexec_option_dont_close_stdin = 0x4
 };
 
 enum daemon_options {

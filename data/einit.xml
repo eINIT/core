@@ -55,7 +55,6 @@
   <environment>
    <global id="PATH" s="/bin:/sbin:/usr/bin:/usr/sbin:/opt/bin:/opt/sbin:/usr/local/bin:/usr/local/sbin" />
    <global id="TERM" s="linux" />
-   <safe PATH="/bin:/sbin:/usr/bin:/usr/sbin:/opt/bin:/opt/sbin" TERM="dumb" />
   </environment>
 
   <kernel>
@@ -83,7 +82,6 @@
    <samba group="nmbd:smbd" seq="all" />
   </alias>
   <prefer>
-   <feedback s="feedback-visual-textual" />
    <logger s="daemon-metalog:daemon-syslog-ng:daemon-syslog" />
   </prefer>
  </services>
