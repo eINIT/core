@@ -275,6 +275,8 @@ int cfg_addnode_f (struct cfgnode *node) {
 
     doop = 0;
 
+    cfg_run_callbacks_for_node (cur->value);
+
     break;
    } else
 
