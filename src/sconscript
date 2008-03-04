@@ -33,7 +33,7 @@ linkflagsLibEinit = ''
 linkflagsLibEinitPP = ''
 
 if uname == 'FreeBSD':
- linkCore = ['-Wl,-export-dynamic']
+ linkCore = ['-Wl,-export-dynamic','-pthread']
  CodeCoreMonitorObjects = [ 'freebsd/einit-monitor.c' ]
  coreLibs = ['core-modules']
 if uname == 'Linux':
@@ -50,7 +50,7 @@ if uname != 'FreeBSD':
  einitCore = env.Program ('einit-core', CodeCoreObjects, LIBS=coreLibs, LIBPATH=['.', 'modules'], CCFLAGS='-DEINIT_CORE', LINKFLAGS=linkCore)
  einitMonitor = env.Program ('einit-monitor', CodeCoreMonitorObjects)
 if uname == 'FreeBSD':
- einitCore = env.Program ('einit-core', CodeCoreObjects, LIBS=coreLibs, LIBPATH=['.', 'modules'], CCFLAGS='-DEINIT_CORE', LINKFLAGS=linkCore)
+ einitCore = env.Program ('einit-core', CodeCoreObjects, LIBS=coreLibs, LIBPATH=['.', 'modules'], CCFLAGS='-DEINIT_CORE', CXXFLAGS = ['-D_THREAD_SAFE'], LINKFLAGS=linkCore)
  einitMonitor = env.Program ('einit-monitor', CodeCoreMonitorObjects, LIBS=['util'])
 
 lastRites = env.Program ('last-rites', CodeLastRites, LIBS=['einit'], LIBPATH=['.'])
