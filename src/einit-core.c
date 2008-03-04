@@ -431,14 +431,6 @@ int main(int argc, char **argv, char **environ) {
    }
 
    {
-    fprintf (stderr, "running initramfs check...\n");
-
-    struct einit_event eml = evstaticinit(einit_boot_initramfs_check);
-    event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread_multi_wait);
-    evstaticdestroy(eml);
-   }
-
-   {
     fprintf (stderr, "running early bootup code...\n");
 
     struct einit_event eml = evstaticinit(einit_boot_early);

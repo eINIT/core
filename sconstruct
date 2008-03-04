@@ -96,7 +96,6 @@ ModulesLinux = ['linux-mdev', 'linux-static-dev', 'linux-sysconf', 'linux-mount'
 
 ModulesLinuxNoBundle = []
 
-ModulesLinuxSpecial = []
 InstallAliases = []
 
 ModulesBSD = ['bsd-devfs', 'bsd-network']
@@ -121,11 +120,9 @@ for i in ASMFunctions:
 if uname == 'Darwin':
  ModulesLinux = []
  ModulesLinuxNoBundle = []
- ModulesLinuxSpecial = []
 if uname == 'FreeBSD':
  ModulesLinux = []
  ModulesLinuxNoBundle = []
- ModulesLinuxSpecial = []
 if uname == 'Linux':
  ModulesBSD = []
  if not conf.CheckNPTL():
@@ -134,13 +131,10 @@ if uname == 'Linux':
   env = conf.Finnish()
  SConscript('run-init/sconscript')
 
- ModulesLinuxSpecial += [ 'linux-initramfs' ]
- InstallAliases += [ InstallDirModules + '-initramfs' ]
-
 env['LIBS'] = []
 
 InternalModules = ['module-so']
-ExternalModules = Modules + ModulesBase + SpecialModules + ModulesLinux + ModulesLinuxNoBundle + ModulesCompatibility + ModulesLinuxSpecial + ModulesBSD
+ExternalModules = Modules + ModulesBase + SpecialModules + ModulesLinux + ModulesLinuxNoBundle + ModulesCompatibility + ModulesBSD
 
 Mkdir ('build/headers/einit')
 Mkdir ('build/headers/einit-modules')
@@ -309,7 +303,7 @@ Export(['env',
         'RuntimeDirSbin', 'RuntimeDirEtc', 'RuntimeDirLib', 'RuntimeDirLibBin', 'RuntimeDirModules', 'RuntimeDirBootstrap', 'RuntimeDirLibEinit',
         'InstallDirSbin', 'InstallDirEtc', 'InstallDirLib', 'InstallDirLibBin', 'InstallDirModules', 'InstallDirBootstrap', 'InstallDirLibEinit',
         'SpecialModules', 'Modules', 'ModulesBase', 'ModulesLinux', 'ModulesLinuxNoBundle', 'ModulesCompatibility', 'InternalModules',
-        'ExternalModules', 'ModulesBSD', 'uname', 'libdir', 'prefix', 'destdir', 'InstallDirInclude', 'AssemblyDir', 'ASMFunctionsAvailable', 'ModulesLinuxSpecial'])
+        'ExternalModules', 'ModulesBSD', 'uname', 'libdir', 'prefix', 'destdir', 'InstallDirInclude', 'AssemblyDir', 'ASMFunctionsAvailable'])
 
 SConscript(ScriptsEinit)
 

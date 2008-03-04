@@ -217,7 +217,6 @@ char **linux_kernel_modules_autoload_d() {
 enum lkm_run_code {
  lkm_pre_dev,
  lkm_post_dev,
- lkm_initramfs,
  lkm_shutdown
 };
 
@@ -408,28 +407,6 @@ int linux_kernel_modules_run (enum lkm_run_code code) {
      threads = (pthread_t **)set_noa_add ((void **)threads, threadid);
    }
   }
- } else if (code == lkm_initramfs) {
-  char dwait;
-  char **modules = linux_kernel_modules_get_by_subsystem ("storage", &dwait, NULL);
-  if (modules) {
-  pthread_t *threadid = emalloc (sizeof (pthread_t));
-  if (ethread_create (threadid, NULL, (void *(*)(void *))linux_kernel_modules_load, modules)) {
-   linux_kernel_modules_load (modules);
-  } else {
-   if (dwait)
-    threads = (pthread_t **)set_noa_add ((void **)threads, threadid);
-   }
-  }
-  modules = linux_kernel_modules_get_by_subsystem ("generic", &dwait, NULL);
-  if (modules) {
-   pthread_t *threadid = emalloc (sizeof (pthread_t));
-   if (ethread_create (threadid, NULL, (void *(*)(void *))linux_kernel_modules_load, modules)) {
-    linux_kernel_modules_load (modules);
-   } else {
-    if (dwait)
-     threads = (pthread_t **)set_noa_add ((void **)threads, threadid);
-   }
-  }
  } else if (code == lkm_post_dev) {
   struct stree *linux_kernel_modules_nodes = cfg_prefix(MPREFIX);
   char have_generic = 0;
@@ -604,10 +581,6 @@ void linux_kernel_modules_node_callback (struct cfgnode *node) {
  }
 }
 
-void linux_kernel_modules_boot_event_handler_initramfs (struct einit_event *ev) {
- linux_kernel_modules_run(lkm_initramfs);
-}
-
 void linux_kernel_modules_boot_event_handler_early (struct einit_event *ev) {
  linux_kernel_modules_run(lkm_pre_dev);
 }
@@ -628,7 +601,6 @@ int linux_kernel_modules_configure (struct lmodule *this) {
 
  exec_configure (this);
 
- event_listen (einit_boot_initramfs, linux_kernel_modules_boot_event_handler_initramfs);
  event_listen (einit_boot_early, linux_kernel_modules_boot_event_handler_early);
  event_listen (einit_boot_load_kernel_extensions, linux_kernel_modules_boot_event_handler_load_kernel_extensions);
 
