@@ -2,7 +2,7 @@
  *  linux-dbus.c
  *  einit
  *
- *  Created on 02/17/2008.
+ *  Created on 03/5/2008.
  *  Copyright 2008 Ryan Hope. All rights reserved.
  *
  */
@@ -93,8 +93,10 @@ int linux_dbus_enable (void *param, struct einit_event *status) {
 }
 
 int linux_dbus_disable (void *param, struct einit_event *status) {
-	return stopdaemon(&linux_dbus_dexec, NULL);
-	remove("/var/run/dbus/system_bus_socket");
+	int ret = status_failed;
+	ret = stopdaemon(&linux_dbus_dexec, NULL);
+	if (ret==1) remove("/var/run/dbus/system_bus_socket");
+	return status_ok;
 }
 
 int linux_dbus_configure (struct lmodule *pa) {
