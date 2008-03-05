@@ -169,6 +169,9 @@ void einit_service_call (const char *service, const char *action);
  */
 void einit_module_call (const char *rid, const char *action);
 
+const char *einit_event_encode (struct einit_event *ev);
+int einit_event_loop_decoder (char *fragment, size_t size, void *data);
+
 /*!\brief Grab and Handle Events
  *
  * This will run an event loop that will grab events from eINIT and emit them locally.

@@ -50,6 +50,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/socket.h>
 #include <sys/stat.h>
 
+#include <einit/einit.h>
 #include <einit-modules/ipc.h>
 
 #include <ixp_local.h>
@@ -641,81 +642,10 @@ void *einit_ipc_9p_listen (void *param) {
 }
 
 void einit_ipc_9p_generic_event_handler (struct einit_event *ev) {
- char *ecode = event_code_to_string(ev->type);
-#if 0
- if (strmatch (ecode, "unknown/custom") ||
-     (!ev->integer && !ev->status && !ev->task && !ev->flag && !ev->rid && !ev->string && !ev->stringset))
-  return; /* discard useless events */
-#endif
-
+ const char *event = einit_event_encode (ev);
  struct msg_event_queue *e = emalloc (sizeof (struct msg_event_queue));
 
- char **data = NULL;
- char buffer[BUFFERSIZE];
-
- esprintf (buffer, BUFFERSIZE, "event-type=%s", ecode);
- data = set_str_add (data, buffer);
-
- if (ev->integer) {
-  esprintf (buffer, BUFFERSIZE, "integer=%i", ev->integer);
-  data = set_str_add (data, buffer);
- }
-
- if (ev->task) {
-  esprintf (buffer, BUFFERSIZE, "task=%i", ev->task);
-  data = set_str_add (data, buffer);
- }
-
- if (ev->status) {
-  esprintf (buffer, BUFFERSIZE, "status=%i", ev->status);
-  data = set_str_add (data, buffer);
- }
-
-
- if (ev->flag) {
-  esprintf (buffer, BUFFERSIZE, "flag=%i", ev->flag);
-  data = set_str_add (data, buffer);
- }
-
- if (ev->rid) {
-  char *msg_string;
-  size_t i = strlen (ev->rid) + 1 + 9; /* "module=\n"*/
-  msg_string = emalloc (i);
-  esprintf (msg_string, i, "module=%s", ev->rid);
-
-  data = set_str_add (data, msg_string);
-  efree (msg_string);
- }
-
- if (ev->string) {
-  char *msg_string;
-  size_t i = strlen (ev->string) + 1 + 9; /* "string=\n"*/
-  msg_string = emalloc (i);
-  esprintf (msg_string, i, "string=%s", ev->string);
-
-  data = set_str_add (data, msg_string);
-  efree (msg_string);
- }
-
- if (ev->stringset) {
-  int y = 0;
-  for (; ev->stringset[y]; y++) {
-   char *msg_string;
-   size_t i = strlen (ev->stringset[y]) + 1 + 12; /* "stringset=\n"*/
-   msg_string = emalloc (i);
-   esprintf (msg_string, i, "stringset=%s", ev->stringset[y]);
-
-   data = set_str_add (data, msg_string);
-   efree (msg_string);
-  }
- }
-
- data = set_str_add (data, "\n");
-
- char *t = set2str ('\n', (const char **)data);
- e->event = (char *)str_stabilise (t);
- efree (data);
- efree (t);
+ e->event = (char *)event;
 
 /* dump events to stderr in sandbox mode: */
  if (coremode & einit_mode_sandbox) {
@@ -897,6 +827,21 @@ void einit_ipc_9p_ipc_stat (struct einit_event *ev) {
  }
 }
 
+void *einit_ipc_9p_event_emit (void *p) {
+ char *d = (char *)p;
+
+ einit_event_loop_decoder(d, strlen(d), NULL);
+
+ return NULL;
+}
+
+void einit_ipc_9p_ipc_write (struct einit_event *ev) {
+ char **path = ev->para;
+
+ if (path && path[0] && path[1] && !path[2] && ev->set[0] && strmatch (path[0], "events") &&  strmatch (path[0], "emit")) {
+  ethread_spawn_detached (einit_ipc_9p_event_emit, (void *)str_stabilise(ev->set[0]));
+ }
+}
 
 const char *einit_ipc_9p_cl_address = NULL;
 
@@ -912,6 +857,7 @@ int einit_ipc_9p_configure (struct lmodule *irr) {
  event_listen (einit_power_reset_imminent, einit_ipc_9p_power_event_handler);
  event_listen (einit_ipc_read, einit_ipc_9p_ipc_read);
  event_listen (einit_ipc_stat, einit_ipc_9p_ipc_stat);
+ event_listen (einit_ipc_write, einit_ipc_9p_ipc_write);
 
  event_listen (einit_event_subsystem_any, einit_ipc_9p_generic_event_handler);
 

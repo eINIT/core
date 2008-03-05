@@ -660,3 +660,76 @@ void einit_replay_events() {
   efree (count_s);
  }
 }
+
+const char *einit_event_encode (struct einit_event *ev) {
+ char *ecode = event_code_to_string(ev->type);
+
+ char **data = NULL;
+ char buffer[BUFFERSIZE];
+
+ esprintf (buffer, BUFFERSIZE, "event-type=%s", ecode);
+ data = set_str_add (data, buffer);
+
+ if (ev->integer) {
+  esprintf (buffer, BUFFERSIZE, "integer=%i", ev->integer);
+  data = set_str_add (data, buffer);
+ }
+
+ if (ev->task) {
+  esprintf (buffer, BUFFERSIZE, "task=%i", ev->task);
+  data = set_str_add (data, buffer);
+ }
+
+ if (ev->status) {
+  esprintf (buffer, BUFFERSIZE, "status=%i", ev->status);
+  data = set_str_add (data, buffer);
+ }
+
+
+ if (ev->flag) {
+  esprintf (buffer, BUFFERSIZE, "flag=%i", ev->flag);
+  data = set_str_add (data, buffer);
+ }
+
+ if (ev->rid) {
+  char *msg_string;
+  size_t i = strlen (ev->rid) + 1 + 9; /* "module=\n"*/
+  msg_string = emalloc (i);
+  esprintf (msg_string, i, "module=%s", ev->rid);
+
+  data = set_str_add (data, msg_string);
+  efree (msg_string);
+ }
+
+ if (ev->string) {
+  char *msg_string;
+  size_t i = strlen (ev->string) + 1 + 9; /* "string=\n"*/
+  msg_string = emalloc (i);
+  esprintf (msg_string, i, "string=%s", ev->string);
+
+  data = set_str_add (data, msg_string);
+  efree (msg_string);
+ }
+
+ if (ev->stringset) {
+  int y = 0;
+  for (; ev->stringset[y]; y++) {
+   char *msg_string;
+   size_t i = strlen (ev->stringset[y]) + 1 + 12; /* "stringset=\n"*/
+   msg_string = emalloc (i);
+   esprintf (msg_string, i, "stringset=%s", ev->stringset[y]);
+
+   data = set_str_add (data, msg_string);
+   efree (msg_string);
+  }
+ }
+
+ data = set_str_add (data, "\n");
+
+ char *t = set2str ('\n', (const char **)data);
+ const char *stable = str_stabilise (t);
+ efree (data);
+ efree (t);
+
+ return stable;
+}

@@ -57,8 +57,10 @@ enum einit_event_emit_flags {
 /*!< use this to tell einit that you don't wish/need to wait for this to return */
  einit_event_flag_duplicate               = 0x4,
 /*!< duplicate event data block. important with *spawn_thread */
- einit_event_flag_spawn_thread_multi_wait = 0x8
+ einit_event_flag_spawn_thread_multi_wait = 0x8,
 /*!< use this to tell einit to spawn a thread for every handler */
+ einit_event_flag_remote                  = 0x10
+/*!< this should always be specified, although just now it's being ignored */
 };
 
 enum einit_event_subsystems {

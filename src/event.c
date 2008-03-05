@@ -49,6 +49,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <errno.h>
 #include <einit/itree.h>
 
+#include <einit/einit.h>
+
 pthread_mutex_t evf_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t pof_mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -138,6 +140,11 @@ void *event_subthread (struct einit_event *event) {
 void *event_emit (struct einit_event *event, enum einit_event_emit_flags flags) {
  pthread_t **threads = NULL;
  if (!event || !event->type) return NULL;
+
+ if (flags & einit_event_flag_remote) {
+  char *path[] = { "events", "emit", NULL };
+  einit_write (path, (char*)einit_event_encode (event));
+ }
 
  if (flags & einit_event_flag_spawn_thread) {
   struct einit_event *ev = evdup(event);
@@ -679,7 +686,7 @@ time_t event_timer_register (struct tm *t) {
 
  ev.integer = tr;
 
- event_emit (&ev, einit_event_flag_broadcast);
+ event_emit (&ev, 0);
 
  evstaticdestroy (ev);
 
@@ -692,7 +699,7 @@ time_t event_timer_register_timeout (time_t t) {
 
  ev.integer = tr;
 
- event_emit (&ev, einit_event_flag_broadcast);
+ event_emit (&ev, 0);
 
  evstaticdestroy (ev);
 
@@ -704,7 +711,7 @@ void event_timer_cancel (time_t t) {
 
  ev.integer = t;
 
- event_emit (&ev, einit_event_flag_broadcast);
+ event_emit (&ev, 0);
 
  evstaticdestroy (ev);
 }
