@@ -105,6 +105,9 @@ int posix_dbus_disable (void *param, struct einit_event *status) {
 int posix_dbus_configure (struct lmodule *pa) {
 	module_init (pa);
         pa->enable = posix_dbus_enable;
-        pa->disable = posix_dbus_disable;    
+        pa->disable = posix_dbus_disable;
+
+        
+
 	return 0;
 }
