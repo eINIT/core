@@ -61,7 +61,7 @@ char * linux_dbus_need_files[] = {"/usr/bin/dbus-daemon", NULL};
 
 struct dexecinfo linux_dbus_dexec = {
 	.id = "daemon-dbus",
-	.command = "/usr/bin/dbus-daemon --system",
+	.command = "pexec-options dont-close-stdin; dbus-daemon --system --fork",
 	.prepare = NULL,
 	.cleanup = NULL,
 	.is_up = NULL,
@@ -101,8 +101,6 @@ int linux_dbus_disable (void *param, struct einit_event *status) {
 
 int linux_dbus_configure (struct lmodule *pa) {
 	module_init (pa);
-	einit_global_environment = straddtoenviron (einit_global_environment, "system_bus_default_address", 
-			"unix:path=/var/run/dbus/system_bus_socket");
 	pa->enable = linux_dbus_enable;
 	pa->disable = linux_dbus_disable;    
 	return 0;
