@@ -45,6 +45,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <errno.h>
 #include <string.h>
 
+#include <einit/einit.h>
 #include <einit-modules/ipc.h>
 
 #define EXPECTED_EIV 1
@@ -110,6 +111,9 @@ void einit_ipc_core_helpers_ipc_read (struct einit_event *ev) {
     ev->set = set_fix_add (ev->set, &n, sizeof (n));
     n.name = (char *)str_stabilise ("all");
     n.is_file = 0;
+    ev->set = set_fix_add (ev->set, &n, sizeof (n));
+    n.name = (char *)str_stabilise ("register");
+    n.is_file = 1;
     ev->set = set_fix_add (ev->set, &n, sizeof (n));
    } else if (strmatch (path[1], "all") && !path[2]) {
     n.is_file = 0;
@@ -394,32 +398,37 @@ void einit_ipc_core_helpers_ipc_write (struct einit_event *ev) {
    ee.string = (char *)str_stabilise (ev->set[0]);
    event_emit (&ee, einit_event_flag_spawn_thread | einit_event_flag_duplicate | einit_event_flag_broadcast);
    evstaticdestroy(ee);
-  } else if (path[1] && path[2] && path[3] && strmatch (path[0], "modules") && strmatch (path[3], "status")) {
-   struct lmodule *cur = mlist;
+  } else if (path[1] && strmatch (path[0], "modules")) {
+   if (strmatch (path[1], "register")) {
+/* decode the new module's data here */
+    mod_add_or_update (NULL, einit_decode_module_from_string (ev->set[0]), substitue_and_prune);
+   } else if (path[2] && path[3] && strmatch (path[3], "status")) {
+    struct lmodule *cur = mlist;
 
-   while (cur) {
-    if (cur->module && cur->module->rid) {
-     if (strmatch (path[2], cur->module->rid)) {
-      struct ch_thread_data *da = emalloc (sizeof (struct ch_thread_data));
-      da->b = cur;
-      da->c = NULL;
+    while (cur) {
+     if (cur->module && cur->module->rid) {
+      if (strmatch (path[2], cur->module->rid)) {
+       struct ch_thread_data *da = emalloc (sizeof (struct ch_thread_data));
+       da->b = cur;
+       da->c = NULL;
 
-      if (strmatch (ev->set[0], "enable")) {
-       da->a = einit_module_enable;
-      } else if (strmatch (ev->set[0], "disable")) {
-       da->a = einit_module_disable;
-      } else {
-       da->a = einit_module_custom;
-       da->c = (char *)str_stabilise (ev->set[0]);
+       if (strmatch (ev->set[0], "enable")) {
+        da->a = einit_module_enable;
+       } else if (strmatch (ev->set[0], "disable")) {
+        da->a = einit_module_disable;
+       } else {
+        da->a = einit_module_custom;
+        da->c = (char *)str_stabilise (ev->set[0]);
+       }
+
+       ethread_spawn_detached ((void *(*)(void *))einit_ipc_core_helpers_ipc_write_detach_action, da);
+
+       break;
       }
-
-      ethread_spawn_detached ((void *(*)(void *))einit_ipc_core_helpers_ipc_write_detach_action, da);
-
-      break;
      }
-    }
 
-    cur = cur->next;
+     cur = cur->next;
+    }
    }
   }
  }
@@ -443,7 +452,7 @@ void einit_ipc_core_helpers_ipc_stat (struct einit_event *ev) {
 
  if (path && path[0]) {
   if (strmatch (path[0], "modules")) {
-   ev->flag = (path[1] && path[2] && path[3] ? 1 : 0);
+   ev->flag = (path[1] && (strmatch (path[1], "register") || (path[2] && path[3])) ? 1 : 0);
   } else if (!path[1] && strmatch (path[0], "mode")) {
    ev->flag = 1;
   }

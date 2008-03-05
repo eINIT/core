@@ -733,3 +733,92 @@ const char *einit_event_encode (struct einit_event *ev) {
 
  return stable;
 }
+
+struct smodule *einit_decode_module_from_string (const char *s) {
+ struct smodule *sm = emalloc(sizeof (struct smodule));
+ memset (sm, 0, sizeof (struct smodule));
+
+ char **data = str2set ('\n', s);
+ int i = 0;
+
+ for (; data[i]; i++) {
+  if (strprefix (data[i], "rid=")) {
+   sm->rid = (char *)str_stabilise ((data[i])+4);
+  } else if (strprefix (data[i], "name=")) {
+   sm->name = (char *)str_stabilise ((data[i])+5);
+  } else if (strprefix (data[i], "provides=")) {
+   sm->si.provides = set_str_add_stable (sm->si.provides, (data[i])+9);
+  } else if (strprefix (data[i], "requires=")) {
+   sm->si.requires = set_str_add_stable (sm->si.requires, (data[i])+9);
+  } else if (strprefix (data[i], "before=")) {
+   sm->si.before = set_str_add_stable (sm->si.before, (data[i])+7);
+  } else if (strprefix (data[i], "after=")) {
+   sm->si.after = set_str_add_stable (sm->si.after, (data[i])+6);
+  }
+ }
+
+ efree (data);
+
+ if (!sm->rid) sm->rid = (char *)str_stabilise ("unknown");
+ if (!sm->name) sm->name = (char *)str_stabilise ("Unknown Module");
+
+ sm->mode |= einit_module_event_actions;
+
+ return sm;
+}
+
+void einit_register_module (struct smodule *s) {
+ char **data = NULL;
+ char buffer[BUFFERSIZE];
+
+ snprintf (buffer, BUFFERSIZE, "rid=%s", s->rid ? s->rid : "unknown");
+ data = set_str_add (data, buffer);
+ snprintf (buffer, BUFFERSIZE, "name=%s", s->name ? s->name : "Unknown Module");
+ data = set_str_add (data, buffer);
+
+ if (s->si.provides) {
+  int i = 0;
+
+  for (; s->si.provides[i]; i++) {
+   snprintf (buffer, BUFFERSIZE, "provides=%s", s->si.provides[i]);
+   data = set_str_add (data, buffer);
+  }
+ }
+
+ if (s->si.requires) {
+  int i = 0;
+
+  for (; s->si.requires[i]; i++) {
+   snprintf (buffer, BUFFERSIZE, "requires=%s", s->si.requires[i]);
+   data = set_str_add (data, buffer);
+  }
+ }
+
+ if (s->si.before) {
+  int i = 0;
+
+  for (; s->si.before[i]; i++) {
+   snprintf (buffer, BUFFERSIZE, "before=%s", s->si.before[i]);
+   data = set_str_add (data, buffer);
+  }
+ }
+
+ if (s->si.after) {
+  int i = 0;
+
+  for (; s->si.after[i]; i++) {
+   snprintf (buffer, BUFFERSIZE, "after=%s", s->si.after[i]);
+   data = set_str_add (data, buffer);
+  }
+ }
+
+ char *path[] = { "modules", "register", NULL };
+ char *t = set2str (':', (const char **)data);
+ efree (data);
+
+ einit_write (path, t);
+
+ efree (t);
+
+ return;
+}
