@@ -799,6 +799,8 @@ void einit_ipc_9p_ipc_read (struct einit_event *ev) {
    ev->set = set_fix_add (ev->set, &n, sizeof (n));
    n.name = (char *)str_stabilise ("feed");
    ev->set = set_fix_add (ev->set, &n, sizeof (n));
+   n.name = (char *)str_stabilise ("emit");
+   ev->set = set_fix_add (ev->set, &n, sizeof (n));
   } else if (strmatch (path[1], "count")) {
    char buffer[32];
    int num = 0;
@@ -838,7 +840,7 @@ void *einit_ipc_9p_event_emit (void *p) {
 void einit_ipc_9p_ipc_write (struct einit_event *ev) {
  char **path = ev->para;
 
- if (path && path[0] && path[1] && !path[2] && ev->set[0] && strmatch (path[0], "events") &&  strmatch (path[0], "emit")) {
+ if (path && path[0] && path[1] && !path[2] && ev->set[0] && strmatch (path[0], "events") &&  strmatch (path[1], "emit")) {
   ethread_spawn_detached (einit_ipc_9p_event_emit, (void *)str_stabilise(ev->set[0]));
  }
 }

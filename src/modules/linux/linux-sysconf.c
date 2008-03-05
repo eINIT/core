@@ -226,8 +226,6 @@ void linux_sysconf_sysctl () {
  FILE *sfile;
  char *sfilename;
 
- linux_sysconf_fix_ttys();
-
  if ((sfilename = cfg_getstring ("configuration-services-sysctl/config", NULL))) {
   notice (4, "doing system configuration via %s.", sfilename);
 
@@ -279,6 +277,9 @@ void linux_sysconf_sysctl () {
 }
 
 void linux_sysconf_boot_devices_available(struct einit_event *ev) {
+ if (!(coremode & (einit_mode_sandbox | einit_mode_ipconly)))
+  linux_sysconf_fix_ttys();
+
  linux_sysconf_sysctl();
  linux_sysconf_hwclock();
 }
