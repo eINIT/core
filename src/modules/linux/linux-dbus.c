@@ -86,7 +86,10 @@ struct dexecinfo linux_dbus_dexec = {
 };
 
 int linux_dbus_enable (void *param, struct einit_event *status) {
-	qexec("/usr/bin/dbus-uuidgen --ensure");
+	struct stat fileattrib;
+	if (stat("/var/lib/dbus/machine-id", &fileattrib) != 0) {
+		qexec("/usr/bin/dbus-uuidgen --ensure");
+	}
 	remove("/var/run/dbus");
 	mkdir("/var/run/dbus",0775);
 	return 	startdaemon(&linux_dbus_dexec, NULL);
