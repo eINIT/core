@@ -101,6 +101,8 @@ int linux_dbus_disable (void *param, struct einit_event *status) {
 
 int linux_dbus_configure (struct lmodule *pa) {
 	module_init (pa);
+	einit_global_environment = straddtoenviron (einit_global_environment, "system_bus_default_address", 
+			"unix:path=/var/run/dbus/system_bus_socket");
 	pa->enable = linux_dbus_enable;
 	pa->disable = linux_dbus_disable;    
 	return 0;

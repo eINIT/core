@@ -92,7 +92,9 @@ ModulesBase = ['fqdn', 'exec', 'mount', 'tty', 'process', 'scheduler', 'module-g
 
 ModulesLinux = ['linux-mdev', 'linux-static-dev', 'linux-sysconf', 'linux-mount', 'linux-process', 'linux-kernel-modules', 'linux-udev', 'linux-hotplug', 'linux-cpufreq', 'linux-bootchart', 'linux-network', 'linux-network-wpa-supplicant', 'linux-network-bridge', 'linux-network-bonding', 'linux-urandom', 'linux-splash-invoker']
 
-ModulesLinuxNoBundle = ['linux-dbus']
+ModulesLinuxDesktop = ['linux-dbus','linux-hald']
+
+ModulesLinuxNoBundle = []
 
 InstallAliases = []
 
@@ -116,9 +118,11 @@ for i in ASMFunctions:
 if uname == 'Darwin':
  ModulesLinux = []
  ModulesLinuxNoBundle = []
+ ModulesLinuxDesktop = []
 if uname == 'FreeBSD':
  ModulesLinux = []
  ModulesLinuxNoBundle = []
+ ModulesLinuxDesktop = []
 if uname == 'Linux':
  ModulesBSD = []
  if not conf.CheckNPTL():
@@ -129,7 +133,7 @@ if uname == 'Linux':
 env['LIBS'] = []
 
 InternalModules = ['module-so']
-ExternalModules = Modules + ModulesBase + SpecialModules + ModulesLinux + ModulesLinuxNoBundle + ModulesBSD
+ExternalModules = Modules + ModulesBase + SpecialModules + ModulesLinux + ModulesLinuxNoBundle + ModulesLinuxDesktop +ModulesBSD
 
 Mkdir ('build/headers/einit')
 Mkdir ('build/headers/einit-modules')
@@ -293,7 +297,7 @@ env.EConfiguration('build/core/module-configuration.c', 'module-configuration')
 Export(['env',
         'RuntimeDirSbin', 'RuntimeDirEtc', 'RuntimeDirLib', 'RuntimeDirLibBin', 'RuntimeDirModules', 'RuntimeDirLibEinit',
         'InstallDirSbin', 'InstallDirEtc', 'InstallDirLib', 'InstallDirLibBin', 'InstallDirModules', 'InstallDirLibEinit',
-        'SpecialModules', 'Modules', 'ModulesBase', 'ModulesLinux', 'ModulesLinuxNoBundle', 'InternalModules',
+        'SpecialModules', 'Modules', 'ModulesBase', 'ModulesLinux', 'ModulesLinuxNoBundle', 'ModulesLinuxDesktop', 'InternalModules',
         'ExternalModules', 'ModulesBSD', 'uname', 'libdir', 'prefix', 'destdir', 'InstallDirInclude', 'AssemblyDir', 'ASMFunctionsAvailable'])
 
 SConscript(ScriptsEinit)

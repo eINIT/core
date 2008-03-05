@@ -1,4 +1,4 @@
-Import(['env', 'InstallDirModules', 'Modules', 'ModulesLinux', 'ExternalModules', 'ModulesBSD', 'uname', 'InternalModules', 'ModulesBase', 'ModulesLinuxNoBundle'])
+Import(['env', 'InstallDirModules', 'Modules', 'ModulesLinux', 'ModulesLinuxDesktop', 'ExternalModules', 'ModulesBSD', 'uname', 'InternalModules', 'ModulesBase', 'ModulesLinuxNoBundle'])
 
 import os.path
 
@@ -80,6 +80,8 @@ buildBundleE('02-bsd', ModulesBSD, 'bsd', menv)
 buildBundleE('02-linux', ModulesLinux, 'linux', menv)
 
 buildBundleE('03-base', ModulesBase, '.', menv)
+
+buildBundleE('04-linux-desktop', ModulesLinuxDesktop, 'linux', menv)
 
 if 'ipc-9p' in ExternalModules:
  buildModule ('ipc-9p', '.', menv.Clone (LIBS=['ixp-local'], LIBPATH=['#libixp']))
