@@ -358,21 +358,10 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
 
  module->status |= status_working;
 
-/* check if the task requested has already been done (or if it can be done at all) */
- if ((task & einit_module_enable) && (!module->enable || (module->status & status_enabled))) {
-  wontload:
-  module->status ^= status_working;
-
-  mod_completion_handler_no_change (module, task);
-
-  emutex_unlock (&module->mutex);
-  return status_idle;
- }
-
  if (module->module->mode & einit_module_event_actions) {
   char *action = custom_command;
 
-  if (task & einit_module_disable) {
+  if (task & einit_module_enable) {
    action = "enable";
   } else if (task & einit_module_disable) {
    action = "disable";
@@ -383,13 +372,24 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
 
   struct einit_event e = evstaticinit (einit_core_module_action_execute);
   e.rid = module->module->rid;
-  e.string = action;
+  e.string = (char *)str_stabilise(action);
 
   event_emit (&e, einit_event_flag_broadcast);
 
   evstaticdestroy (e);
 
   return status_working;
+ }
+
+ /* check if the task requested has already been done (or if it can be done at all) */
+ if ((task & einit_module_enable) && (!module->enable || (module->status & status_enabled))) {
+  wontload:
+    module->status ^= status_working;
+
+  mod_completion_handler_no_change (module, task);
+
+  emutex_unlock (&module->mutex);
+  return status_idle;
  }
 
  if ((task & einit_module_disable) && (!module->disable || (module->status & status_disabled) || (module->status == status_idle)))
@@ -527,6 +527,9 @@ int mod_complete (char *rid, enum einit_module_task task, enum einit_module_stat
  if (!module) return status_failed;
 
  struct einit_event *fb = mod_initialise_feedback_event (module, task);
+
+ fb->status = status;
+ module->status = status;
 
  mod_completion_handler (module, fb, task);
  evdestroy (fb);
