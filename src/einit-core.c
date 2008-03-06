@@ -155,8 +155,9 @@ void core_einit_core_module_action_complete (struct einit_event *ev) {
 
 void einit_process_raw_event (int fd) {
  char buffer[BUFFERSIZE];
+ memset (buffer, 0, BUFFERSIZE);
 
- ssize_t r = read(fd, buffer, BUFFERSIZE);
+ ssize_t r = read(fd, buffer, BUFFERSIZE-1);
 
  if (r > 0) {
   einit_event_loop_decoder (buffer, r, NULL);
@@ -407,12 +408,12 @@ int einit_main_loop(int ipc_pipe_fd) {
    FD_SET(ipc_pipe_fd, &rfds);
 
    selectres = pselect(1, &rfds, NULL, NULL, 0, &osigmask);
+
+   if (FD_ISSET (ipc_pipe_fd, &rfds)) {
+    einit_process_raw_event (ipc_pipe_fd);
+   }
   } else {
    selectres = pselect(0, NULL, NULL, NULL, 0, &osigmask);
-  }
-
-  if (selectres) {
-   einit_process_raw_event (ipc_pipe_fd);
   }
  }
 }
