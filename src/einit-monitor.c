@@ -56,6 +56,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <libutil.h>
 #endif
 
+#define PID_TERMINATED_EVENT "event-type=process/died\ninteger=%i"
+
 pid_t send_sigint_pid = 0;
 char is_sandbox = 0;
 
@@ -139,14 +141,12 @@ int run_core (int argc, char **argv, char **env, char *einit_crash_data, int com
 int einit_monitor_loop (int argc, char **argv, char **env, char *einit_crash_data, char need_recovery) {
  int commandpipe[2];
  int debugsocket[2];
- FILE *commandpipe_out = NULL;
  pid_t core_pid;
 
  pipe (commandpipe);
 
  socketpair (AF_UNIX, SOCK_STREAM, 0, debugsocket);
  fcntl (debugsocket[0], F_SETFD, FD_CLOEXEC | O_NONBLOCK);
-
  fcntl (commandpipe[1], F_SETFD, FD_CLOEXEC);
 
  core_pid = fork();
@@ -163,9 +163,6 @@ int einit_monitor_loop (int argc, char **argv, char **env, char *einit_crash_dat
    break;
  }
 
- commandpipe_out = fdopen (commandpipe[1], "w");
- close (debugsocket[1]);
-
  if (einit_crash_data) {
   free (einit_crash_data);
   einit_crash_data = NULL;
@@ -178,7 +175,7 @@ int einit_monitor_loop (int argc, char **argv, char **env, char *einit_crash_dat
   if (wpid == core_pid) {
    //    goto respawn; /* try to recover by re-booting */
 //   if (!debug) if (commandpipe_in) fclose (commandpipe_in);
-   if (commandpipe_out) fclose (commandpipe_out);
+   close (commandpipe[1]);
 
    if (WIFEXITED(rstatus) && (WEXITSTATUS(rstatus) != einit_exit_status_die_respawn)) {
     if (WEXITSTATUS(rstatus) == EXIT_SUCCESS)
@@ -227,14 +224,13 @@ int einit_monitor_loop (int argc, char **argv, char **env, char *einit_crash_dat
 
    return einit_monitor_loop(argc, argv, env, einit_crash_data, 1);
   } else {
-   if (commandpipe_out) {
-    if (WIFEXITED(rstatus)) {
-     fprintf (commandpipe_out, "pid %i terminated\n\n", wpid);
-    } else {
-     fprintf (commandpipe_out, "pid %i died\n\n", wpid);
-    }
-    fflush (commandpipe_out);
-   }
+   char buffer[BUFFERSIZE];
+   size_t len;
+
+   snprintf (buffer, BUFFERSIZE, PID_TERMINATED_EVENT, wpid);
+   len = strlen (buffer);
+
+   write (commandpipe[1], buffer, len);
   }
  }
 }

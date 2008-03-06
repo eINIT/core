@@ -54,6 +54,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/wait.h>
 #include <einit-modules/configuration.h>
 #include <einit/configuration.h>
+#include <einit/einit.h>
 
 #include <sys/wait.h>
 #include <einit/event.h>
@@ -152,49 +153,14 @@ void core_einit_core_module_action_complete (struct einit_event *ev) {
   mod_complete (ev->rid, ev->task, ev->status);
 }
 
-void *pidthread_processor(FILE *pipe) {
- char buffer [BUFFERSIZE];
- char **message = NULL;
+void einit_process_raw_event (int fd) {
+ char buffer[BUFFERSIZE];
 
- do {
-  while (fgets (buffer, BUFFERSIZE, pipe) != NULL) {
-   if (strmatch (buffer, "\n")) { // message complete
-    if (message) {
-     if (message[0] && !message[1]) {
-      char **command = str2set (' ', message[0]);
+ ssize_t r = read(fd, buffer, BUFFERSIZE);
 
-// parse the pid X (died|terminated) messages
-      if (strmatch (command [0], "pid") && command[1] && command [2] &&
-         (strmatch (command[2], "terminated") || strmatch (command[2], "died"))) {
-
-       struct einit_event ev = evstaticinit (einit_process_died);
-
-       ev.integer = parse_integer (command[1]);
-
-       event_emit (&ev, einit_event_flag_broadcast | einit_event_flag_duplicate | einit_event_flag_spawn_thread);
-
-       evstaticdestroy(ev);
-      }
-
-      efree (command);
-     } else {
-      char *noticebuffer = set2str ('\n', (const char **)message);
-
-      efree (noticebuffer);
-     }
-
-     efree (message);
-     message = NULL;
-    }
-   } else { // continue constructing
-    strtrim(buffer);
-
-    message = set_str_add_stable (message, buffer);
-   }
-  }
- } while (1);
-
- return NULL;
+ if (r > 0) {
+  einit_event_loop_decoder (buffer, r, NULL);
+ }
 }
 
 pthread_mutex_t
@@ -408,7 +374,7 @@ void sched_signal_sigalrm (int signal, siginfo_t *siginfo, void *context) {
  return;
 }
 
-int einit_main_loop() {
+int einit_main_loop(int ipc_pipe_fd) {
  sigset_t sigmask, osigmask;
 
  sigemptyset(&sigmask);
@@ -434,7 +400,20 @@ int einit_main_loop() {
 
   sched_handle_timers();
 
-  selectres = pselect(0, NULL, NULL, NULL, 0, &osigmask);
+  if (ipc_pipe_fd > 0) {
+   fd_set rfds;
+
+   FD_ZERO(&rfds);
+   FD_SET(ipc_pipe_fd, &rfds);
+
+   selectres = pselect(1, &rfds, NULL, NULL, 0, &osigmask);
+  } else {
+   selectres = pselect(0, NULL, NULL, NULL, 0, &osigmask);
+  }
+
+  if (selectres) {
+   einit_process_raw_event (ipc_pipe_fd);
+  }
  }
 }
 
@@ -442,10 +421,9 @@ int einit_main_loop() {
 int main(int argc, char **argv, char **environ) {
  int i;
  int pthread_errno;
- FILE *commandpipe_in = NULL;
  char need_recovery = 0;
  char debug = 0;
- int command_pipe = 0;
+ int command_pipe = -1;
  int crash_pipe = 0;
 // char crash_threshold = 5;
  char *einit_crash_data = NULL;
@@ -578,10 +556,6 @@ int main(int argc, char **argv, char **environ) {
 
  sched_trace_target = crash_pipe;
 
-  if (command_pipe) { // commandpipe[0]
-   commandpipe_in = fdopen (command_pipe, "r");
-  }
-
 /* actual system initialisation */
   if (!suppress_version) {
    eprintf (stdout, "eINIT " EINIT_VERSION_LITERAL ": Initialising: %s\n", osinfo.sysname);
@@ -665,11 +639,7 @@ int main(int argc, char **argv, char **environ) {
 
    fprintf (stderr, "main loop.\n");
 
-   if (commandpipe_in) {
-    ethread_spawn_detached ((void *(*)(void *))pidthread_processor, commandpipe_in);
-   }
-
-   return einit_main_loop();
+   return einit_main_loop(command_pipe);
   }
 
 /* this should never be reached... */
