@@ -111,7 +111,7 @@ int stop_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status);
 char **create_environment_f (char **environment, const char **variables);
 void einit_exec_process_event_handler (struct einit_event *);
 
-void *dexec_watcher (pid_t pid);
+void *dexec_watcher (intptr_t pid_i);
 
 void einit_exec_update_daemons_from_pidfiles() {
  emutex_lock (&running_mutex);
@@ -151,7 +151,9 @@ void einit_exec_update_daemons_from_pidfiles() {
 void einit_exec_process_event_handler (struct einit_event *ev) {
  einit_exec_update_daemons_from_pidfiles();
 
- dexec_watcher(ev->integer);
+ intptr_t p = ev->integer;
+
+ ethread_spawn_detached ((void *(*)(void *))dexec_watcher, (void *)p);
 }
 
 char *apply_envfile_f (char *command, const char **environment) {
@@ -670,7 +672,9 @@ int qexec_f (char *command) {
  return status_failed;
 }
 
-void *dexec_watcher (pid_t pid) {
+void *dexec_watcher (intptr_t pid_i) {
+ pid_t pid = (pid_t)pid_i;
+
  struct daemonst *prev = NULL;
  struct dexecinfo *dx = NULL;
  struct lmodule *module = NULL;
