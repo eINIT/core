@@ -58,7 +58,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/wait.h>
 #include <einit/event.h>
 #include <signal.h>
-#include <semaphore.h>
 
 #include <fcntl.h>
 
@@ -200,12 +199,6 @@ void *pidthread_processor(FILE *pipe) {
 
 pthread_mutex_t
   sched_timer_data_mutex = PTHREAD_MUTEX_INITIALIZER;
-
-sem_t *signal_semaphore = NULL;
-
-#if ((_POSIX_SEMAPHORES - 200112L) >= 0)
-sem_t signal_semaphore_static;
-#endif
 
 stack_t signalstack;
 
@@ -360,10 +353,10 @@ void sched_reset_event_handlers () {
  sigemptyset(&(action.sa_mask));
 
  action.sa_sigaction = sched_signal_sigalrm;
- action.sa_flags = SA_NOCLDSTOP | SA_SIGINFO | SA_NODEFER | SA_ONSTACK;
+ action.sa_flags = SA_SIGINFO | SA_NODEFER | SA_ONSTACK;
  if ( sigaction (SIGALRM, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
 
- action.sa_flags = SA_SIGINFO | SA_RESTART | SA_NODEFER | SA_ONSTACK;
+ action.sa_flags = SA_SIGINFO | SA_NODEFER | SA_ONSTACK;
  action.sa_sigaction = sched_signal_sigint;
  if ( sigaction (SIGINT, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
 
@@ -404,40 +397,27 @@ void sched_reset_event_handlers () {
 
 // (on linux) SIGINT to INIT means ctrl+alt+del was pressed
 void sched_signal_sigint (int signal, siginfo_t *siginfo, void *context) {
-#ifdef __linux__
- /* only shut down if the SIGINT was sent by the kernel, (e)INIT (process 1) or by the parent process */
- if ((siginfo->si_code == SI_KERNEL) ||
-      (((siginfo->si_code == SI_USER) && (siginfo->si_pid == 1)) || (siginfo->si_pid == getppid())))
-#else
-  /* only shut down if the SIGINT was sent by process 1 or by the parent process */
-  /* if ((siginfo->si_pid == 1) || (siginfo->si_pid == getppid())) */
-// note: this relies on a proper pthreads implementation so... i deactivated it for now.
-#endif
- {
-  sigint_called = 1;
-  if (!(coremode & einit_core_exiting) && signal_semaphore)
-   sem_post (signal_semaphore);
+ sigint_called = 1;
 
- }
  return;
 }
 
 void sched_signal_sigalrm (int signal, siginfo_t *siginfo, void *context) {
- if (!(coremode & einit_core_exiting) && signal_semaphore) {
-  if (sem_post (signal_semaphore)) {
-   bitch(bitch_stdio, 0, "sem_post() failed.");
-  }
- }
+/* nothing to do here... really */
 
  return;
 }
 
 int einit_main_loop() {
+ sigset_t sigmask, osigmask;
+
+ sigemptyset(&sigmask);
+ sigaddset(&sigmask, SIGINT);
+ sigaddset(&sigmask, SIGALRM);
+ sigprocmask(SIG_BLOCK, &sigmask, &osigmask);
+
  while (1) {
-  sched_handle_timers();
-
-  sem_wait (signal_semaphore);
-
+  int selectres;
   if (sigint_called) {
    shutting_down = 1;
    struct einit_event ee = evstaticinit (einit_core_switch_mode);
@@ -451,42 +431,11 @@ int einit_main_loop() {
    sigint_called = 0;
    evstaticdestroy (ee);
   }
+
+  sched_handle_timers();
+
+  selectres = pselect(0, NULL, NULL, NULL, 0, &osigmask);
  }
-}
-
-void scheduler_configure() {
-#if ((_POSIX_SEMAPHORES - 200112L) >= 0)
- signal_semaphore = &signal_semaphore_static;
- sem_init (signal_semaphore, 0, 0);
-#elif defined(__APPLE__)
- char tmp[BUFFERSIZE];
-
- esprintf (tmp, BUFFERSIZE, "/einit-sgchld-sem-%i", getpid());
-
- if ((int)(signal_semaphore = sem_open (tmp, O_CREAT, O_RDWR, 0)) == SEM_FAILED) {
-  perror ("scheduler: semaphore setup");
-  exit (EXIT_FAILURE);
- }
-#else
-#warning no proper or recognised semaphores implementation, i can not promise this code will work.
- /* let's just hope for the best... */
- char tmp[BUFFERSIZE];
-
- signal_semaphore = ecalloc (1, sizeof (sem_t));
- if (sem_init (signal_semaphore, 0, 0) == -1) {
-  efree (signal_semaphore);
-  esprintf (tmp, BUFFERSIZE, "/einit-sigchild-semaphore-%i", getpid());
-
-  if ((signal_semaphore = sem_open (tmp, O_CREAT, O_RDWR, 0)) == SEM_FAILED) {
-   perror ("scheduler: semaphore setup");
-   exit (EXIT_FAILURE);
-  }
- }
-#endif
-
- event_listen (einit_timer_set, sched_timer_event_handler_set);
-
- sched_reset_event_handlers ();
 }
 
 /* t3h m41n l00ps0rzZzzz!!!11!!!1!1111oneeleven11oneone11!!11 */
@@ -512,6 +461,7 @@ int main(int argc, char **argv, char **environ) {
 
  event_listen (einit_core_update_modules, core_einit_event_handler_update_modules);
  event_listen (einit_core_recover, core_einit_event_handler_recover);
+ event_listen (einit_timer_set, sched_timer_event_handler_set);
 
  event_listen (einit_core_module_action_complete, core_einit_core_module_action_complete);
 
@@ -624,7 +574,7 @@ int main(int argc, char **argv, char **environ) {
 
  enable_core_dumps ();
 
- scheduler_configure();
+ sched_reset_event_handlers();
 
  sched_trace_target = crash_pipe;
 
