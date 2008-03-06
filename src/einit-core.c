@@ -55,6 +55,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit-modules/configuration.h>
 #include <einit/configuration.h>
 
+#include <sys/wait.h>
+#include <einit/event.h>
+#include <signal.h>
+#include <semaphore.h>
+
 #include <fcntl.h>
 
 #ifdef __linux__
@@ -193,6 +198,297 @@ void *pidthread_processor(FILE *pipe) {
  return NULL;
 }
 
+pthread_mutex_t
+  sched_timer_data_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+sem_t *signal_semaphore = NULL;
+
+#if ((_POSIX_SEMAPHORES - 200112L) >= 0)
+sem_t signal_semaphore_static;
+#endif
+
+stack_t signalstack;
+
+void sched_signal_sigint (int, siginfo_t *, void *);
+void sched_signal_sigalrm (int, siginfo_t *, void *);
+void sched_run_sigchild ();
+
+char sigint_called = 0;
+
+extern char shutting_down;
+
+void sched_signal_sigalrm (int signal, siginfo_t *siginfo, void *context);
+
+time_t *sched_timer_data = NULL;
+
+int scheduler_compare_time (time_t a, time_t b) {
+ if (!a) return -1;
+ if (!b) return 1;
+
+ double d = difftime (a, b);
+
+ if (d < 0) return 1;
+ if (d > 0) return -1;
+ return 0;
+}
+
+void insert_timer_event (time_t n) {
+ emutex_lock (&sched_timer_data_mutex);
+
+ uintptr_t tmpinteger = n;
+ sched_timer_data = (time_t *)set_noa_add ((void **)sched_timer_data, (void *)tmpinteger);
+ setsort ((void **)sched_timer_data, set_sort_order_custom, (int (*)(const void *, const void *))scheduler_compare_time);
+
+ emutex_unlock (&sched_timer_data_mutex);
+}
+
+time_t scheduler_prune_time = 0;
+
+time_t scheduler_get_next_tick (time_t now) {
+ time_t next = 0;
+
+ emutex_lock (&sched_timer_data_mutex);
+
+ if (sched_timer_data) next = sched_timer_data[0];
+
+ emutex_unlock (&sched_timer_data_mutex);
+
+ if (next && ((next) <= (now + 60))) /* see if the event is within 60 seconds */
+  return next;
+ else {
+  scheduler_prune_time = now + 60;
+
+  insert_timer_event (now + 60);
+  return scheduler_get_next_tick(now);
+ }
+}
+
+void sched_handle_timers () {
+ time_t now = time(NULL);
+ time_t next_tick = scheduler_get_next_tick(now);
+
+ if (!next_tick) {
+//  notice (1, "no more timers left.\n");
+
+  return;
+ }
+
+ if (next_tick <= now) {
+//  notice (1, "next timer NAO\n");
+
+  struct einit_event ev = evstaticinit (einit_timer_tick);
+
+  ev.integer = next_tick;
+
+  event_emit (&ev, einit_event_flag_broadcast);
+
+  evstaticdestroy (ev);
+
+  uintptr_t tmpinteger = ev.integer;
+  sched_timer_data = (time_t *)setdel ((void **)sched_timer_data, (void *)tmpinteger);
+
+  if (next_tick == scheduler_prune_time) {
+   ethread_prune_thread_pool();
+  }
+
+  sched_handle_timers();
+ } else {
+  if (next_tick > now) {
+//   notice (1, "next timer in %i seconds\n", (next_tick - now));
+
+   alarm (next_tick - now);
+  }
+ }
+}
+
+void sched_timer_event_handler_set (struct einit_event *ev) {
+ insert_timer_event (ev->integer);
+
+ sched_handle_timers();
+}
+
+#if defined(__GLIBC__)
+#if ! defined(__UCLIBC__)
+#include <execinfo.h>
+
+extern int sched_trace_target;
+
+#define TRACE_MESSAGE_HEADER "eINIT has crashed! Please submit the following to a developer:\n --- VERSION INFORMATION ---\n eINIT, version: " EINIT_VERSION_LITERAL "\n --- END OF VERSION INFORMATION ---\n --- BACKTRACE ---\n"
+#define TRACE_MESSAGE_HEADER_LENGTH sizeof(TRACE_MESSAGE_HEADER)
+
+#define TRACE_MESSAGE_FOOTER " --- END OF BACKTRACE ---\n"
+#define TRACE_MESSAGE_FOOTER_LENGTH sizeof(TRACE_MESSAGE_FOOTER)
+
+#define TRACE_MESSAGE_FOOTER_STDOUT " --- END OF BACKTRACE ---\n\n > switching back to the default mode in 15 seconds + 5 seconds cooldown.\n"
+#define TRACE_MESSAGE_FOOTER_STDOUT_LENGTH sizeof(TRACE_MESSAGE_FOOTER_STDOUT)
+
+void sched_signal_trace (int signal, siginfo_t *siginfo, void *context) {
+ void *trace[250];
+ ssize_t trace_length;
+ int timer = 15;
+
+ trace_length = backtrace (trace, 250);
+
+ if (sched_trace_target) {
+//  write (sched_trace_target, TRACE_MESSAGE_HEADER, TRACE_MESSAGE_HEADER_LENGTH);
+  backtrace_symbols_fd (trace, trace_length, sched_trace_target);
+//  write (sched_trace_target, TRACE_MESSAGE_FOOTER, TRACE_MESSAGE_FOOTER_LENGTH);
+ }
+
+ write (STDOUT_FILENO, TRACE_MESSAGE_HEADER, TRACE_MESSAGE_HEADER_LENGTH);
+ backtrace_symbols_fd (trace, trace_length, STDOUT_FILENO);
+ write (STDOUT_FILENO, TRACE_MESSAGE_FOOTER_STDOUT, TRACE_MESSAGE_FOOTER_STDOUT_LENGTH);
+ fsync (STDOUT_FILENO);
+
+ while ((timer = sleep (timer)));
+
+// raise(SIGKILL);
+ _exit(einit_exit_status_die_respawn);
+}
+
+#endif
+#endif
+
+void sched_reset_event_handlers () {
+ struct sigaction action;
+
+ signalstack.ss_sp = emalloc (SIGSTKSZ);
+ signalstack.ss_size = SIGSTKSZ;
+ signalstack.ss_flags = 0;
+ sigaltstack (&signalstack, NULL);
+
+ sigemptyset(&(action.sa_mask));
+
+ action.sa_sigaction = sched_signal_sigalrm;
+ action.sa_flags = SA_NOCLDSTOP | SA_SIGINFO | SA_NODEFER | SA_ONSTACK;
+ if ( sigaction (SIGALRM, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
+
+ action.sa_flags = SA_SIGINFO | SA_RESTART | SA_NODEFER | SA_ONSTACK;
+ action.sa_sigaction = sched_signal_sigint;
+ if ( sigaction (SIGINT, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
+
+ /* some signals REALLY should be ignored */
+ action.sa_sigaction = (void (*)(int, siginfo_t *, void *))SIG_IGN;
+ if ( sigaction (SIGTRAP, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
+ if ( sigaction (SIGABRT, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
+
+ if ( sigaction (SIGPIPE, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
+ if ( sigaction (SIGIO, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
+ if ( sigaction (SIGTTIN, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
+ if ( sigaction (SIGTTOU, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
+
+#if 1
+ /* catch a couple of signals and print traces for them */
+#if defined(__GLIBC__)
+#if ! defined(__UCLIBC__)
+ action.sa_sigaction = sched_signal_trace;
+ action.sa_flags = SA_NOCLDSTOP | SA_SIGINFO | SA_NODEFER;
+
+ if ( sigaction (SIGQUIT, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
+ if ( sigaction (SIGABRT, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
+ if ( sigaction (SIGUSR1, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
+ if ( sigaction (SIGUSR2, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
+ if ( sigaction (SIGTSTP, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
+ if ( sigaction (SIGTERM, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
+ if ( sigaction (SIGSEGV, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
+#ifdef SIGPOLL
+ if ( sigaction (SIGPOLL, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
+#endif
+ if ( sigaction (SIGPROF, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
+ if ( sigaction (SIGXCPU, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
+ if ( sigaction (SIGXFSZ, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
+#endif
+#endif
+#endif
+}
+
+// (on linux) SIGINT to INIT means ctrl+alt+del was pressed
+void sched_signal_sigint (int signal, siginfo_t *siginfo, void *context) {
+#ifdef __linux__
+ /* only shut down if the SIGINT was sent by the kernel, (e)INIT (process 1) or by the parent process */
+ if ((siginfo->si_code == SI_KERNEL) ||
+      (((siginfo->si_code == SI_USER) && (siginfo->si_pid == 1)) || (siginfo->si_pid == getppid())))
+#else
+  /* only shut down if the SIGINT was sent by process 1 or by the parent process */
+  /* if ((siginfo->si_pid == 1) || (siginfo->si_pid == getppid())) */
+// note: this relies on a proper pthreads implementation so... i deactivated it for now.
+#endif
+ {
+  sigint_called = 1;
+  if (!(coremode & einit_core_exiting) && signal_semaphore)
+   sem_post (signal_semaphore);
+
+ }
+ return;
+}
+
+void sched_signal_sigalrm (int signal, siginfo_t *siginfo, void *context) {
+ if (!(coremode & einit_core_exiting) && signal_semaphore) {
+  if (sem_post (signal_semaphore)) {
+   bitch(bitch_stdio, 0, "sem_post() failed.");
+  }
+ }
+
+ return;
+}
+
+int einit_main_loop() {
+ while (1) {
+  sched_handle_timers();
+
+  sem_wait (signal_semaphore);
+
+  if (sigint_called) {
+   shutting_down = 1;
+   struct einit_event ee = evstaticinit (einit_core_switch_mode);
+   ee.string = "power-reset";
+
+//    ee.para = stdout;
+
+   event_emit (&ee, einit_event_flag_spawn_thread | einit_event_flag_duplicate | einit_event_flag_broadcast);
+//  evstaticdestroy(ee);
+
+   sigint_called = 0;
+   evstaticdestroy (ee);
+  }
+ }
+}
+
+void scheduler_configure() {
+#if ((_POSIX_SEMAPHORES - 200112L) >= 0)
+ signal_semaphore = &signal_semaphore_static;
+ sem_init (signal_semaphore, 0, 0);
+#elif defined(__APPLE__)
+ char tmp[BUFFERSIZE];
+
+ esprintf (tmp, BUFFERSIZE, "/einit-sgchld-sem-%i", getpid());
+
+ if ((int)(signal_semaphore = sem_open (tmp, O_CREAT, O_RDWR, 0)) == SEM_FAILED) {
+  perror ("scheduler: semaphore setup");
+  exit (EXIT_FAILURE);
+ }
+#else
+#warning no proper or recognised semaphores implementation, i can not promise this code will work.
+ /* let's just hope for the best... */
+ char tmp[BUFFERSIZE];
+
+ signal_semaphore = ecalloc (1, sizeof (sem_t));
+ if (sem_init (signal_semaphore, 0, 0) == -1) {
+  efree (signal_semaphore);
+  esprintf (tmp, BUFFERSIZE, "/einit-sigchild-semaphore-%i", getpid());
+
+  if ((signal_semaphore = sem_open (tmp, O_CREAT, O_RDWR, 0)) == SEM_FAILED) {
+   perror ("scheduler: semaphore setup");
+   exit (EXIT_FAILURE);
+  }
+ }
+#endif
+
+ event_listen (einit_timer_set, sched_timer_event_handler_set);
+
+ sched_reset_event_handlers ();
+}
+
 /* t3h m41n l00ps0rzZzzz!!!11!!!1!1111oneeleven11oneone11!!11 */
 int main(int argc, char **argv, char **environ) {
  int i;
@@ -328,6 +624,8 @@ int main(int argc, char **argv, char **environ) {
 
  enable_core_dumps ();
 
+ scheduler_configure();
+
  sched_trace_target = crash_pipe;
 
   if (command_pipe) { // commandpipe[0]
@@ -421,9 +719,7 @@ int main(int argc, char **argv, char **environ) {
     ethread_spawn_detached ((void *(*)(void *))pidthread_processor, commandpipe_in);
    }
 
-   struct einit_event eml = evstaticinit(einit_core_main_loop_reached);
-   event_emit (&eml, einit_event_flag_broadcast);
-   evstaticdestroy(eml);
+   return einit_main_loop();
   }
 
 /* this should never be reached... */
