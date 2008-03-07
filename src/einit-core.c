@@ -160,6 +160,10 @@ void einit_process_raw_event (int fd) {
  int i = 0;
 
  if ((r = read (fd, epre_buffer + epre_offset, BUFFERSIZE - 1 - epre_offset)) > 0) {
+  fprintf (stderr, "buffer contents: ");
+
+  write (2, epre_buffer, epre_offset);
+
   epre_offset += r;
 
   retry:
