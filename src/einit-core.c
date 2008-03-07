@@ -153,53 +153,30 @@ void core_einit_core_module_action_complete (struct einit_event *ev) {
   mod_complete (ev->rid, ev->task, ev->status);
 }
 
-char *readfd_until_eod (int fd) {
- int rn = 0;
- void *buf = NULL;
- char *data = NULL;
- ssize_t blen = 0;
-
- errno = 0;
-
- buf = emalloc (BUFFERSIZE * 10);
- do {
-  buf = erealloc (buf, blen + BUFFERSIZE * 10);
-  if (buf == NULL) return NULL;
-  rn = read (fd, (char *)(buf + blen), BUFFERSIZE * 10);
-
-  if (rn > 0)
-   write (2, buf+blen, rn);
-
-  blen = blen + rn;
- } while ((rn > 0) || ((rn == -1) && (errno == EINTR)));
-
- if (blen > -1) {
-  data = erealloc (buf, blen+1);
-  data[blen] = 0;
-  if (blen > 0) {
-   *(data+blen-1) = 0;
-  } else {
-   efree (data);
-   data = NULL;
-  }
- }
-
- return data;
-}
-
 void einit_process_raw_event (int fd) {
- char *buffer = readfd_until_eod(fd);
+ char buffer[BUFFERSIZE];
+ ssize_t offset = 0, r;
+ int i = 0;
 
- if (buffer) {
-  char **fragments = str2set (1, buffer);
-  int i = 0;
-  for (; fragments[i]; i++) {
-   fprintf (stderr, "**\n** this is the fragment i got: %s\n", fragments[i]);
+ while ((r = read (fd, buffer + offset, BUFFERSIZE - 1 - offset)) > 0) {
+  offset += r;
 
-   einit_event_loop_decoder (fragments[i], strlen(fragments[i]), NULL);
+  retry:
+
+  for (i = 0; i <= r; i++) {
+   if (buffer[i] == '\x01') {
+    buffer[i] = 0;
+
+    fprintf (stderr, "**\n** this is the fragment i got: %s\n", buffer);
+    einit_event_loop_decoder (buffer, i, NULL);
+
+    memmove (buffer, buffer + offset, r - i);
+    offset -= i;
+    r -= i;
+
+    goto retry;
+   }
   }
-
-  efree (fragments);
  }
 }
 
