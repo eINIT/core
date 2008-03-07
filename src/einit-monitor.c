@@ -143,11 +143,11 @@ int einit_monitor_loop (int argc, char **argv, char **env, char *einit_crash_dat
  int debugsocket[2];
  pid_t core_pid;
 
- socketpair (AF_UNIX, SOCK_STREAM, 0, commandpipe);
+ pipe (commandpipe);
  socketpair (AF_UNIX, SOCK_STREAM, 0, debugsocket);
 
  fcntl (debugsocket[0], F_SETFD, FD_CLOEXEC | O_NONBLOCK);
- fcntl (commandpipe[1], F_SETFD, FD_CLOEXEC);
+ fcntl (commandpipe[1], F_SETFD, FD_CLOEXEC | O_NONBLOCK);
 
  core_pid = fork();
 
