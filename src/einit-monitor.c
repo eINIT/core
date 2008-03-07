@@ -61,6 +61,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 pid_t send_sigint_pid = 0;
 char is_sandbox = 0;
 
+const char *corefile = EINIT_LIB_BASE "/bin/einit-core";
+
 char *readfd (int fd) {
  int rn = 0;
  void *buf = NULL;
@@ -133,7 +135,7 @@ int run_core (int argc, char **argv, char **env, char *einit_crash_data, int com
 
  narg[i] = 0;
 
- execve (EINIT_LIB_BASE "/bin/einit-core", narg, env);
+ execve (corefile, narg, env);
  perror ("couldn't execute eINIT");
  return -1;
 }
@@ -143,11 +145,13 @@ int einit_monitor_loop (int argc, char **argv, char **env, char *einit_crash_dat
  int debugsocket[2];
  pid_t core_pid;
 
- pipe (commandpipe);
  socketpair (AF_UNIX, SOCK_STREAM, 0, debugsocket);
-
  fcntl (debugsocket[0], F_SETFD, FD_CLOEXEC | O_NONBLOCK);
- fcntl (commandpipe[1], F_SETFD, FD_CLOEXEC | O_NONBLOCK);
+ fcntl (debugsocket[1], F_SETFD, O_NONBLOCK);
+
+ pipe (commandpipe);
+// socketpair (AF_UNIX, SOCK_STREAM, 0, commandpipe);
+ fcntl (commandpipe[1], F_SETFD, FD_CLOEXEC);
 
  core_pid = fork();
 
@@ -159,6 +163,11 @@ int einit_monitor_loop (int argc, char **argv, char **env, char *einit_crash_dat
   case -1:
    perror ("einit-monitor: couldn't fork()");
    sleep (1);
+   close (commandpipe[0]);
+   close (debugsocket[0]);
+   close (commandpipe[1]);
+   close (debugsocket[1]);
+
    return einit_monitor_loop(argc, argv, env, NULL, need_recovery);
   default:
    close (commandpipe[0]);
@@ -173,8 +182,16 @@ int einit_monitor_loop (int argc, char **argv, char **env, char *einit_crash_dat
   einit_crash_data = NULL;
  }
 
+#if 0
+ pid_t wpid = 0;
+#endif
+
  while (1) {
   int rstatus;
+
+//  wpid++;
+
+#if 1
   pid_t wpid = waitpid(-1, &rstatus, 0); /* this ought to wait for ANY process */
 
   if (wpid == core_pid) {
@@ -235,12 +252,32 @@ int einit_monitor_loop (int argc, char **argv, char **env, char *einit_crash_dat
    snprintf (buffer, BUFFERSIZE, PID_TERMINATED_EVENT, wpid);
    len = strlen (buffer);
 
+   if (write (commandpipe[1], buffer, len) < len) {
+    perror ("couldn't write data");
+   } else {
+    kill (core_pid, SIGUSR1);
+   }
+  }
+#endif
+#if 0
+   sleep (10);
+
+   char buffer[BUFFERSIZE];
+   size_t len;
+
+   snprintf (buffer, BUFFERSIZE, PID_TERMINATED_EVENT, wpid);
+   len = strlen (buffer);
+
    fprintf (stderr, "\nm\nthis is what i sent:\n**\n");
    write (2, buffer, len);
    fprintf (stderr, "\n**\n");
 
-   write (commandpipe[1], buffer, len);
-  }
+   if (write (commandpipe[1], buffer, len) < len) {
+    perror ("couldn't write data");
+   } else {
+    kill (core_pid, SIGUSR1);
+   }
+#endif
  }
 }
 
@@ -261,6 +298,8 @@ int main(int argc, char **argv, char **env) {
   } else if (!strcmp(argv[i], "--sandbox")) {
    need_recovery = 1;
    is_sandbox = 1;
+  } else if (((i+1) < argc) && !strcmp(argv[i], "--core-file")) {
+   corefile = argv[i+1];
   }
 
   argv_mutable[it] = argv[i];

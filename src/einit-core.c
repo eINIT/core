@@ -162,9 +162,9 @@ void einit_process_raw_event (int fd) {
  if ((r = read (fd, epre_buffer + epre_offset, BUFFERSIZE - 1 - epre_offset)) > 0) {
   epre_offset += r;
 
-  fprintf (stderr, "\n.\nthis is what's in my buffer:\n**\n");
+/*  fprintf (stderr, "\n.\nthis is what's in my buffer:\n**\n");
   write (2, epre_buffer, epre_offset);
-  fprintf (stderr, "\n.\n");
+  fprintf (stderr, "\n.\n");*/
 
   retry:
 
@@ -193,9 +193,11 @@ stack_t signalstack;
 
 void sched_signal_sigint (int, siginfo_t *, void *);
 void sched_signal_sigalrm (int, siginfo_t *, void *);
+void sched_signal_sigusr1 (int, siginfo_t *, void *);
 void sched_run_sigchild ();
 
 char sigint_called = 0;
+char sigusr1_called = 0;
 
 extern char shutting_down;
 
@@ -349,6 +351,9 @@ void sched_reset_event_handlers () {
  action.sa_sigaction = sched_signal_sigint;
  if ( sigaction (SIGINT, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
 
+ action.sa_sigaction = sched_signal_sigusr1;
+ if ( sigaction (SIGUSR1, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
+
  /* some signals REALLY should be ignored */
  action.sa_sigaction = (void (*)(int, siginfo_t *, void *))SIG_IGN;
  if ( sigaction (SIGTRAP, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
@@ -368,7 +373,7 @@ void sched_reset_event_handlers () {
 
  if ( sigaction (SIGQUIT, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
  if ( sigaction (SIGABRT, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
- if ( sigaction (SIGUSR1, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
+// if ( sigaction (SIGUSR1, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
  if ( sigaction (SIGUSR2, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
  if ( sigaction (SIGTSTP, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
  if ( sigaction (SIGTERM, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
@@ -391,6 +396,13 @@ void sched_signal_sigint (int signal, siginfo_t *siginfo, void *context) {
  return;
 }
 
+/* god knows why i need to do it like this */
+void sched_signal_sigusr1 (int signal, siginfo_t *siginfo, void *context) {
+ sigusr1_called = 1;
+
+ return;
+}
+
 void sched_signal_sigalrm (int signal, siginfo_t *siginfo, void *context) {
 /* nothing to do here... really */
 
@@ -403,6 +415,7 @@ int einit_main_loop(int ipc_pipe_fd) {
  sigemptyset(&sigmask);
  sigaddset(&sigmask, SIGINT);
  sigaddset(&sigmask, SIGALRM);
+ sigaddset(&sigmask, SIGUSR1);
  sigprocmask(SIG_BLOCK, &sigmask, &osigmask);
 
  while (1) {
@@ -424,28 +437,44 @@ int einit_main_loop(int ipc_pipe_fd) {
   sched_handle_timers();
 
   if (ipc_pipe_fd != -1) {
-   fd_set rfds;
+//   fd_set rfds;
 
-   FD_ZERO(&rfds);
-   FD_SET(ipc_pipe_fd, &rfds);
+//   einit_process_raw_event (ipc_pipe_fd);
 
-   fprintf (stderr, "proper select\n");
+//   FD_ZERO(&rfds);
+//   FD_SET(ipc_pipe_fd, &rfds);
 
-   selectres = pselect(2, &rfds, NULL, NULL, 0, &osigmask);
+//   fprintf (stderr, " ***************************** proper select (fd=%i)\n", ipc_pipe_fd);
 
-   fprintf (stderr, "done with select\n");
+//   selectres = pselect(2, &rfds, NULL, NULL, 0, &osigmask);
+   selectres = pselect(1, NULL, NULL, NULL, 0, &osigmask);
 
+//   fprintf (stderr, "done with select\n");
+
+   if (sigusr1_called) {
+    einit_process_raw_event (ipc_pipe_fd);
+
+    sigusr1_called = 0;
+   }
+
+#if 0
    if ((selectres > 0) && (FD_ISSET (ipc_pipe_fd, &rfds))) {
-    fprintf (stderr, "reading from pipe\n");
+    sleep(5);
+    fprintf (stderr, "   ************************* reading from pipe (%i)\n", ipc_pipe_fd);
 
     einit_process_raw_event (ipc_pipe_fd);
+   } else {
+    fprintf (stderr, "selectres=%i\n", selectres);
+    if (FD_ISSET (ipc_pipe_fd, &rfds))
+     fprintf (stderr, "FD_ISSET\n", selectres);
    }
+#endif
   } else {
-   fprintf (stderr, "improper select\n");
+//   fprintf (stderr, "improper select\n");
 
    selectres = pselect(1, NULL, NULL, NULL, 0, &osigmask);
 
-   fprintf (stderr, "done\n");
+//   fprintf (stderr, "done\n");
   }
  }
 }
