@@ -160,9 +160,7 @@ void einit_process_raw_event (int fd) {
  while (memset (buffer, 0, BUFFERSIZE), ((r = read(fd, buffer, BUFFERSIZE-1)) > 0)) {
   fprintf (stderr, "\n.\n** this is the fragment i got: %s\n.\n", buffer);
 
-  if (r > 0) {
-   einit_event_loop_decoder (buffer, r, NULL);
-  }
+  einit_event_loop_decoder (buffer, r, NULL);
  }
 }
 
@@ -489,7 +487,7 @@ int main(int argc, char **argv, char **environ) {
       need_recovery = 1;
      } else if (strmatch(argv[i], "--command-pipe")) {
       command_pipe = parse_integer (argv[i+1]);
-      fcntl (command_pipe, F_SETFD, FD_CLOEXEC);
+      fcntl (command_pipe, F_SETFD, FD_CLOEXEC | O_NONBLOCK);
 
       i++;
      } else if (strmatch(argv[i], "--crash-pipe")) {
