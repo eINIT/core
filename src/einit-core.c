@@ -162,6 +162,10 @@ void einit_process_raw_event (int fd) {
  if ((r = read (fd, epre_buffer + epre_offset, BUFFERSIZE - 1 - epre_offset)) > 0) {
   epre_offset += r;
 
+  fprintf (stderr, "\n.\nthis is what's in my buffer:\n**\n");
+  write (2, epre_buffer, epre_offset);
+  fprintf (stderr, "\n.\n");
+
   retry:
 
   for (i = 0; i <= epre_offset; i++) {
