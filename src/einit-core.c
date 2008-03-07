@@ -155,11 +155,9 @@ void core_einit_core_module_action_complete (struct einit_event *ev) {
 
 void einit_process_raw_event (int fd) {
  char buffer[BUFFERSIZE];
- memset (buffer, 0, BUFFERSIZE);
-
  ssize_t r;
 
- while ((r = read(fd, buffer, BUFFERSIZE-1)) > 0) {
+ while (memset (buffer, 0, BUFFERSIZE), ((r = read(fd, buffer, BUFFERSIZE-1)) > 0)) {
   fprintf (stderr, "\n.\n** this is the fragment i got: %s\n.\n", buffer);
 
   if (r > 0) {
