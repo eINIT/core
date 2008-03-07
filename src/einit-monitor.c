@@ -56,7 +56,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <libutil.h>
 #endif
 
-#define PID_TERMINATED_EVENT "event-type=process/died\ninteger=%i\nmodule=einit-monitor\n"
+#define PID_TERMINATED_EVENT "event-type=process/died\ninteger=%i\nmodule=einit-monitor\n\x01"
 
 pid_t send_sigint_pid = 0;
 char is_sandbox = 0;

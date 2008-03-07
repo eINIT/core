@@ -153,14 +153,49 @@ void core_einit_core_module_action_complete (struct einit_event *ev) {
   mod_complete (ev->rid, ev->task, ev->status);
 }
 
+char *readfd_until_eod (int fd) {
+ int rn = 0;
+ void *buf = NULL;
+ char *data = NULL;
+ ssize_t blen = 0;
+
+ buf = emalloc (BUFFERSIZE * 10);
+ do {
+  buf = erealloc (buf, blen + BUFFERSIZE * 10);
+  if (buf == NULL) return NULL;
+  rn = read (fd, (char *)(buf + blen), BUFFERSIZE * 10);
+  blen = blen + rn;
+ } while ((rn > 0) && (!errno || (errno == EINTR)));
+
+#ifdef BITCHY
+ /* about the only way we get here is files in /proc that suddently 'vanished'... so no need to bitch */
+ if (errno && (errno != EAGAIN) && (errno != EINTR))
+  bitch(bitch_stdio, errno, "reading file failed.");
+#endif
+
+ if (blen > -1) {
+  data = erealloc (buf, blen+1);
+  data[blen] = 0;
+  if (blen > 0) {
+   *(data+blen-1) = 0;
+  } else {
+   efree (data);
+   data = NULL;
+  }
+ }
+
+ return data;
+}
+
 void einit_process_raw_event (int fd) {
- char buffer[BUFFERSIZE];
- ssize_t r;
+ char *buffer = readfd_until_eod(fd);
 
- while (memset (buffer, 0, BUFFERSIZE), ((r = read(fd, buffer, BUFFERSIZE-1)) > 0)) {
-  fprintf (stderr, "\n.\n** this is the fragment i got: %s\n.\n", buffer);
-
-  einit_event_loop_decoder (buffer, r, NULL);
+ if (buffer) {
+  char **fragments = str2set (1, buffer);
+  int i = 0;
+  for (; fragments[i]; i++) {
+   einit_event_loop_decoder (fragments[i], strlen(fragments[i]), NULL);
+  }
  }
 }
 
