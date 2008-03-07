@@ -153,12 +153,17 @@ int einit_monitor_loop (int argc, char **argv, char **env, char *einit_crash_dat
 
  switch (core_pid) {
   case 0:
+   close (commandpipe[1]);
+   close (debugsocket[0]);
    run_core (argc, argv, env, einit_crash_data, commandpipe[0], debugsocket[1], need_recovery);
   case -1:
    perror ("einit-monitor: couldn't fork()");
    sleep (1);
    return einit_monitor_loop(argc, argv, env, NULL, need_recovery);
   default:
+   close (commandpipe[0]);
+   close (debugsocket[1]);
+
    send_sigint_pid = core_pid;
    break;
  }
