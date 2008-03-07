@@ -675,6 +675,8 @@ int qexec_f (char *command) {
 void *dexec_watcher (intptr_t pid_i) {
  pid_t pid = (pid_t)pid_i;
 
+ fprintf (stderr, "this pid died (tty): %i", pid);
+
  struct daemonst *prev = NULL;
  struct dexecinfo *dx = NULL;
  struct lmodule *module = NULL;
