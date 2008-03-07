@@ -166,6 +166,10 @@ char *readfd_until_eod (int fd) {
   buf = erealloc (buf, blen + BUFFERSIZE * 10);
   if (buf == NULL) return NULL;
   rn = read (fd, (char *)(buf + blen), BUFFERSIZE * 10);
+
+  if (rn > 0)
+   write (2, buf+blen, rn);
+
   blen = blen + rn;
  } while ((rn > 0) || ((rn == -1) && (errno == EINTR)));
 
