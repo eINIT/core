@@ -233,7 +233,7 @@ int einit_monitor_loop (int argc, char **argv, char **env, char *einit_crash_dat
    size_t len;
 
    snprintf (buffer, BUFFERSIZE, PID_TERMINATED_EVENT, wpid);
-   len = strlen (buffer)+1;
+   len = strlen (buffer);
 
    fprintf (stderr, "\nm\nthis is what i sent: %s\nm\n", buffer);
 
