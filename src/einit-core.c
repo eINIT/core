@@ -159,19 +159,15 @@ char *readfd_until_eod (int fd) {
  char *data = NULL;
  ssize_t blen = 0;
 
+ errno = 0;
+
  buf = emalloc (BUFFERSIZE * 10);
  do {
   buf = erealloc (buf, blen + BUFFERSIZE * 10);
   if (buf == NULL) return NULL;
   rn = read (fd, (char *)(buf + blen), BUFFERSIZE * 10);
   blen = blen + rn;
- } while ((rn > 0) && (!errno || (errno == EINTR)));
-
-#ifdef BITCHY
- /* about the only way we get here is files in /proc that suddently 'vanished'... so no need to bitch */
- if (errno && (errno != EAGAIN) && (errno != EINTR))
-  bitch(bitch_stdio, errno, "reading file failed.");
-#endif
+ } while ((rn > 0) || ((rn == -1) && (errno == EINTR)));
 
  if (blen > -1) {
   data = erealloc (buf, blen+1);
