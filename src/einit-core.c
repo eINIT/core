@@ -157,12 +157,14 @@ void einit_process_raw_event (int fd) {
  char buffer[BUFFERSIZE];
  memset (buffer, 0, BUFFERSIZE);
 
- ssize_t r = read(fd, buffer, BUFFERSIZE-1);
+ ssize_t r;
 
- fprintf (stderr, "\n.\n** this is the fragment i got: %s\n.\n", buffer);
+ while ((r = read(fd, buffer, BUFFERSIZE-1)) > 0) {
+  fprintf (stderr, "\n.\n** this is the fragment i got: %s\n.\n", buffer);
 
- if (r > 0) {
-  einit_event_loop_decoder (buffer, r, NULL);
+  if (r > 0) {
+   einit_event_loop_decoder (buffer, r, NULL);
+  }
  }
 }
 
