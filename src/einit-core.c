@@ -194,8 +194,12 @@ void einit_process_raw_event (int fd) {
   char **fragments = str2set (1, buffer);
   int i = 0;
   for (; fragments[i]; i++) {
+   fprintf (stderr, "**\n** this is the fragment i got: %s\n", fragments[i]);
+
    einit_event_loop_decoder (fragments[i], strlen(fragments[i]), NULL);
   }
+
+  efree (fragments);
  }
 }
 
