@@ -56,7 +56,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <libutil.h>
 #endif
 
-#define PID_TERMINATED_EVENT "event-type=process/died\ninteger=%i\nmodule=einit-monitor\n.\n"
+#define PID_TERMINATED_EVENT "event-type=process/died\ninteger=%i\nmodule=einit-monitor\n.\n\n"
 
 pid_t send_sigint_pid = 0;
 char is_sandbox = 0;
@@ -235,7 +235,9 @@ int einit_monitor_loop (int argc, char **argv, char **env, char *einit_crash_dat
    snprintf (buffer, BUFFERSIZE, PID_TERMINATED_EVENT, wpid);
    len = strlen (buffer);
 
-   fprintf (stderr, "\nm\nthis is what i sent: %s\nm\n", buffer);
+   fprintf (stderr, "\nm\nthis is what i sent:\n**\n");
+   write (2, buffer, len);
+   fprintf (stderr, "\n**\n");
 
    write (commandpipe[1], buffer, len);
   }
