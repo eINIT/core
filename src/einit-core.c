@@ -160,24 +160,21 @@ void einit_process_raw_event (int fd) {
  int i = 0;
 
  if ((r = read (fd, epre_buffer + epre_offset, BUFFERSIZE - 1 - epre_offset)) > 0) {
-  fprintf (stderr, "buffer contents: ");
-
-  write (2, epre_buffer, epre_offset);
-
   epre_offset += r;
 
   retry:
 
-  for (i = 0; i <= r; i++) {
+  for (i = 0; i <= epre_offset; i++) {
    if ((i > 2) && (epre_buffer[i-2] == '\n') && (epre_buffer[i-1] == '.') && (epre_buffer[i] == '\n')) {
     epre_buffer[i] = 0;
+    epre_buffer[i-1] = 0;
 
-    fprintf (stderr, "**\n** this is the fragment i got: %s\n", epre_buffer);
     einit_event_loop_decoder (epre_buffer, i, NULL);
 
-    memmove (epre_buffer, epre_buffer + epre_offset, r - i);
-    epre_offset -= i;
-    r -= i;
+    if (epre_offset - i + 1) {
+     memmove (epre_buffer, epre_buffer + i + 1, epre_offset - i + 1);
+    }
+    epre_offset -= (i+1);
 
     goto retry;
    }
@@ -422,7 +419,7 @@ int einit_main_loop(int ipc_pipe_fd) {
 
   sched_handle_timers();
 
-  if (ipc_pipe_fd > 0) {
+  if (ipc_pipe_fd != -1) {
    fd_set rfds;
 
    FD_ZERO(&rfds);
@@ -430,7 +427,7 @@ int einit_main_loop(int ipc_pipe_fd) {
 
    selectres = pselect(2, &rfds, NULL, NULL, 0, &osigmask);
 
-   if (FD_ISSET (ipc_pipe_fd, &rfds)) {
+   if ((selectres > 0) && (FD_ISSET (ipc_pipe_fd, &rfds))) {
     einit_process_raw_event (ipc_pipe_fd);
    }
   } else {
