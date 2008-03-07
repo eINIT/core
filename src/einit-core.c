@@ -154,24 +154,25 @@ void core_einit_core_module_action_complete (struct einit_event *ev) {
 }
 
 void einit_process_raw_event (int fd) {
- char buffer[BUFFERSIZE];
- ssize_t offset = 0, r;
+ static char epre_buffer[BUFFERSIZE];
+ static ssize_t epre_offset = 0;
+ ssize_t r;
  int i = 0;
 
- while ((r = read (fd, buffer + offset, BUFFERSIZE - 1 - offset)) > 0) {
-  offset += r;
+ if ((r = read (fd, epre_buffer + epre_offset, BUFFERSIZE - 1 - epre_offset)) > 0) {
+  epre_offset += r;
 
   retry:
 
   for (i = 0; i <= r; i++) {
-   if (buffer[i] == '\x01') {
-    buffer[i] = 0;
+   if ((i > 2) && (epre_buffer[i-2] == '\n') && (epre_buffer[i-1] == '.') && (epre_buffer[i] == '\n')) {
+    epre_buffer[i] = 0;
 
-    fprintf (stderr, "**\n** this is the fragment i got: %s\n", buffer);
-    einit_event_loop_decoder (buffer, i, NULL);
+    fprintf (stderr, "**\n** this is the fragment i got: %s\n", epre_buffer);
+    einit_event_loop_decoder (epre_buffer, i, NULL);
 
-    memmove (buffer, buffer + offset, r - i);
-    offset -= i;
+    memmove (epre_buffer, epre_buffer + epre_offset, r - i);
+    epre_offset -= i;
     r -= i;
 
     goto retry;
@@ -429,7 +430,7 @@ int einit_main_loop(int ipc_pipe_fd) {
     einit_process_raw_event (ipc_pipe_fd);
    }
   } else {
-   selectres = pselect(0, NULL, NULL, NULL, 0, &osigmask);
+   selectres = pselect(1, NULL, NULL, NULL, 0, &osigmask);
   }
  }
 }
@@ -503,7 +504,7 @@ int main(int argc, char **argv, char **environ) {
       need_recovery = 1;
      } else if (strmatch(argv[i], "--command-pipe")) {
       command_pipe = parse_integer (argv[i+1]);
-      fcntl (command_pipe, F_SETFD, FD_CLOEXEC | O_NONBLOCK);
+      fcntl (command_pipe, F_SETFD, FD_CLOEXEC/* | O_NONBLOCK*/); /* i think O_NONBLOCK messes with select */
 
       i++;
      } else if (strmatch(argv[i], "--crash-pipe")) {
