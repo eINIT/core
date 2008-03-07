@@ -429,13 +429,23 @@ int einit_main_loop(int ipc_pipe_fd) {
    FD_ZERO(&rfds);
    FD_SET(ipc_pipe_fd, &rfds);
 
+   fprintf (stderr, "proper select\n");
+
    selectres = pselect(2, &rfds, NULL, NULL, 0, &osigmask);
 
+   fprintf (stderr, "done with select\n");
+
    if ((selectres > 0) && (FD_ISSET (ipc_pipe_fd, &rfds))) {
+    fprintf (stderr, "reading from pipe\n");
+
     einit_process_raw_event (ipc_pipe_fd);
    }
   } else {
+   fprintf (stderr, "improper select\n");
+
    selectres = pselect(1, NULL, NULL, NULL, 0, &osigmask);
+
+   fprintf (stderr, "done\n");
   }
  }
 }
