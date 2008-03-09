@@ -575,6 +575,7 @@ uint32_t event_string_to_code (const char *code) {
   else if (strmatch (tcode[0], "hotplug"))  ret = einit_event_subsystem_hotplug;
   else if (strmatch (tcode[0], "any"))      ret = einit_event_subsystem_any;
   else if (strmatch (tcode[0], "custom"))   ret = einit_event_subsystem_custom;
+  else if (strmatch (tcode[0], "acpi"))     ret = einit_event_subsystem_acpi;
 
   if (tcode[1])
    switch (ret) {
