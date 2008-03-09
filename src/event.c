@@ -552,6 +552,8 @@ char *event_code_to_string (const uint32_t code) {
   case einit_event_subsystem_boot:     return "boot/{unknown}";
   case einit_event_subsystem_hotplug:  return "hotplug/{unknown}";
 
+  case einit_event_subsystem_acpi:     return "acpi/{unknown}";
+
   case einit_event_subsystem_any:      return "any";
   case einit_event_subsystem_custom:   return "custom";
  }
@@ -573,9 +575,9 @@ uint32_t event_string_to_code (const char *code) {
   else if (strmatch (tcode[0], "process"))  ret = einit_event_subsystem_process;
   else if (strmatch (tcode[0], "boot"))     ret = einit_event_subsystem_boot;
   else if (strmatch (tcode[0], "hotplug"))  ret = einit_event_subsystem_hotplug;
+  else if (strmatch (tcode[0], "acpi"))     ret = einit_event_subsystem_acpi;
   else if (strmatch (tcode[0], "any"))      ret = einit_event_subsystem_any;
   else if (strmatch (tcode[0], "custom"))   ret = einit_event_subsystem_custom;
-  else if (strmatch (tcode[0], "acpi"))     ret = einit_event_subsystem_acpi;
 
   if (tcode[1])
    switch (ret) {
