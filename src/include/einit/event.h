@@ -77,6 +77,7 @@ enum einit_event_subsystems {
  einit_event_subsystem_boot     = 0x00009000,
  einit_event_subsystem_hotplug  = 0x0000a000,
  einit_event_subsystem_ipc_v2   = 0x0000b000,
+ einit_event_subsystem_acpi     = 0x0000c000,
 
  einit_event_subsystem_any      = 0xffffe000,
 /*!< match any subsystem... mostly intended to be used for rebroadcasting, e.g. via D-Bus */
@@ -203,7 +204,10 @@ enum einit_event_code {
  einit_ipc_stat                     = einit_event_subsystem_ipc_v2   | 0x003,
  einit_ipc_open                     = einit_event_subsystem_ipc_v2   | 0x004,
  einit_ipc_enabling                 = einit_event_subsystem_ipc_v2   | 0x010,
- einit_ipc_disabling                = einit_event_subsystem_ipc_v2   | 0x011
+ einit_ipc_disabling                = einit_event_subsystem_ipc_v2   | 0x011,
+ 
+ /* einit_event_subsystem_acpi: */
+ einit_acpi_event_generic			= einit_event_subsystem_acpi	 | 0x001
 };
 
 #define evstaticinit(ttype) { ttype, 0, NULL, NULL, 0, 0, 0, 0, NULL, { NULL }, NULL }
