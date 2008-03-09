@@ -31,7 +31,6 @@ int acpi_eventd_handler_configure (struct lmodule *);
 #if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
 
 char * acpi_eventd_handler_provides[] = {"acpi-eventd-handler", NULL};
-char * acpi_eventd_handler_requires[] = {"acpi-eventd", NULL};
 
 /* no const here, we need to mofiy this on the fly */
 
@@ -44,7 +43,7 @@ struct smodule acpi_eventd_handler_self = {
 		.rid       = "acpi-eventd-handler",
 		.si        = {
 				.provides = acpi_eventd_handler_provides,
-				.requires = acpi_eventd_handler_requires,
+				.requires = NULL,
 				.after    = NULL,
 				.before   = NULL
 		},

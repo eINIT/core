@@ -536,6 +536,8 @@ char *event_code_to_string (const uint32_t code) {
   case einit_hotplug_offline:                  return "hotplug/offline";
   case einit_hotplug_move:                     return "hotplug/move";
   case einit_hotplug_generic:                  return "hotplug/generic";
+  
+  case einit_acpi_event_generic:			    return "acpi/generic";
  }
 
  switch (code & EVENT_SUBSYSTEM_MASK) {
@@ -669,6 +671,9 @@ uint32_t event_string_to_code (const char *code) {
      else if (strmatch (tcode[1], "offline"))                     ret = einit_hotplug_offline;
      else if (strmatch (tcode[1], "move"))                        ret = einit_hotplug_move;
      else if (strmatch (tcode[1], "generic"))                     ret = einit_hotplug_generic;
+     break;
+    case einit_event_subsystem_acpi:
+     if (strmatch (tcode[1], "generic"))                          ret = einit_acpi_event_generic;
      break;
    }
 
