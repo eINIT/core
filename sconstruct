@@ -86,7 +86,7 @@ AssemblyDir = '#asm/' + arch + '-' + uname.lower() + '-' + libc
 
 SpecialModules = ['00-configuration-stree', '01-configuration-xml-expat', 'ipc-9p', 'module-logic-v4']
 
-Modules = ['shadow-exec']
+Modules = []
 
 ModulesBase = ['fqdn', 'exec', 'mount', 'tty', 'process', 'module-group', 'module-network-v2', 'parse-sh', 'module-checkpoint', 'ipc-core-helpers', 'module-transformations']
 
@@ -94,7 +94,7 @@ ModulesLinux = ['linux-mdev', 'linux-static-dev', 'linux-sysconf', 'linux-mount'
 
 ModulesPosixDesktop = []
 
-ModulesLinuxNoBundle = []
+ModulesLinuxNoBundle = ['acpi-eventd-handler']
 
 InstallAliases = []
 
@@ -308,3 +308,4 @@ env.Install (InstallDirInclude + '/einit-modules', '#build/headers/einit-modules
 InstallAliases += [InstallDirSbin, InstallDirLib, InstallDirLibBin, InstallDirModules, InstallConfig, InstallDirLibEinit, InstallDirInclude, InstallDirInclude + '/einit', InstallDirInclude + '/einit-modules', InstallDirLibEinit + '/scripts']
 
 env.Alias('install', InstallAliases)
+
