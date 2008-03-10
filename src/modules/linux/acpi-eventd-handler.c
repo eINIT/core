@@ -61,16 +61,10 @@ void acpi_eventd_handler_generic_event_handler(struct einit_event *ev) {
 	syslog(LOG_INFO, "%s\"%s\"[%d]",ev->rid,ev->string,ev->status);
 	struct stree *st;
 	st = cfg_prefix(ACPI_EVENT_PREFIX);
-	syslog(LOG_INFO,"a");
 	if (st) {
-		syslog(LOG_INFO,"b");
 		struct stree *cur = streelinear_prepare(st);
 		while (cur) {
-			syslog(LOG_INFO,"c");
 			struct cfgnode *n = cur->value;
-			if (n->arbattrs) {
-				syslog(LOG_INFO,"d");
-			}
 			cur = streenext(cur);
 		}
 		streefree(st);
