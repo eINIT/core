@@ -65,8 +65,10 @@ void acpi_eventd_handler_generic_event_handler(struct einit_event *ev) {
 	if (st) {
 		struct stree *cur = streelinear_prepare(st);
 		while (cur) {
-			notice(3,"%s\n",cur->key);
-			//struct cfgnode *n = cur->value;
+			struct cfgnode *n = cur->value;
+			notice(3,"%s\n",n->idattr);
+			char *a = set2str(':', (const char **)n->arbattrs);
+			notice(3,"%s\n",a);
 			cur = streenext(cur);
 		}
 		streefree(st);
