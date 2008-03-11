@@ -679,6 +679,8 @@ uint32_t event_string_to_code (const char *code) {
      break;
     case einit_event_subsystem_acpi:
      if (strmatch (tcode[1], "generic"))                          ret = einit_acpi_event_generic;
+     else if (strmatch (tcode[1], "lid-open"))                    ret = einit_acpi_event_lid_open;
+     else if (strmatch (tcode[1], "lid-close"))                   ret = einit_acpi_event_lid_closed;
      break;
    }
 
