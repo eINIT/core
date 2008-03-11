@@ -538,8 +538,7 @@ char *event_code_to_string (const uint32_t code) {
   case einit_hotplug_generic:                  return "hotplug/generic";
   
   case einit_acpi_event_generic:			    return "acpi/generic";
-  case einit_acpi_event_lid_open:			    return "acpi/lid_open";
-  case einit_acpi_event_lid_closed:			    return "acpi/lid_closed";
+  case einit_acpi_event_lid_custom:			    return "acpi/lid_custom";
  }
 
  switch (code & EVENT_SUBSYSTEM_MASK) {

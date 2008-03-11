@@ -208,8 +208,7 @@ enum einit_event_code {
  
  /* einit_event_subsystem_acpi: */
  einit_acpi_event_generic			= einit_event_subsystem_acpi	 | 0x001,
- einit_acpi_event_lid_open			= einit_event_subsystem_acpi	 | 0x002,
- einit_acpi_event_lid_closed		= einit_event_subsystem_acpi	 | 0x003
+ einit_acpi_event_lid_custom		= einit_event_subsystem_acpi	 | 0x002
 };
 
 #define evstaticinit(ttype) { ttype, 0, NULL, NULL, 0, 0, 0, 0, NULL, { NULL }, NULL }
