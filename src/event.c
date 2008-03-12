@@ -505,6 +505,9 @@ char *event_code_to_string (const uint32_t code) {
   case einit_power_failure_imminent:           return "power/failure-imminent";
   case einit_power_restored:                   return "power/restored";
 
+  case einit_power_source_ac:                  return "power/source-ac";
+  case einit_power_source_battery:             return "power/source-battery";
+
   case einit_timer_tick:                       return "timer/tick";
   case einit_timer_set:                        return "timer/set";
   case einit_timer_cancel:                     return "timer/cancel";
@@ -536,12 +539,10 @@ char *event_code_to_string (const uint32_t code) {
   case einit_hotplug_offline:                  return "hotplug/offline";
   case einit_hotplug_move:                     return "hotplug/move";
   case einit_hotplug_generic:                  return "hotplug/generic";
-  
-  case einit_acpi_event_generic:			    return "acpi/generic";
-  case einit_acpi_event_lid_open:			    return "acpi/lid-open";
-  case einit_acpi_event_lid_closed:			    return "acpi/lid-closed";
-  case einit_acpi_event_power_source_ac:	    return "acpi/power-source-ac";
-  case einit_acpi_event_power_source_battery:	return "acpi/power-source-battery";
+
+  case einit_acpi_event_generic:               return "acpi/generic";
+  case einit_acpi_event_lid_open:              return "acpi/lid-open";
+  case einit_acpi_event_lid_closed:            return "acpi/lid-closed";
  }
 
  switch (code & EVENT_SUBSYSTEM_MASK) {
@@ -641,6 +642,10 @@ uint32_t event_string_to_code (const char *code) {
      else if (strmatch (tcode[1], "failing"))                     ret = einit_power_failing;
      else if (strmatch (tcode[1], "failure-imminent"))            ret = einit_power_failure_imminent;
      else if (strmatch (tcode[1], "restored"))                    ret = einit_power_restored;
+
+     else if (strmatch (tcode[1], "source-ac"))                   ret = einit_power_source_ac;
+     else if (strmatch (tcode[1], "source-battery"))              ret = einit_power_source_battery;
+
      break;
     case einit_event_subsystem_timer:
      if (strmatch (tcode[1], "tick"))                             ret = einit_timer_tick;
@@ -683,8 +688,6 @@ uint32_t event_string_to_code (const char *code) {
      if (strmatch (tcode[1], "generic"))                          ret = einit_acpi_event_generic;
      else if (strmatch (tcode[1], "lid-open"))                    ret = einit_acpi_event_lid_open;
      else if (strmatch (tcode[1], "lid-close"))                   ret = einit_acpi_event_lid_closed;
-     else if (strmatch (tcode[1], "power-source-ac"))             ret = einit_acpi_event_power_source_ac;
-     else if (strmatch (tcode[1], "power-source-battery"))        ret = einit_acpi_event_power_source_battery;
      break;
    }
 
