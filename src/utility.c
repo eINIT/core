@@ -60,10 +60,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 long _getgr_r_size_max = 0, _getpw_r_size_max = 0;
 
-#if ! defined (EINIT_UTIL)
 #include <regex.h>
-
 #include <dirent.h>
+
+#ifdef __linux__
+#include <sys/syscall.h>
+#include <linux/sched.h>
+#include <signal.h>
+#endif
+
 
 char **readdirfilter (struct cfgnode const *node, const char *default_dir, const char *default_allow, const char *default_disallow, char recurse) {
  DIR *dir;
@@ -200,8 +205,6 @@ char **straddtoenviron (char **environment, const char *key, const char *value) 
  return ret;
 }
 
-#endif
-
 char *readfd_l (int fd, ssize_t *rl) {
  int rn = 0;
  void *buf = NULL;
@@ -215,12 +218,6 @@ char *readfd_l (int fd, ssize_t *rl) {
   rn = read (fd, (char *)(buf + blen), BUFFERSIZE * 10);
   blen = blen + rn;
  } while ((rn > 0) && (!errno || (errno == EAGAIN) || (errno == EINTR)));
-
-#ifdef BITCHY
-/* about the only way we get here is files in /proc that suddently 'vanished'... so no need to bitch */
- if (errno && (errno != EAGAIN) && (errno != EINTR))
-  bitch(bitch_stdio, errno, "reading file failed.");
-#endif
 
  if (blen > -1) {
   data = erealloc (buf, blen+1);
@@ -350,8 +347,6 @@ void strtrim (char *s) {
   else break;
  }
 }
-
-#if ! defined (EINIT_UTIL)
 
 pthread_mutex_t
  thread_rendezvous_mutex = PTHREAD_MUTEX_INITIALIZER,
@@ -655,8 +650,6 @@ int lookupuidgid (uid_t *uid, gid_t *gid, const char *user, const char *group) {
  return 0;
 }
 
-#endif
-
 signed int parse_integer (const char *s) {
  signed int ret = 0;
 
@@ -802,67 +795,6 @@ char *escape_xml (const char *input) {
  return retval;
 }
 
-#ifdef DEBUG
-
-/* some stdio wrappers with error reporting */
-FILE *exfopen (const char *filename, const char *mode, const char *file, const int line, const char *function) {
- const char *lfile          = file ? file : "unknown";
- const char *lfunction      = function ? function : "unknown";
- const int lline            = line ? line : 0;
-
- FILE *retval = fopen (filename, mode);
-
- if (retval) return retval;
-
- bitch_macro (bitch_stdio, lfile, lline, lfunction, errno, "fopen() failed.");
- return NULL;
-}
-
-DIR *exopendir (const char *name, const char *file, const int line, const char *function) {
- const char *lfile          = file ? file : "unknown";
- const char *lfunction      = function ? function : "unknown";
- const int lline            = line ? line : 0;
-
- DIR *retval = opendir (name);
-
- if (retval) return retval;
-
- bitch_macro (bitch_stdio, lfile, lline, lfunction, errno, "opendir() failed.");
- return NULL;
-}
-
-struct dirent *exreaddir (DIR *dir, const char *file, const int line, const char *function) {
- const char *lfile          = file ? file : "unknown";
- const char *lfunction      = function ? function : "unknown";
- const int lline            = line ? line : 0;
-
- errno = 0;
-
- struct dirent *retval = readdir (dir);
-
- if (retval) return retval;
-
- if (errno) {
-  bitch_macro (bitch_stdio, lfile, lline, lfunction, errno, "readdir() failed.");
- }
- return NULL;
-}
-
-int exopen(const char *pathname, int mode, const char *file, const int line, const char *function) {
- const char *lfile          = file ? file : "unknown";
- const char *lfunction      = function ? function : "unknown";
- const int lline            = line ? line : 0;
-
- int retval = open (pathname, mode);
-
- if (retval != -1) return retval;
-
- bitch_macro (bitch_stdio, lfile, lline, lfunction, errno, "open() failed.");
- return -1;
-}
-
-#endif
-
 #ifndef _have_asm_strmatch
 char strmatch (const char *str1, const char *str2) {
  while (*str1 == *str2) {
@@ -921,8 +853,6 @@ void disable_core_dumps() {
  setrlimit(RLIMIT_CORE, &zero);
 }
 #endif
-
-#if ! defined (EINIT_UTIL)
 
 char **getpath_filter (char *filter) {
  char **rv = NULL;
@@ -1045,8 +975,6 @@ int unlink_recursive (const char *file, char self) {
 
  return c;
 }
-
-#endif
 
 char *strip_empty_variables (char *string) {
  size_t i = 0, start = 0;
@@ -1318,4 +1246,20 @@ void update_local_environment() {
    setenv (node->idattr, node->svalue, 1);
   }
  }
+}
+
+pid_t efork() {
+ pid_t child;
+#ifdef __linux__
+ child = syscall(__NR_clone, SIGCHLD, 0, NULL, NULL, NULL);
+#else
+ child = fork();
+#endif
+
+ if (child < 0) {
+  sleep (1);
+  return efork(); /* just retry... */
+ }
+
+ return child;
 }

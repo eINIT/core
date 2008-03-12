@@ -73,7 +73,7 @@ const struct smodule einit_exec_self = {
  .eibuild   = BUILDNUMBER,
  .version   = 1,
  .mode      = 0,
- .name      = "pexec/dexec library module",
+ .name      = "pexec/dexec/eexec library module",
  .rid       = "einit-exec",
  .si        = {
   .provides = NULL,
@@ -87,8 +87,6 @@ const struct smodule einit_exec_self = {
 module_register(einit_exec_self);
 
 #endif
-
-// char hasslash = strchr(key, '/') ? 1 : 0;
 
 /* variables */
 struct daemonst * running = NULL;
@@ -105,6 +103,9 @@ char kill_timeout_primary = 20, kill_timeout_secondary = 20;
 char **check_variables_f (const char *, const char **, FILE *);
 char *apply_envfile_f (char *command, const char **environment);
 int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, const char *user, const char *group, char **local_environment, struct einit_event *status);
+
+int eexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, const char *user, const char *group, char **local_environment, struct einit_event *status);
+
 int qexec_f (char *command);
 int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status);
 int stop_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status);
@@ -614,6 +615,195 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
  if (WIFEXITED(pidstatus) && (WEXITSTATUS(pidstatus) == EXIT_SUCCESS)) return status_ok;
  return status_failed;
 }
+
+
+int eexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, const char *user, const char *group, char **local_environment, struct einit_event *status) {
+ int pipefderr [2];
+ pid_t child;
+ int pidstatus = 0;
+ enum pexec_options options = (status ? 0 : pexec_option_nopipe);
+ uint32_t cs = status_ok;
+ char have_waited = 0;
+
+ lookupuidgid (&uid, &gid, user, group);
+
+ if (!command) return status_failed;
+// if the first command is pexec-options, then set some special options
+ if (strprefix (command, "pexec-options")) {
+  char *ocmds = (char*)str_stabilise(command),
+  *rcmds = strchr (ocmds, ';'),
+  **optx = NULL;
+  if (!rcmds) {
+   return status_failed;
+  }
+
+  *rcmds = 0;
+  optx = str2set (' ', ocmds);
+  *rcmds = ';';
+
+  command = rcmds+1;
+
+  if (optx) {
+   unsigned int x = 0;
+   for (; optx[x]; x++) {
+    if (strmatch (optx[x], "no-pipe")) {
+     options |= pexec_option_nopipe;
+    } else if (strmatch (optx[x], "dont-close-stdin")) {
+     options |= pexec_option_dont_close_stdin;
+    }
+   }
+
+   efree (optx);
+  }
+ }
+ if (!command || !command[0]) {
+  return status_failed;
+ }
+
+ if (strmatch (command, "true")) {
+  return status_ok;
+ }
+
+ if (!(options & pexec_option_nopipe)) {
+  if (pipe (pipefderr)) {
+   fbprintf (status, "failed to create pipe: %s", strerror (errno));
+   return status_failed;
+  }
+/* make sure the read end won't survive an exec*() */
+  fcntl (pipefderr[0], F_SETFD, FD_CLOEXEC);
+  fcntl (pipefderr[0], F_SETFL, O_NONBLOCK);
+  fcntl (pipefderr[1], F_SETFD, FD_CLOEXEC);
+  fcntl (pipefderr[1], F_SETFL, O_NONBLOCK);
+ }
+
+ char **exec_environment;
+
+ exec_environment = (char **)setcombine ((const void **)einit_global_environment, (const void **)local_environment, SET_TYPE_STRING);
+ exec_environment = create_environment_f (exec_environment, variables);
+
+ command = apply_envfile_f ((char *)command, (const char **)exec_environment);
+
+ char **exvec = exec_run_sh ((char *)command, options, exec_environment);
+
+/* efree ((void *)command);
+ command = NULL;*/
+
+ if ((child = efork()) < 0) {
+  if (status)
+   status->string = strerror (errno);
+  return status_failed;
+ } else if (child == 0) {
+  disable_core_dumps ();
+
+  if (gid && (setgid (gid) == -1))
+   perror ("setting gid");
+  if (uid && (setuid (uid) == -1))
+   perror ("setting uid");
+
+  if (!(options & pexec_option_dont_close_stdin))
+   close (0);
+
+  close (1);
+  if (!(options & pexec_option_nopipe)) {
+/* unset this flag after fork()-ing */
+   fcntl (pipefderr[1], F_SETFD, 0);
+   close (2);
+   close (pipefderr [0]);
+   dup2 (pipefderr [1], 1);
+   dup2 (pipefderr [1], 2);
+   close (pipefderr [1]);
+  } else {
+   dup2 (2, 1);
+  }
+
+  execve (exvec[0], exvec, exec_environment);
+ } else {
+  FILE *fx;
+
+  if (exec_environment) efree (exec_environment);
+  if (exvec) efree (exvec);
+
+  if (!(options & pexec_option_nopipe) && status) {
+/* tag the fd as close-on-exec, just in case */
+   fcntl (pipefderr[1], F_SETFD, FD_CLOEXEC);
+   close (pipefderr[1]);
+   errno = 0;
+
+   if ((fx = fdopen(pipefderr[0], "r"))) {
+    char rxbuffer[BUFFERSIZE];
+    setvbuf (fx, NULL, _IONBF, 0);
+
+    if ((waitpid (child, &pidstatus, WNOHANG) == child) &&
+        (WIFEXITED(pidstatus) || WIFSIGNALED(pidstatus))) {
+     have_waited = 1;
+    } else while (!feof(fx)) {
+     if (!fgets(rxbuffer, BUFFERSIZE, fx)) {
+      if (errno == EAGAIN) {
+       usleep(100);
+       goto skip_read;
+      }
+      break;
+     }
+
+     char **fbc = str2set ('|', rxbuffer), orest = 1;
+     strtrim (rxbuffer);
+
+     if (fbc) {
+      if (strmatch (fbc[0], "feedback")) {
+// suppose things are going fine until proven otherwise
+       cs = status_ok;
+
+       if (strmatch (fbc[1], "notice")) {
+        orest = 0;
+        fbprintf (status, "%s", fbc[2]);
+       } else if (strmatch (fbc[1], "success")) {
+        orest = 0;
+        cs = status_ok;
+        fbprintf (status, "%s", fbc[2]);
+       } else if (strmatch (fbc[1], "failure")) {
+        orest = 0;
+        cs = status_failed;
+        fbprintf (status, "%s", fbc[2]);
+       }
+      }
+
+      efree (fbc);
+     }
+
+     if (orest) {
+      fbprintf (status, "%s", rxbuffer);
+     }
+
+     continue;
+
+     skip_read:
+
+     if (waitpid (child, &pidstatus, WNOHANG) == child) {
+      if (WIFEXITED(pidstatus) || WIFSIGNALED(pidstatus)) {
+       have_waited = 1;
+       break;
+      }
+     }
+    }
+
+    efclose (fx);
+   } else {
+    perror ("pexec(): open pipe");
+   }
+  }
+
+  if (!have_waited) {
+   do {
+    waitpid (child, &pidstatus, 0);
+   } while (!WIFEXITED(pidstatus) && !WIFSIGNALED(pidstatus));
+  }
+ }
+
+ if (cs == status_failed) return status_failed;
+ if (WIFEXITED(pidstatus) && (WEXITSTATUS(pidstatus) == EXIT_SUCCESS)) return status_ok;
+ return status_failed;
+}
+
 
 int qexec_f (char *command) {
  size_t len;
@@ -1127,6 +1317,7 @@ int einit_exec_configure (struct lmodule *irr) {
  event_listen (einit_process_died, einit_exec_process_event_handler);
 
  function_register ("einit-execute-command", 1, pexec_f);
+ function_register ("einit-execute-command-in-main-loop", 1, eexec_f);
  function_register ("einit-execute-daemon", 1, start_daemon_f);
  function_register ("einit-stop-daemon", 1, stop_daemon_f);
  function_register ("einit-create-environment", 1, create_environment_f);
