@@ -439,7 +439,7 @@ int einit_main_loop(int ipc_pipe_fd) {
    FD_ZERO(&rfds);
    FD_SET(ipc_pipe_fd, &rfds);
 
-   selectres = pselect(ipc_pipe_fd, &rfds, NULL, NULL, 0, &osigmask);
+   selectres = pselect(ipc_pipe_fd+1, &rfds, NULL, NULL, 0, &osigmask);
 
    if ((selectres > 0) && (FD_ISSET (ipc_pipe_fd, &rfds))) {
     einit_process_raw_event (ipc_pipe_fd);
