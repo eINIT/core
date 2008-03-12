@@ -399,24 +399,71 @@ void sched_signal_sigalrm (int signal, siginfo_t *siginfo, void *context) {
  return;
 }
 
+struct fdprep {
+ int (*f)(fd_set *);
+ struct fdprep *n;
+} *einit_fd_prepare_functions = NULL;
+
+struct fdhandler {
+ void (*f)(fd_set *);
+ struct fdhandler *n;
+} *einit_fd_handler_functions = NULL;
+
+void einit_add_fd_prepare_function (int (*fdprep)(fd_set *)) {
+ struct fdprep *c = emalloc (sizeof(struct fdprep));
+
+ c->f = fdprep;
+ c->n = einit_fd_prepare_functions;
+ einit_fd_prepare_functions = c;
+}
+
+void einit_add_fd_handler_function (void (*fdhandle)(fd_set *)) {
+ struct fdhandler *c = emalloc (sizeof(struct fdhandler));
+
+ c->f = fdhandle;
+ c->n = einit_fd_handler_functions;
+ einit_fd_handler_functions = c;
+}
+
+int einit_raw_ipc_prepare (fd_set *rfds) {
+ int rv = 0;
+ FD_SET(einit_ipc_pipe_fd, rfds);
+
+ if (einit_ipc_pipe_fd > rv)
+  rv = einit_ipc_pipe_fd;
+
+ return rv;
+}
+
+void einit_raw_ipc_handle (fd_set *rfds) {
+ if (FD_ISSET (einit_ipc_pipe_fd, rfds)) {
+  einit_process_raw_event (einit_ipc_pipe_fd);
+ }
+}
+
 int einit_prepare_fdset (fd_set *rfds) {
  int rv = 0;
 
  FD_ZERO(rfds);
 
- if (einit_ipc_pipe_fd != -1) {
-  FD_SET(einit_ipc_pipe_fd, rfds);
+ struct fdprep *c = einit_fd_prepare_functions;
+ while (c) {
+  int h = c->f(rfds);
 
-  if (einit_ipc_pipe_fd > rv)
-   rv = einit_ipc_pipe_fd;
+  if (h > rv)
+   rv = h;
+
+  c = c->n;
  }
 
  return rv + 1;
 }
 
-int einit_handle_fdset (fd_set *rfds) {
- if (FD_ISSET (einit_ipc_pipe_fd, rfds)) {
-  einit_process_raw_event (einit_ipc_pipe_fd);
+void einit_handle_fdset (fd_set *rfds) {
+ struct fdhandler *c = einit_fd_handler_functions;
+ while (c) {
+  c->f(rfds);
+  c = c->n;
  }
 }
 
@@ -427,6 +474,11 @@ int einit_main_loop() {
  sigaddset(&sigmask, SIGINT);
  sigaddset(&sigmask, SIGALRM);
  sigprocmask(SIG_BLOCK, &sigmask, &osigmask);
+
+ if (einit_ipc_pipe_fd != -1) {
+  einit_add_fd_prepare_function(einit_raw_ipc_prepare);
+  einit_add_fd_handler_function(einit_raw_ipc_handle);
+ }
 
  while (1) {
   int selectres;

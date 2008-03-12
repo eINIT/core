@@ -279,6 +279,9 @@ struct lmodule **mod_get_all_providers (char *service);
 
 /*!\} */
 
+void einit_add_fd_prepare_function (int (*fdprep)(fd_set *));
+void einit_add_fd_handler_function (void (*fdhandle)(fd_set *));
+
 #define fbprintf(statusvar, ...) if (statusvar) {\
  char _fbprintf_buffer[BUFFERSIZE];\
  snprintf (_fbprintf_buffer, BUFFERSIZE, __VA_ARGS__);\
