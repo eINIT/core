@@ -540,6 +540,8 @@ char *event_code_to_string (const uint32_t code) {
   case einit_acpi_event_generic:			    return "acpi/generic";
   case einit_acpi_event_lid_open:			    return "acpi/lid-open";
   case einit_acpi_event_lid_closed:			    return "acpi/lid-closed";
+  case einit_acpi_event_power_source_ac:	    return "acpi/power-source-ac";
+  case einit_acpi_event_power_source_battery:	return "acpi/power-source-battery";
  }
 
  switch (code & EVENT_SUBSYSTEM_MASK) {

@@ -207,9 +207,11 @@ enum einit_event_code {
  einit_ipc_disabling                = einit_event_subsystem_ipc_v2   | 0x011,
  
  /* einit_event_subsystem_acpi: */
- einit_acpi_event_generic			= einit_event_subsystem_acpi	 | 0x001,
- einit_acpi_event_lid_open			= einit_event_subsystem_acpi	 | 0x002,
- einit_acpi_event_lid_closed		= einit_event_subsystem_acpi	 | 0x003
+ einit_acpi_event_generic				= einit_event_subsystem_acpi	| 0x001,
+ einit_acpi_event_lid_open				= einit_event_subsystem_acpi	| 0x002,
+ einit_acpi_event_lid_closed			= einit_event_subsystem_acpi	| 0x003,
+ einit_acpi_event_power_source_ac		= einit_event_subsystem_acpi	| 0x004,
+ einit_acpi_event_power_source_battery	= einit_event_subsystem_acpi	| 0x005
 };
 
 #define evstaticinit(ttype) { ttype, 0, NULL, NULL, 0, 0, 0, 0, NULL, { NULL }, NULL }
