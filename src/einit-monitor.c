@@ -254,9 +254,9 @@ int einit_monitor_loop (int argc, char **argv, char **env, char *einit_crash_dat
 
    if (write (commandpipe[1], buffer, len) < len) {
     perror ("couldn't write data");
-   } else {
+   }/* else {
     kill (core_pid, SIGUSR1);
-   }
+   }*/
   }
 #endif
 #if 0

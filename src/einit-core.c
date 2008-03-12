@@ -193,11 +193,9 @@ stack_t signalstack;
 
 void sched_signal_sigint (int, siginfo_t *, void *);
 void sched_signal_sigalrm (int, siginfo_t *, void *);
-void sched_signal_sigusr1 (int, siginfo_t *, void *);
 void sched_run_sigchild ();
 
 char sigint_called = 0;
-char sigusr1_called = 0;
 
 extern char shutting_down;
 
@@ -351,9 +349,6 @@ void sched_reset_event_handlers () {
  action.sa_sigaction = sched_signal_sigint;
  if ( sigaction (SIGINT, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
 
- action.sa_sigaction = sched_signal_sigusr1;
- if ( sigaction (SIGUSR1, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
-
  /* some signals REALLY should be ignored */
  action.sa_sigaction = (void (*)(int, siginfo_t *, void *))SIG_IGN;
  if ( sigaction (SIGTRAP, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
@@ -396,13 +391,6 @@ void sched_signal_sigint (int signal, siginfo_t *siginfo, void *context) {
  return;
 }
 
-/* god knows why i need to do it like this */
-void sched_signal_sigusr1 (int signal, siginfo_t *siginfo, void *context) {
- sigusr1_called = 1;
-
- return;
-}
-
 void sched_signal_sigalrm (int signal, siginfo_t *siginfo, void *context) {
 /* nothing to do here... really */
 
@@ -415,7 +403,6 @@ int einit_main_loop(int ipc_pipe_fd) {
  sigemptyset(&sigmask);
  sigaddset(&sigmask, SIGINT);
  sigaddset(&sigmask, SIGALRM);
- sigaddset(&sigmask, SIGUSR1);
  sigprocmask(SIG_BLOCK, &sigmask, &osigmask);
 
  while (1) {
@@ -437,25 +424,25 @@ int einit_main_loop(int ipc_pipe_fd) {
   sched_handle_timers();
 
   if (ipc_pipe_fd != -1) {
-//   fd_set rfds;
+   fd_set rfds;
 
 //   einit_process_raw_event (ipc_pipe_fd);
 
-//   FD_ZERO(&rfds);
-//   FD_SET(ipc_pipe_fd, &rfds);
+   FD_ZERO(&rfds);
+   FD_SET(ipc_pipe_fd, &rfds);
 
 //   fprintf (stderr, " ***************************** proper select (fd=%i)\n", ipc_pipe_fd);
 
-//   selectres = pselect(2, &rfds, NULL, NULL, 0, &osigmask);
-   selectres = pselect(1, NULL, NULL, NULL, 0, &osigmask);
+   selectres = pselect(ipc_pipe_fd + 1, &rfds, NULL, NULL, 0, &osigmask);
+//   selectres = pselect(1, NULL, NULL, NULL, 0, &osigmask);
 
 //   fprintf (stderr, "done with select\n");
 
-   if (sigusr1_called) {
+/*   if (sigusr1_called) {
     einit_process_raw_event (ipc_pipe_fd);
 
     sigusr1_called = 0;
-   }
+   }*/
 
 #if 0
    if ((selectres > 0) && (FD_ISSET (ipc_pipe_fd, &rfds))) {
