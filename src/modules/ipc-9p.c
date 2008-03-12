@@ -50,6 +50,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/socket.h>
 #include <sys/stat.h>
 
+#include <signal.h>
+
 #include <einit/einit.h>
 #include <einit-modules/ipc.h>
 
@@ -611,6 +613,33 @@ Ixp9Srv einit_ipc_9p_srv = {
 
 static IxpServer einit_ipc_9p_server; 
 
+int einit_ipc_9p_prepare (fd_set *rfds) {
+ if (!einit_ipc_9p_running) return 0;
+
+ IxpConn *c;
+ int i = 0;
+
+ for(c = einit_ipc_9p_server.conn; c; c = c->next)
+  if(c->read) {
+   if(i < c->fd)
+    i = c->fd;
+   FD_SET(c->fd, rfds);
+  }
+
+ return i;
+}
+
+void einit_ipc_9p_handle (fd_set *rfds) {
+ if (!einit_ipc_9p_running) return;
+
+ IxpConn *c, *n;
+ for(c = einit_ipc_9p_server.conn; c; c = n) {
+  n = c->next;
+  if(FD_ISSET(c->fd, rfds))
+   c->read(c);
+ }
+}
+
 void *einit_ipc_9p_listen (void *param) {
  intptr_t fdp = (intptr_t)param;
  int fd = fdp;
@@ -625,15 +654,10 @@ void *einit_ipc_9p_listen (void *param) {
   notice (1, "9p server initialised");
   /* server loop nao */
 
-  ixp_serverloop(&einit_ipc_9p_server);
+  einit_add_fd_prepare_function(einit_ipc_9p_prepare);
+  einit_add_fd_handler_function(einit_ipc_9p_handle);
 
-  if (einit_ipc_9p_running) {
-   notice (1, "9p server loop has terminated: %s; retrying in 5 seconds", ixp_errbuf());
-
-   sleep (5);
-
-   return einit_ipc_9p_listen (param);
-  }
+  kill (getpid(), SIGALRM); /* make the main thread pick up our new functions */
  } else {
   notice (1, "could not initialise 9p server");
  }
@@ -738,11 +762,7 @@ void *einit_ipc_9p_thread_function (void *unused_parameter) {
 
  einit_ipc_9p_listen((void *)fd);
 
- if (einit_ipc_9p_running)
-  notice (1, "einit-9p: function returned, waiting 5s before respawning");
-
- sleep (5);
- return einit_ipc_9p_thread_function (NULL);
+ return NULL;
 }
 
 void *einit_ipc_9p_thread_function_address (char *address) {
@@ -762,7 +782,7 @@ void *einit_ipc_9p_thread_function_address (char *address) {
 
 void einit_ipc_9p_boot_event_handler_root_device_ok (struct einit_event *ev) {
  notice (6, "enabling IPC (9p)");
- ethread_create (&einit_ipc_9p_thread, NULL, einit_ipc_9p_thread_function, NULL);
+ einit_ipc_9p_thread_function(NULL);
 }
 
 void einit_ipc_9p_power_event_handler (struct einit_event *ev) {
