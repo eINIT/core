@@ -134,8 +134,8 @@ void einit_exec_update_daemons_from_pidfiles() {
 
       efree (contents);
 
-      if (cur->module && cur->module->module && cur->module->module->rid) {
-       notice (2, "exec: modules %s updated and is now known with pid %i.", cur->module->module->rid, cur->pid);
+      if (cur->daemon_rid) {
+       notice (2, "exec: modules %s updated and is now known with pid %i.", cur->daemon_rid, cur->pid);
       } else {
        notice (2, "exec: anonymous daemon updated and is now known with pid %i.", cur->pid);
       }
@@ -881,7 +881,7 @@ void *dexec_watcher (intptr_t pid_i) {
   dx = cur->dx;
   if (cur->pid == pid) {
 /* check whether to restart, and do so if the answer is yes... */
-   module = cur->module;
+   module = cur->daemon_rid ? mod_lookup_rid (cur->daemon_rid) : NULL;
    if (prev != NULL) {
     prev->next = cur->next;
    } else {
@@ -958,9 +958,9 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
    new->starttime = time (NULL);
    new->dx = shellcmd;
    if (status)
-    new->module = (struct lmodule*)status->para;
+    new->daemon_rid = status->rid;
    else
-    new->module = NULL;
+    new->daemon_rid = NULL;
    emutex_init (&new->mutex, NULL);
    emutex_lock (&running_mutex);
    new->next = running;
@@ -1052,9 +1052,9 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
    new->starttime = time (NULL);
    new->dx = shellcmd;
    if (status)
-    new->module = (struct lmodule*)status->para;
+    new->daemon_rid = status->rid;
    else
-    new->module = NULL;
+    new->daemon_rid = NULL;
    emutex_init (&new->mutex, NULL);
    emutex_lock (&running_mutex);
    new->next = running;
@@ -1076,9 +1076,9 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
   new->starttime = time (NULL);
   new->dx = shellcmd;
   if (status)
-   new->module = (struct lmodule*)status->para;
+   new->daemon_rid = status->rid;
   else
-   new->module = NULL;
+   new->daemon_rid = NULL;
   emutex_init (&new->mutex, NULL);
 
   shellcmd->cb = new;

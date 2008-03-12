@@ -91,7 +91,7 @@ struct daemonst {
  int status;
  time_t starttime;
  time_t timer;
- struct lmodule *module;
+ char *daemon_rid;
  struct dexecinfo *dx;
  struct daemonst *next;
  pthread_mutex_t mutex;
