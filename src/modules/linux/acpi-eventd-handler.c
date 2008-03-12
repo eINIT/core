@@ -21,9 +21,7 @@
 #include <errno.h>
 #include <syslog.h>
 
-#define ACPI_EVENT_GENERIC "configuration-services-acpi-eventd-events-generic"
-#define ACPI_EVENT_LIDOPEN "configuration-services-acpi-eventd-events-lid-open"
-#define ACPI_EVENT_LIDCLOSED "configuration-services-acpi-eventd-events-lid-closed"
+#define ACPI_EVENT_PREFIX "configuration-services-acpi-eventd-events-"
 
 #define EXPECTED_EIV 1
 
@@ -61,7 +59,7 @@ module_register(acpi_eventd_handler_self);
 
 void acpi_eventd_handler_generic_event_handler(struct einit_event *ev) {
 	struct stree *st;
-	st = cfg_prefix(ACPI_EVENT_GENERIC);
+	st = cfg_prefix(ACPI_EVENT_PREFIX);
 	if (st) {
 		struct stree *cur = streelinear_prepare(st);
 		while (cur) {
