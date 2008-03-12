@@ -77,9 +77,7 @@ enum einit_event_subsystems {
  einit_event_subsystem_boot     = 0x00009000,
  einit_event_subsystem_hotplug  = 0x0000a000,
  einit_event_subsystem_ipc_v2   = 0x0000b000,
- einit_event_subsystem_acpi     = 0x0000c000,
-
- einit_event_subsystem_laptop   = 0x00100000,
+ einit_event_subsystem_laptop   = 0x0000c000,
 
  einit_event_subsystem_any      = 0xffffe000,
 /*!< match any subsystem... mostly intended to be used for rebroadcasting, e.g. via D-Bus */
@@ -164,6 +162,8 @@ enum einit_event_code {
 
  einit_power_source_ac              = einit_event_subsystem_power    | 0x030,
  einit_power_source_battery         = einit_event_subsystem_power    | 0x031,
+ einit_power_button_power           = einit_event_subsystem_power    | 0x032,
+ einit_power_button_sleep           = einit_event_subsystem_power    | 0x033,
 
  einit_power_down_requested         = einit_event_subsystem_power    | 0x040,
  einit_power_reset_requested        = einit_event_subsystem_power    | 0x041,
@@ -215,12 +215,10 @@ enum einit_event_code {
  einit_ipc_open                     = einit_event_subsystem_ipc_v2   | 0x004,
  einit_ipc_enabling                 = einit_event_subsystem_ipc_v2   | 0x010,
  einit_ipc_disabling                = einit_event_subsystem_ipc_v2   | 0x011,
-
- /* einit_event_subsystem_acpi: */
- einit_acpi_generic                 = einit_event_subsystem_acpi     | 0x001,
-
- einit_laptop_lid_opened            = einit_event_subsystem_laptop   | 0x001,
- einit_laptop_lid_closed            = einit_event_subsystem_laptop   | 0x002
+ 
+ /* einit_event_subsystem_laptop: */
+ einit_laptop_lid_open          = einit_event_subsystem_laptop     | 0x001,
+ einit_laptop_lid_closed        = einit_event_subsystem_laptop     | 0x002
 };
 
 #define evstaticinit(ttype) { ttype, 0, NULL, NULL, 0, 0, 0, 0, NULL, { NULL }, NULL }

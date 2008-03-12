@@ -94,7 +94,7 @@ ModulesLinux = ['linux-mdev', 'linux-static-dev', 'linux-sysconf', 'linux-mount'
 
 ModulesPosixDesktop = []
 
-ModulesLinuxNoBundle = ['acpi-eventd-handler']
+ModulesLinuxNoBundle = ['linux-event-client-acpi']
 
 InstallAliases = []
 
