@@ -508,6 +508,11 @@ char *event_code_to_string (const uint32_t code) {
   case einit_power_source_ac:                  return "power/source-ac";
   case einit_power_source_battery:             return "power/source-battery";
 
+  case einit_power_down_requested:             return "power/down-requested";
+  case einit_power_reset_requested:            return "power/reset-requested";
+  case einit_power_sleep_requested:            return "power/sleep-requested";
+  case einit_power_hibernation_requested:      return "power/hibernation-requested";
+
   case einit_timer_tick:                       return "timer/tick";
   case einit_timer_set:                        return "timer/set";
   case einit_timer_cancel:                     return "timer/cancel";
@@ -645,6 +650,11 @@ uint32_t event_string_to_code (const char *code) {
 
      else if (strmatch (tcode[1], "source-ac"))                   ret = einit_power_source_ac;
      else if (strmatch (tcode[1], "source-battery"))              ret = einit_power_source_battery;
+
+     else if (strmatch (tcode[1], "down-requested"))              ret = einit_power_down_requested;
+     else if (strmatch (tcode[1], "reset-requested"))             ret = einit_power_reset_requested;
+     else if (strmatch (tcode[1], "sleep-requested"))             ret = einit_power_sleep_requested;
+     else if (strmatch (tcode[1], "hibernation-requested"))       ret = einit_power_hibernation_requested;
 
      break;
     case einit_event_subsystem_timer:
