@@ -444,6 +444,10 @@ int einit_main_loop(int ipc_pipe_fd) {
     sigusr1_called = 0;
    }*/
 
+   if ((selectres > 0) && (FD_ISSET (ipc_pipe_fd, &rfds))) {
+    einit_process_raw_event (ipc_pipe_fd);
+   }
+
 #if 0
    if ((selectres > 0) && (FD_ISSET (ipc_pipe_fd, &rfds))) {
     sleep(5);
