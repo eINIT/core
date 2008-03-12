@@ -164,7 +164,12 @@ enum einit_event_code {
  einit_power_source_battery         = einit_event_subsystem_power    | 0x031,
  einit_power_button_power           = einit_event_subsystem_power    | 0x032,
  einit_power_button_sleep           = einit_event_subsystem_power    | 0x033,
-  
+
+ einit_power_down_requested         = einit_event_subsystem_power    | 0x040,
+ einit_power_reset_requested        = einit_event_subsystem_power    | 0x041,
+ einit_power_sleep_requested        = einit_event_subsystem_power    | 0x042,
+ einit_power_hibernation_requested  = einit_event_subsystem_power    | 0x043,
+
  einit_timer_tick                   = einit_event_subsystem_timer    | 0x001,
 /*!< tick.tick.tick. */
  einit_timer_set                    = einit_event_subsystem_timer    | 0x002,
