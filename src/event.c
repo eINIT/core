@@ -683,6 +683,8 @@ uint32_t event_string_to_code (const char *code) {
      if (strmatch (tcode[1], "generic"))                          ret = einit_acpi_event_generic;
      else if (strmatch (tcode[1], "lid-open"))                    ret = einit_acpi_event_lid_open;
      else if (strmatch (tcode[1], "lid-close"))                   ret = einit_acpi_event_lid_closed;
+     else if (strmatch (tcode[1], "power-source-ac"))             ret = einit_acpi_event_power_source_ac;
+     else if (strmatch (tcode[1], "power-source-battery"))        ret = einit_acpi_event_power_source_battery;
      break;
    }
 
