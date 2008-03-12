@@ -178,9 +178,9 @@ struct lmodule *mod_add_or_update (void *sohandle, const struct smodule *module,
 struct lmodule *mod_add (void *sohandle, const struct smodule *module) {
  struct lmodule *nmod;
 
- if (module) {
+/* if (module) {
   fprintf (stderr, " * mod_add(*, %s)\n", module->rid);
- }
+ }*/
 
  emutex_lock (&mod_blocked_rids_mutex);
  if (inset ((const void **)mod_blocked_rids, module->rid, SET_TYPE_STRING)) {
