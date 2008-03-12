@@ -545,9 +545,10 @@ char *event_code_to_string (const uint32_t code) {
   case einit_hotplug_move:                     return "hotplug/move";
   case einit_hotplug_generic:                  return "hotplug/generic";
 
-  case einit_acpi_event_generic:               return "acpi/generic";
-  case einit_acpi_event_lid_open:              return "acpi/lid-open";
-  case einit_acpi_event_lid_closed:            return "acpi/lid-closed";
+  case einit_acpi_generic:                     return "acpi/generic";
+
+  case einit_laptop_lid_opened:                return "laptop/lid-opened";
+  case einit_laptop_lid_closed:                return "laptop/lid-closed";
  }
 
  switch (code & EVENT_SUBSYSTEM_MASK) {
@@ -563,6 +564,7 @@ char *event_code_to_string (const uint32_t code) {
   case einit_event_subsystem_hotplug:  return "hotplug/{unknown}";
 
   case einit_event_subsystem_acpi:     return "acpi/{unknown}";
+  case einit_event_subsystem_laptop:   return "laptop/{unknown}";
 
   case einit_event_subsystem_any:      return "any";
   case einit_event_subsystem_custom:   return "custom";
@@ -586,6 +588,7 @@ uint32_t event_string_to_code (const char *code) {
   else if (strmatch (tcode[0], "boot"))     ret = einit_event_subsystem_boot;
   else if (strmatch (tcode[0], "hotplug"))  ret = einit_event_subsystem_hotplug;
   else if (strmatch (tcode[0], "acpi"))     ret = einit_event_subsystem_acpi;
+  else if (strmatch (tcode[0], "laptop"))   ret = einit_event_subsystem_laptop;
   else if (strmatch (tcode[0], "any"))      ret = einit_event_subsystem_any;
   else if (strmatch (tcode[0], "custom"))   ret = einit_event_subsystem_custom;
 
@@ -695,9 +698,11 @@ uint32_t event_string_to_code (const char *code) {
      else if (strmatch (tcode[1], "generic"))                     ret = einit_hotplug_generic;
      break;
     case einit_event_subsystem_acpi:
-     if (strmatch (tcode[1], "generic"))                          ret = einit_acpi_event_generic;
-     else if (strmatch (tcode[1], "lid-open"))                    ret = einit_acpi_event_lid_open;
-     else if (strmatch (tcode[1], "lid-close"))                   ret = einit_acpi_event_lid_closed;
+     if (strmatch (tcode[1], "generic"))                          ret = einit_acpi_generic;
+     break;
+    case einit_event_subsystem_laptop:
+     if (strmatch (tcode[1], "lid-opened"))                       ret = einit_laptop_lid_opened;
+     else if (strmatch (tcode[1], "lid-closed"))                  ret = einit_laptop_lid_closed;
      break;
    }
 

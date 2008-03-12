@@ -75,7 +75,7 @@ void acpi_eventd_handler_generic_event_handler(struct einit_event *ev) {
 
 int acpi_eventd_handler_configure(struct lmodule *pa) {
 	module_init(pa);
-	event_listen(einit_acpi_event_generic,
+	event_listen(einit_acpi_generic,
 			acpi_eventd_handler_generic_event_handler);
 	return 0;
 }
