@@ -467,6 +467,18 @@ void einit_handle_fdset (fd_set *rfds) {
  }
 }
 
+/* this is from exec.c */
+
+int einit_exec_pipe_prepare (fd_set *rfds);
+void einit_exec_pipe_handle (fd_set *rfds);
+
+void einit_exec_setup() {
+ einit_add_fd_prepare_function(einit_exec_pipe_prepare);
+ einit_add_fd_handler_function(einit_exec_pipe_handle);
+}
+
+/* end of exec.c code */
+
 int einit_main_loop() {
  sigset_t sigmask, osigmask;
 
@@ -572,7 +584,7 @@ int main(int argc, char **argv, char **environ) {
       need_recovery = 1;
      } else if (strmatch(argv[i], "--command-pipe")) {
       einit_ipc_pipe_fd = parse_integer (argv[i+1]);
-      fcntl (einit_ipc_pipe_fd, F_SETFD, FD_CLOEXEC/* | O_NONBLOCK*/); /* i think O_NONBLOCK messes with select */
+      fcntl (einit_ipc_pipe_fd, F_SETFD, FD_CLOEXEC);
 
       i++;
      } else if (strmatch(argv[i], "--crash-pipe")) {
@@ -639,6 +651,7 @@ int main(int argc, char **argv, char **environ) {
  enable_core_dumps ();
 
  sched_reset_event_handlers();
+ einit_exec_setup();
 
  sched_trace_target = crash_pipe;
 

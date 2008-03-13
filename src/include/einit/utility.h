@@ -273,6 +273,8 @@ char *after_string_from_files (char **files);
 
 void update_local_environment();
 
+pid_t efork(); /* fork reliably... i.e. use clone() on linux */
+
 #endif /* _UTILITY_H */
 
 #ifdef __cplusplus
