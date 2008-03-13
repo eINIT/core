@@ -22,7 +22,7 @@ CodeEinitLogD = ['einit-log.c']
 
 CodeEinitSysVD = ['tools/einit-sysvd.c']
 
-CodeLibEinit = ['libraries/libeinit.c', 'bitch.c', 'event.c', 'utility.c'] + CodeSet + CodeSTree + CodeITree + AssemblyFunctions
+CodeLibEinit = ['libraries/libeinit.c', 'bitch.c', 'event.c', 'utility.c', 'exec.c'] + CodeSet + CodeSTree + CodeITree + AssemblyFunctions
 
 linkCore = '-Wl,-export-dynamic'
 
