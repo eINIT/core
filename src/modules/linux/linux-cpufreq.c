@@ -140,6 +140,14 @@ void linux_cpufreq_switch_done () {
  }
 }
 
+void linux_cpufreq_power_source_battery() {
+	
+}
+
+void linux_cpufreq_power_source_ac() {
+	
+}
+
 int linux_cpufreq_configure (struct lmodule *pa) {
  module_init (pa);
 
@@ -150,6 +158,7 @@ int linux_cpufreq_configure (struct lmodule *pa) {
 
  event_listen (einit_core_switching, linux_cpufreq_switch);
  event_listen (einit_core_done_switching, linux_cpufreq_switch_done);
-
+ event_listen(einit_power_source_battery, linux_cpufreq_power_source_battery);
+ event_listen(einit_power_source_ac, linux_cpufreq_power_source_ac);
  return 0;
 }
