@@ -1111,8 +1111,9 @@ const char *str_stabilise (const char *s) {
    if (i->data == s) {
     return s;
    }
-   /*if (strmatch (s, i->data)) {*/
-   if (hash == i->key) {
+   if (strmatch (s, i->data)) {
+   // Why did this break the feedback events
+   /*if (hash == i->key) {*/
     return i->data;
    }
   }
