@@ -59,6 +59,8 @@ extern "C" {
 #include <dirent.h>
 #include <stdio.h>
 
+uint32_t SuperFastHash (const char * data, int len);	
+	
 char **readdirfilter (struct cfgnode const *node, const char *default_dir, const char *default_allow, const char *default_disallow, char recurse);
 
 /*!\brief Add the variable \b key with \b value to \b environment.
