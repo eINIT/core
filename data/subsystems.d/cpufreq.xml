@@ -13,7 +13,11 @@
  <!--
  <configuration>
   <linux>
-   <cpufreq cpus="2" in-switch="performance" post-switch="ondemand" />
+   <cpufreq cpus="2" 
+   			in-switch="performance"
+   			post-switch="ondemand"
+   			power-source-battery="powersave"
+   			power-source-ac="ondemand" />
   </linux>
  </configuration>
  -->

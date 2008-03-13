@@ -141,11 +141,47 @@ void linux_cpufreq_switch_done () {
 }
 
 void linux_cpufreq_power_source_battery() {
-	
+	 struct cfgnode *node = cfg_getnode ("configuration-linux-cpufreq", NULL);
+
+	 if (node && node->arbattrs) {
+	  char *governor_data = NULL;
+	  int cpus = 32;
+	  int i = 0;
+
+	  for (; node->arbattrs[i]; i+=2) {
+	   if (strmatch (node->arbattrs[i], "cpus")) {
+	    cpus = parse_integer (node->arbattrs[i+1]);
+	   } else if (strmatch (node->arbattrs[i], "power-source-battery")) {
+	    governor_data = node->arbattrs[i+1];
+	   }
+	  }
+
+	  if (governor_data) {
+	   linux_cpufreq_set_governor_data (governor_data, cpus);
+	  }
+	 }	
 }
 
 void linux_cpufreq_power_source_ac() {
-	
+	 struct cfgnode *node = cfg_getnode ("configuration-linux-cpufreq", NULL);
+
+	 if (node && node->arbattrs) {
+	  char *governor_data = NULL;
+	  int cpus = 32;
+	  int i = 0;
+
+	  for (; node->arbattrs[i]; i+=2) {
+	   if (strmatch (node->arbattrs[i], "cpus")) {
+	    cpus = parse_integer (node->arbattrs[i+1]);
+	   } else if (strmatch (node->arbattrs[i], "power-source-ac")) {
+	    governor_data = node->arbattrs[i+1];
+	   }
+	  }
+
+	  if (governor_data) {
+	   linux_cpufreq_set_governor_data (governor_data, cpus);
+	  }
+	 }
 }
 
 int linux_cpufreq_configure (struct lmodule *pa) {
@@ -158,7 +194,7 @@ int linux_cpufreq_configure (struct lmodule *pa) {
 
  event_listen (einit_core_switching, linux_cpufreq_switch);
  event_listen (einit_core_done_switching, linux_cpufreq_switch_done);
- event_listen(einit_power_source_battery, linux_cpufreq_power_source_battery);
- event_listen(einit_power_source_ac, linux_cpufreq_power_source_ac);
+ event_listen (einit_power_source_battery, linux_cpufreq_power_source_battery);
+ event_listen (einit_power_source_ac, linux_cpufreq_power_source_ac);
  return 0;
 }
