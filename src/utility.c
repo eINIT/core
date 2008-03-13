@@ -1111,7 +1111,8 @@ const char *str_stabilise (const char *s) {
    if (i->data == s) {
     return s;
    }
-   if (strmatch (s, i->data)) {
+   /*if (strmatch (s, i->data)) {*/
+   if (hash == i->key) {
     return i->data;
    }
   }
