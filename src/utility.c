@@ -310,11 +310,12 @@ void *erealloc (void *c, size_t s) {
 }
 
 char *estrdup (const char *s) {
- size_t len = strlen(s)+1;
- char *p = emalloc (len + (8 - (len % 8)));
+ size_t len = strlen(s)+1, alen = len + ((len % 8) ? (8 - (len % 8)) : 0);
+ char *p = emalloc (alen);
 
- memset (p, 0, len + (8 - (len % 8)));
  memcpy (p, s, len);
+ if (alen != len)
+  memset (p+len, 0, alen-len);
 
  return p;
 }
