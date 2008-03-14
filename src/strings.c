@@ -145,6 +145,7 @@ const char *str_stabilise_l (const char *s, uint32_t *h, int *l) {
 
  struct itree *i = 0;
 
+#if 0
  if (pi % 8) {
   /* this means we'd be unaligned */
 #ifdef DEBUG
@@ -157,6 +158,9 @@ const char *str_stabilise_l (const char *s, uint32_t *h, int *l) {
  } else {
   hash = StrSuperFastHash(s, &len);
  }
+#else
+ hash = hashp (s);
+#endif
 
 #ifdef DEBUG
  fprintf (stderr, "hash result: %i, len %i\n", hash, len);
@@ -195,6 +199,11 @@ const char *str_stabilise_l (const char *s, uint32_t *h, int *l) {
 
  if (i) {
   if (nv) efree (nv);
+
+#ifdef DEBUG
+  fprintf (stderr, "stabilisation result: %i bad, %i good, %i prefail, strings %i\n", bad_lookups, good_lookups, prefail_lookups, strings);
+#endif
+
   goto ret;
  }
 
