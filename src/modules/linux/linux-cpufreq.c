@@ -141,6 +141,7 @@ void linux_cpufreq_switch_done () {
 }
 
 void linux_cpufreq_power_source_battery() {
+	notice(3,"power source battery event heard");
 	 struct cfgnode *node = cfg_getnode ("configuration-linux-cpufreq", NULL);
 
 	 if (node && node->arbattrs) {
@@ -163,6 +164,7 @@ void linux_cpufreq_power_source_battery() {
 }
 
 void linux_cpufreq_power_source_ac() {
+	notice(3,"power source ac event heard");
 	 struct cfgnode *node = cfg_getnode ("configuration-linux-cpufreq", NULL);
 
 	 if (node && node->arbattrs) {
