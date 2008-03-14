@@ -56,7 +56,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // data is guarranteed to be 32-bit aligned)
 uint32_t StrSuperFastHash (const char * data, int *len) {
- uint32_t hash, tmp, p32, mask;
+ uint32_t hash = 0, tmp, lw, mask, *p32;
  int rem = 0;
  char *p = (char *)data;
  *len = 0;
@@ -65,9 +65,11 @@ uint32_t StrSuperFastHash (const char * data, int *len) {
 
     // this unrolls to better optimized code on most compilers
  do {
-  p32 = (uint32_t) *p;
-  mask = HAS_ZERO_BYTE(p32);
-  if (!mask) {
+  p32 = (uint32_t *)(p);
+  lw = *p32;
+  mask = HAS_ZERO_BYTE(lw);
+        // if mask == 0 p32 has no zero in it
+  if (mask == 0) {
              // Do the hash calculation
    hash  += get16bits (p);
    tmp    = (get16bits (p+2) << 11) ^ hash;
@@ -76,9 +78,8 @@ uint32_t StrSuperFastHash (const char * data, int *len) {
    p += sizeof(uint32_t);
              // Increase len as well
    (*len)++;
-  } else
-   break;
- } while (mask);
+  }
+ } while (mask == 0);
 
     // Now we've got out of the loop, because we hit a zero byte,
     // find out which exactly
@@ -109,7 +110,7 @@ uint32_t StrSuperFastHash (const char * data, int *len) {
     // len was calculated in 4-byte tuples,
     // multiply it by 4 to get the number in bytes
  *len = (*len << 2) + rem;
-
+ 
  /* Force "avalanching" of final 127 bits */
  hash ^= hash << 3;
  hash += hash >> 5;
@@ -133,12 +134,13 @@ const char *str_stabilise (const char *s) {
  uintptr_t pi = (uintptr_t)s;
  int len;
  uint32_t hash;
- char *nv;
+ char *nv = NULL;
 
 #ifdef DEBUG
  static int bad_lookups = 0;
  static int good_lookups = 0;
  static int prefail_lookups = 0;
+ static int strings = 0;
 #endif
 
  struct itree *i = 0;
@@ -149,41 +151,28 @@ const char *str_stabilise (const char *s) {
   prefail_lookups++;
 #endif
 
-  doadd:
-
   nv = estrdup (s);
 
   hash = StrSuperFastHash(nv, &len);
-
-  emutex_lock (&einit_stable_strings_mutex);
-  /* we don't really care if we accidentally duplicate the string */
-  i = itreeadd (einit_stable_strings, hash, nv, tree_value_noalloc);
-  einit_stable_strings = i;
-  emutex_unlock (&einit_stable_strings_mutex);
-
-#ifdef DEBUG
-  fprintf (stderr, "stabilisation result: %i bad, %i good, %i prefail\n", bad_lookups, good_lookups, prefail_lookups);
-#endif
-
-  return i->value;
+ } else {
+  hash = StrSuperFastHash(s, &len);
  }
-
- hash = StrSuperFastHash(s, &len);
 
 #ifdef DEBUG
  fprintf (stderr, "hash result: %i, len %i\n", hash, len);
 #endif
 
-// char *ac = NULL;
-
  i = einit_stable_strings ? itreefind (einit_stable_strings, hash, tree_find_first) : NULL;
+#if 0
  while (i) {
   if (i->value == s) {
 #ifdef DEBUG
    good_lookups++;
 
-   fprintf (stderr, "stabilisation result: %i bad, %i good, %i prefail\n", bad_lookups, good_lookups, prefail_lookups);
+   fprintf (stderr, "stabilisation result: %i bad, %i good, %i prefail, strings %i\n", bad_lookups, good_lookups, prefail_lookups, strings);
 #endif
+
+   if (nv) efree (nv);
 
    return s;
   }
@@ -191,21 +180,45 @@ const char *str_stabilise (const char *s) {
 #ifdef DEBUG
    good_lookups++;
 
-   fprintf (stderr, "stabilisation result: %i bad, %i good, %i prefail\n", bad_lookups, good_lookups, prefail_lookups);
+   fprintf (stderr, "stabilisation result: %i bad, %i good, %i prefail, strings %i\n", bad_lookups, good_lookups, prefail_lookups, strings);
 #endif
+
+   if (nv) efree (nv);
 
    return i->value;
   } else {
 #ifdef DEBUG
    bad_lookups++;
+   printf ("BAD LOOKUP: %s<>%s\n", s, i->value);
 #endif
   }
 
   i = itreefind (i, hash, tree_find_next);
  }
+#endif
+
+ if (i) {
+  if (nv) efree (nv);
+  return i->value;
+ }
 
  /* getting 'ere means we didn't have the right string in the set */
- goto doadd;
+
+ if (!nv)
+  nv = estrdup (s);
+
+ emutex_lock (&einit_stable_strings_mutex);
+ /* we don't really care if we accidentally duplicate the string */
+ i = itreeadd (einit_stable_strings, hash, nv, tree_value_noalloc);
+ einit_stable_strings = i;
+ emutex_unlock (&einit_stable_strings_mutex);
+
+#ifdef DEBUG
+ strings++;
+ fprintf (stderr, "stabilisation result: %i bad, %i good, %i prefail, strings %i\n", bad_lookups, good_lookups, prefail_lookups, strings);
+#endif
+
+ return i->value;
 }
 
 char **set_str_dup_stable (char **s) {
