@@ -313,6 +313,7 @@ char *estrdup (const char *s) {
  size_t len = strlen(s)+1;
  char *p = emalloc (len + (8 - (len % 8)));
 
+ memset (p, 0, len + (8 - (len % 8)));
  memcpy (p, s, len);
 
  return p;
