@@ -141,6 +141,7 @@ char *einit_read (char **path);
  */
 int einit_read_callback (char **path, int (*callback)(char *, size_t, void *), void *);
 int einit_read_callback_limited (char **path, int (*callback)(char *, size_t, void *), void *, int);
+int einit_read_callback_skip (char **path, int (*callback)(char *, size_t, void *), void *, int);
 
 /*!\brief Write to a file
  *
@@ -188,6 +189,14 @@ void einit_event_loop ();
  * have been processed, instead of waiting for new events to come in.
  */
 void einit_replay_events ();
+
+/*!\brief Grab and Handle new Events
+ *
+ * This will run an event loop that will grab events from eINIT and emit them locally,
+ * but unlike einit_event_loop(), it will not emit old events, but only those that
+ * come in after this loop started
+ */
+void einit_event_loop_skip_old ();
 
 char * einit_module_get_attribute (const char *rid, const char *attribute);
 

@@ -311,7 +311,7 @@ void *erealloc (void *c, size_t s) {
 
 char *estrdup (const char *s) {
  size_t len = strlen(s)+1;
- char *p = emalloc (len);
+ char *p = emalloc (len + (8 - (len % 8)));
 
  memcpy (p, s, len);
 
@@ -822,19 +822,6 @@ char strprefix (const char *str1, const char *str2) {
 }
 #endif
 
-#ifndef _have_asm_hashp
-uintptr_t hashp (const char *str) {
- uintptr_t rv = 0;
-
- while (*str) {
-  rv += *str;
-  str++;
- }
-
- return rv;
-}
-#endif
-
 #ifdef DEBUG
 void enable_core_dumps() {
  struct rlimit infinite = {
@@ -1034,64 +1021,6 @@ int eregcomp_cache (regex_t * preg, const char * pattern, int cflags) {
 void eregfree_cache (regex_t *preg) {
 }
 
-struct itree *einit_stable_strings = NULL;
-pthread_mutex_t einit_stable_strings_mutex = PTHREAD_MUTEX_INITIALIZER;
-
-const char *str_stabilise (const char *s) {
- if (!s) return NULL;
-
- long hash = hashp(s);
- //int len;
- //uint32_t hash = StrSuperFastHash(s, &len);
-
- struct itree *i = einit_stable_strings ? itreefind (einit_stable_strings, hash, tree_find_first) : NULL;
- while (i) {
-  if (!s[0]) {
-   if (!(i->data)[0])
-    return i->data;
-  } else {
-   if (i->data == s) {
-    return s;
-   }
-   if (strmatch (s, i->data)) {
-   // Why did this break the feedback events
-   /*if (hash == i->key) {*/
-    return i->data;
-   }
-  }
-
-  i = itreefind (i, hash, tree_find_next);
- }
-
- /* getting 'ere means we didn't have the right string in the set */
- emutex_lock (&einit_stable_strings_mutex);
- /* we don't really care if we accidentally duplicate the string */
- i = itreeadd (einit_stable_strings, hash, (char *)s, tree_value_string);
- einit_stable_strings = i;
- emutex_unlock (&einit_stable_strings_mutex);
-
- return i->data;
-}
-
-char **set_str_dup_stable (char **s) {
- void **d = NULL;
- int i = 0;
-
- if (!s) return NULL;
-
- for (; s[i]; i++) {
-  d = set_noa_add (d, (void *)str_stabilise (s[i]));
- }
-
- return (char **)d;
-}
-
-char **set_str_add_stable (char **s, char *e) {
- s = (char **)set_noa_add ((void **)s, (void *)str_stabilise (e));
-
- return s;
-}
-
 char check_files (char **files) {
  if (files) {
   int i = 0;
@@ -1267,85 +1196,4 @@ pid_t efork() {
  }
 
  return child;
-}
-
-#undef get16bits
-#if (defined(__GNUC__) && defined(__i386__)) || defined(__WATCOMC__) \
-  || defined(_MSC_VER) || defined (__BORLANDC__) || defined (__TURBOC__)
-#define get16bits(d) (*((const uint16_t *) (d)))
-#endif
-
-#if !defined (get16bits)
-#define get16bits(d) ((((uint32_t)(((const uint8_t *)(d))[1])) << 8)\
-                       +(uint32_t)(((const uint8_t *)(d))[0]) )
-#endif
-
-// Taken from http://graphics.stanford.edu/~seander/bithacks.html#ZeroInWord
-#define HAS_ZERO_BYTE(v)  (~((((v & 0x7F7F7F7FUL) + 0x7F7F7F7FUL) | v) | 0x7F7F7F7FUL))
-
-// data is guarranteed to be 32-bit aligned)
-uint32_t StrSuperFastHash (const char * data, int *len) {
- uint32_t hash, tmp, p32, mask;
- int rem = 0;
- char *p = (char *)data;
- *len = 0;
-
- if (data == NULL) return 0;
-
-    // this unrolls to better optimized code on most compilers
- do {
-  p32 = (uint32_t) *p;
-  mask = HAS_ZERO_BYTE(p32);
-  if (!mask) {
-             // Do the hash calculation
-   hash  += get16bits (p);
-   tmp    = (get16bits (p+2) << 11) ^ hash;
-   hash   = (hash << 16) ^ tmp;
-   hash  += hash >> 11;
-   p += sizeof(uint32_t);
-             // Increase len as well
-   (*len)++;
-  } else
-   break;
- } while (mask);
-
-    // Now we've got out of the loop, because we hit a zero byte,
-    // find out which exactly
- if (p[0] == '\0')
-  rem = 0;
- if (p[1] == '\0')
-  rem = 1;
- if (p[2] == '\0')
-  rem = 2;
- if (p[3] == '\0')
-  rem = 3;
-
- /* Handle end cases */
- switch (rem) {
-  case 3: hash += get16bits (p);
-  hash ^= hash << 16;
-  hash ^= p[2] << 18;
-  hash += hash >> 11;
-  break;
-  case 2: hash += get16bits (p);
-  hash ^= hash << 11;
-  hash += hash >> 17;
-  break;
-  case 1: hash += *data;
-  hash ^= hash << 10;
-  hash += hash >> 1;
- }
-    // len was calculated in 4-byte tuples,
-    // multiply it by 4 to get the number in bytes
- *len = (*len << 2) + rem;
-
- /* Force "avalanching" of final 127 bits */
- hash ^= hash << 3;
- hash += hash >> 5;
- hash ^= hash << 4;
- hash += hash >> 17;
- hash ^= hash << 25;
- hash += hash >> 6;
-
- return hash;
 }
