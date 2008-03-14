@@ -146,7 +146,7 @@ const char *str_stabilise (const char *s) {
  struct itree *i = 0;
 
  if (pi % 8) {
-  /* this means that (modulo pi 8) is != 0, so it's not aligned to 8 bytes, so it can't be from a previous str_stabilise() call either */
+  /* this means we'd be unaligned */
 #ifdef DEBUG
   prefail_lookups++;
 #endif
@@ -163,7 +163,7 @@ const char *str_stabilise (const char *s) {
 #endif
 
  i = einit_stable_strings ? itreefind (einit_stable_strings, hash, tree_find_first) : NULL;
-#if 0
+#if 1
  while (i) {
   if (i->value == s) {
 #ifdef DEBUG
@@ -172,9 +172,7 @@ const char *str_stabilise (const char *s) {
    fprintf (stderr, "stabilisation result: %i bad, %i good, %i prefail, strings %i\n", bad_lookups, good_lookups, prefail_lookups, strings);
 #endif
 
-   if (nv) efree (nv);
-
-   return s;
+   break;
   }
   if (strmatch (s, i->value)) {
 #ifdef DEBUG
@@ -183,9 +181,7 @@ const char *str_stabilise (const char *s) {
    fprintf (stderr, "stabilisation result: %i bad, %i good, %i prefail, strings %i\n", bad_lookups, good_lookups, prefail_lookups, strings);
 #endif
 
-   if (nv) efree (nv);
-
-   return i->value;
+   break;
   } else {
 #ifdef DEBUG
    bad_lookups++;
