@@ -58,6 +58,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/time.h> 
 #include <sys/resource.h>
 
+#include <stdint.h>
+
 #ifdef __linux__
 #include <sys/syscall.h>
 #include <linux/sched.h>
@@ -68,67 +70,6 @@ long _getgr_r_size_max = 0, _getpw_r_size_max = 0;
 
 #include <regex.h>
 #include <dirent.h>
-
-#ifndef __SuperFastHash__
-#define __SuperFastHash__
-#include <stdint.h>
-#undef get16bits
-#if (defined(__GNUC__) && defined(__i386__)) || defined(__WATCOMC__) \
-  || defined(_MSC_VER) || defined (__BORLANDC__) || defined (__TURBOC__)
-#define get16bits(d) (*((const uint16_t *) (d)))
-#endif
-
-#if !defined (get16bits)
-#define get16bits(d) ((((uint32_t)(((const uint8_t *)(d))[1])) << 8)\
-                       +(uint32_t)(((const uint8_t *)(d))[0]) )
-#endif
-
-uint32_t SuperFastHash (const char * data, int len) {
-uint32_t hash = len, tmp;
-int rem;
-
-    if (len <= 0 || data == NULL) return 0;
-
-    rem = len & 3;
-    len >>= 2;
-
-    /* Main loop */
-    for (;len > 0; len--) {
-        hash  += get16bits (data);
-        tmp    = (get16bits (data+2) << 11) ^ hash;
-        hash   = (hash << 16) ^ tmp;
-        data  += 2*sizeof (uint16_t);
-        hash  += hash >> 11;
-    }
-
-    /* Handle end cases */
-    switch (rem) {
-        case 3: hash += get16bits (data);
-                hash ^= hash << 16;
-                hash ^= data[sizeof (uint16_t)] << 18;
-                hash += hash >> 11;
-                break;
-        case 2: hash += get16bits (data);
-                hash ^= hash << 11;
-                hash += hash >> 17;
-                break;
-        case 1: hash += *data;
-                hash ^= hash << 10;
-                hash += hash >> 1;
-    }
-
-    /* Force "avalanching" of final 127 bits */
-    hash ^= hash << 3;
-    hash += hash >> 5;
-    hash ^= hash << 4;
-    hash += hash >> 17;
-    hash ^= hash << 25;
-    hash += hash >> 6;
-
-    return hash;
-}
-
-#endif
 
 char **readdirfilter (struct cfgnode const *node, const char *default_dir, const char *default_allow, const char *default_disallow, char recurse) {
  DIR *dir;
@@ -1099,9 +1040,10 @@ pthread_mutex_t einit_stable_strings_mutex = PTHREAD_MUTEX_INITIALIZER;
 const char *str_stabilise (const char *s) {
  if (!s) return NULL;
 
- //long hash = hashp(s);
- uint32_t hash = SuperFastHash(s,strlen(s));
- 
+ long hash = hashp(s);
+ //int len;
+ //uint32_t hash = StrSuperFastHash(s, &len);
+
  struct itree *i = einit_stable_strings ? itreefind (einit_stable_strings, hash, tree_find_first) : NULL;
  while (i) {
   if (!s[0]) {
@@ -1325,4 +1267,85 @@ pid_t efork() {
  }
 
  return child;
+}
+
+#undef get16bits
+#if (defined(__GNUC__) && defined(__i386__)) || defined(__WATCOMC__) \
+  || defined(_MSC_VER) || defined (__BORLANDC__) || defined (__TURBOC__)
+#define get16bits(d) (*((const uint16_t *) (d)))
+#endif
+
+#if !defined (get16bits)
+#define get16bits(d) ((((uint32_t)(((const uint8_t *)(d))[1])) << 8)\
+                       +(uint32_t)(((const uint8_t *)(d))[0]) )
+#endif
+
+// Taken from http://graphics.stanford.edu/~seander/bithacks.html#ZeroInWord
+#define HAS_ZERO_BYTE(v)  (~((((v & 0x7F7F7F7FUL) + 0x7F7F7F7FUL) | v) | 0x7F7F7F7FUL))
+
+// data is guarranteed to be 32-bit aligned)
+uint32_t StrSuperFastHash (const char * data, int *len) {
+ uint32_t hash, tmp, p32, mask;
+ int rem = 0;
+ char *p = (char *)data;
+ *len = 0;
+
+ if (data == NULL) return 0;
+
+    // this unrolls to better optimized code on most compilers
+ do {
+  p32 = (uint32_t) *p;
+  mask = HAS_ZERO_BYTE(p32);
+  if (!mask) {
+             // Do the hash calculation
+   hash  += get16bits (p);
+   tmp    = (get16bits (p+2) << 11) ^ hash;
+   hash   = (hash << 16) ^ tmp;
+   hash  += hash >> 11;
+   p += sizeof(uint32_t);
+             // Increase len as well
+   (*len)++;
+  } else
+   break;
+ } while (mask);
+
+    // Now we've got out of the loop, because we hit a zero byte,
+    // find out which exactly
+ if (p[0] == '\0')
+  rem = 0;
+ if (p[1] == '\0')
+  rem = 1;
+ if (p[2] == '\0')
+  rem = 2;
+ if (p[3] == '\0')
+  rem = 3;
+
+ /* Handle end cases */
+ switch (rem) {
+  case 3: hash += get16bits (p);
+  hash ^= hash << 16;
+  hash ^= p[2] << 18;
+  hash += hash >> 11;
+  break;
+  case 2: hash += get16bits (p);
+  hash ^= hash << 11;
+  hash += hash >> 17;
+  break;
+  case 1: hash += *data;
+  hash ^= hash << 10;
+  hash += hash >> 1;
+ }
+    // len was calculated in 4-byte tuples,
+    // multiply it by 4 to get the number in bytes
+ *len = (*len << 2) + rem;
+
+ /* Force "avalanching" of final 127 bits */
+ hash ^= hash << 3;
+ hash += hash >> 5;
+ hash ^= hash << 4;
+ hash += hash >> 17;
+ hash ^= hash << 25;
+ hash += hash >> 6;
+
+ return hash;
 }

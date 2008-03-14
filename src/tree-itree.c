@@ -47,8 +47,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 struct stree *streeadd (const struct stree *stree, const char *key, const void *value, int32_t vlen, const void *luggage) {
  if (!key) return NULL;
- //signed long keyhash = hashp (key);
- uint32_t keyhash = SuperFastHash(key,strlen(key));
+ signed long keyhash = hashp (key);
+ //int len;
+ //uint32_t keyhash = StrSuperFastHash(key, &len);
 
  size_t nodesize;
  struct stree *newnode;
@@ -107,13 +108,15 @@ struct stree *streefind (const struct stree *stree, const char *key, enum tree_s
  signed long keyhash;
  struct itree *it = stree->treenode;
 
+ //int len = 0;
+
  switch (options) {
   case tree_find_next:
    keyhash = stree->treenode->key;
    break;
   default:
-   //keyhash = hashp (key);
-   keyhash = SuperFastHash(key,strlen(key));
+   keyhash = hashp (key);
+   //keyhash = StrSuperFastHash (key, &len);
    break;
  }
 
