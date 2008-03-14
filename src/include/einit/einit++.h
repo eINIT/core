@@ -54,25 +54,27 @@ using std::vector;
 
 class EinitModule {
 	
+	private:
 	string rid;
+	EinitModule(string rid);
 	
 	int enable  (void *, struct einit_event *);
 	int disable (void *, struct einit_event *);
 	int custom (void *, char *, struct einit_event *);
-	int cleanup (EinitModule m);
-	int scanmodules (EinitModule m);
+	int cleanup ();
+	int scanmodules ();
 	
 	public:
-	void call(const string rid, const string action);
-  string getAttribute (const string rid, const string attribute);
-  string getName (const string rid);
-  vector<string> stringToVector(const string rid, const string attr);
-  vector<string> getProvides (const string rid);
-  vector<string> getRequires (const string rid);
-  vector<string> getAfter (const string rid);
-  vector<string> getBefore (const string rid);
-  vector<string> getStatus (const string rid);
-  vector<string> getOptions (const string rid);
+	void call(const string action);
+  string getAttribute (const string attribute);
+  string getName ();
+  vector<string> stringToVector(const string attr);
+  vector<string> getProvides ();
+  vector<string> getRequires ();
+  vector<string> getAfter ();
+  vector<string> getBefore ();
+  vector<string> getStatus ();
+  vector<string> getOptions ();
    
 };
 
@@ -124,7 +126,7 @@ class Einit {
 	void eventLoop(); 
 	void replayEvents();
  	void serviceCall(const string service, const string action);
- 	EinitModule makeModule(const string name);
+ 	static EinitModule makeModule(const string name);
 
 };
 
