@@ -541,7 +541,7 @@ int main(int argc, char **argv, char **environ) {
 
  event_listen (einit_core_module_action_complete, core_einit_core_module_action_complete);
 
- if (argv) einit_argv = set_str_dup (argv);
+ if (argv) einit_argv = set_str_dup_stable (argv);
 
 /* check command line arguments */
  for (i = 1; i < argc; i++) {
@@ -640,9 +640,12 @@ int main(int argc, char **argv, char **environ) {
 
     efree (tmpstrset);
    }
+
+   lp--;
+   *lp = '=';
   }
 
-  einit_initial_environment = set_str_dup (environ);
+  einit_initial_environment = set_str_dup_stable (environ);
  }
 
  if (!einit_startup_mode_switches) einit_startup_mode_switches = einit_default_startup_mode_switches;

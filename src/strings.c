@@ -163,7 +163,7 @@ const char *str_stabilise_l (const char *s, uint32_t *h, int *l) {
 #endif
 
  i = einit_stable_strings ? itreefind (einit_stable_strings, hash, tree_find_first) : NULL;
-#if 1
+#if 0
  while (i) {
   if (i->value == s) {
 #ifdef DEBUG
