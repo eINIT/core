@@ -56,10 +56,15 @@ using std::vector;
  * This is the main object to manipulate eINIT with. You should only have one instance of this in your program.
  */
 class Einit {
+ private:
+ 
+ 
+ 
  public:
   Einit(); /*!<\brief Regular constructor, as a side-effect this'll initate the connection to eINIT. */
   ~Einit(); /*!<\brief Regular destructor, as a side-effect this'll terminate the connection to eINIT. */
 
+	
 /*!\brief Power Down the System
  *
  * Tell eINIT to initiate a system shutdown. You're likely to die soon after this, so better start cleaning up ASAP.
@@ -77,4 +82,68 @@ class Einit {
  * Update all the information we have from eINIT.
  */
   void update();
+
+
+/*!\brief Connect to eINIT
+ *
+ * Connect to eINIT, via whatever Method is deemed appropriate. Use this before 
+ * using any of the einit*_ipc*() functions.
+*/ 
+  bool connect(int *argc, char **argv);
+  
+  bool connectSpawn(int *argc, char **argv);
+  
+	char disconnect();
+ 	void switchMode (const string mode);
+  
+	void eventLoop(); 
+	void replayEvents();
+ 	void serviceCall(const string service, const string action);
+ 	EinitModule makeModule(const string name);
+
 };
+
+/*!\brief The eINIT file system.
+ * 
+ *
+ */
+class EinitFilesystem {
+	
+	IxpClient *einit_ipc_9p_client = NULL;
+	pid_t einit_ipc_9p_client_pid = 0;
+
+	
+	int readCallback (string *path, int (*callback)(string, size_t, void *), void *cdata);
+	int readCallbackLimited (string *path, int (*callback)(string, size_t, void *), void *cdata, int fragments);
+
+	
+	public:
+	int write(string *path, const string data);
+	string* ls(string *path);
+	string read(string *path);
+	
+};
+
+class EinitModule {
+	
+	string rid;
+	
+	int enable  (void *, struct einit_event *);
+	int disable (void *, struct einit_event *);
+	int custom (void *, char *, struct einit_event *);
+	int cleanup (EinitModule m);
+	int scanmodules (EinitModule m);
+	
+	public:
+	void call(const string rid, const string action);
+  string getAttribute (const string rid, const string attribute);
+  string getName (const string rid);
+  vector<string> EinitModule::stringToVector(const string rid, const string attr);
+  vector<string> getProvides (const string rid);
+  vector<string> getRequires (const string rid);
+  vector<string> getAfter (const string rid);
+  vector<string> getBefore (const string rid);
+  vector<string> getStatus (const string rid);
+  vector<string> getOptions (const string rid);
+   
+}
