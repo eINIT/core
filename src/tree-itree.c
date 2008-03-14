@@ -111,6 +111,8 @@ struct stree *streefind (const struct stree *stree, const char *key, enum tree_s
 
  struct itree *it = stree->treenode;
 
+ str_stabilise_l (key, &keyhash, &keylen);
+/*
  switch (options) {
   case tree_find_next:
    keyhash = stree->treenode->key;
@@ -120,6 +122,7 @@ struct stree *streefind (const struct stree *stree, const char *key, enum tree_s
    //keyhash = StrSuperFastHash (key, &len);
    break;
  }
+*/
 
  while ((it = itreefind (it, keyhash, options))) {
   struct stree *st = it->value;
