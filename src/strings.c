@@ -163,7 +163,7 @@ const char *str_stabilise_l (const char *s, uint32_t *h, int *l) {
 #endif
 
  i = einit_stable_strings ? itreefind (einit_stable_strings, hash, tree_find_first) : NULL;
-#if 0
+#if 1
  while (i) {
   if (i->value == s) {
 #ifdef DEBUG
@@ -185,8 +185,8 @@ const char *str_stabilise_l (const char *s, uint32_t *h, int *l) {
   } else {
 #ifdef DEBUG
    bad_lookups++;
-   printf ("BAD LOOKUP: %s<>%s\n", s, i->value);
 #endif
+   printf ("BAD LOOKUP: %s<>%s, hash: %i\n", s, i->value, hash);
   }
 
   i = itreefind (i, hash, tree_find_next);
