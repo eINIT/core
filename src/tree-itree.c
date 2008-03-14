@@ -47,9 +47,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 struct stree *streeadd (const struct stree *stree, const char *key, const void *value, int32_t vlen, const void *luggage) {
  if (!key) return NULL;
- signed long keyhash = hashp (key);
- //int len;
- //uint32_t keyhash = StrSuperFastHash(key, &len);
+
+ uint32_t keyhash  = 0;
+ int keylen = 0;
+ char *stablekey = (char *)str_stabilise_l (key, &keyhash, &keylen);
+
+// fprintf (stderr, "key: %s, hash: %i\n", key, keyhash);
+
+// signed long keyhash = hashp (key);
+//uint32_t keyhash = StrSuperFastHash(key, &len);
 
  size_t nodesize;
  struct stree *newnode;
@@ -68,7 +74,7 @@ struct stree *streeadd (const struct stree *stree, const char *key, const void *
  newnode = emalloc (nodesize);
  memset (newnode, 0, sizeof (struct stree));
 
- newnode->key = (char *)str_stabilise (key);
+ newnode->key = stablekey;
 
  switch (vlen) {
   case tree_value_noalloc:
@@ -84,11 +90,6 @@ struct stree *streeadd (const struct stree *stree, const char *key, const void *
 
  newnode->treenode = itreeadd (stree ? stree->treenode : NULL, keyhash, newnode, tree_value_noalloc);
 
-// newnode->treenode = itreefind (newnode->treenode, keyhash, tree_find_first);
-
-/* if (newnode->treenode->value != newnode) {
-  fprintf (stderr, "TOOT TOOT!\n");
- }*/
  return newnode;
 }
 
@@ -105,26 +106,22 @@ struct stree *streedel (struct stree *subject) {
 
 struct stree *streefind (const struct stree *stree, const char *key, enum tree_search_base options) {
  if (!key || !stree) return NULL;
- signed long keyhash;
- struct itree *it = stree->treenode;
+ uint32_t keyhash;
+ int keylen;
 
- //int len = 0;
+ struct itree *it = stree->treenode;
 
  switch (options) {
   case tree_find_next:
    keyhash = stree->treenode->key;
    break;
   default:
-   keyhash = hashp (key);
+   str_stabilise_l (key, &keyhash, &keylen);
    //keyhash = StrSuperFastHash (key, &len);
    break;
  }
 
-// fprintf (stderr, "search: %i, it=%i, sv=%i, options=%i\n", keyhash, it, stree, options);
-
  while ((it = itreefind (it, keyhash, options))) {
-//  fprintf (stderr, "candidate: %i, %i, %i\n", keyhash, it, it->value);
-
   struct stree *st = it->value;
   if (strmatch (st->key, key)) {
    return st;
@@ -133,13 +130,6 @@ struct stree *streefind (const struct stree *stree, const char *key, enum tree_s
   }
  }
 
-#if 0
- fprintf (stderr, "i'm outta options...\n");
-#ifdef DEBUG
- itreedump (stree->treenode);
-#endif
- fflush (stderr);
-#endif
  return NULL;
 }
 

@@ -263,6 +263,8 @@ void eregfree_cache (regex_t *preg);
 #include <einit/set.h>
 
 const char *str_stabilise (const char *s);
+const char *str_stabilise_l (const char *s, uint32_t *h, int *l);
+
 char **set_str_dup_stable (char **s);
 char **set_str_add_stable (char **s, char *e);
 

@@ -127,7 +127,7 @@ pthread_mutex_t einit_stable_strings_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 #undef DEBUG
 
-const char *str_stabilise (const char *s) {
+const char *str_stabilise_l (const char *s, uint32_t *h, int *l) {
  if (!s) return NULL;
  if (!s[0]) return ""; /* use a real static string for this one since it can fuck things up hard */
 
@@ -195,7 +195,7 @@ const char *str_stabilise (const char *s) {
 
  if (i) {
   if (nv) efree (nv);
-  return i->value;
+  goto ret;
  }
 
  /* getting 'ere means we didn't have the right string in the set */
@@ -214,7 +214,16 @@ const char *str_stabilise (const char *s) {
  fprintf (stderr, "stabilisation result: %i bad, %i good, %i prefail, strings %i\n", bad_lookups, good_lookups, prefail_lookups, strings);
 #endif
 
+ ret:
+
+ if (h) *h = hash;
+ if (l) *l = len;
+
  return i->value;
+}
+
+const char *str_stabilise (const char *s) {
+ return str_stabilise_l (s, NULL, NULL);
 }
 
 char **set_str_dup_stable (char **s) {
