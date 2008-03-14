@@ -51,6 +51,31 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 using std::string;
 using std::vector;
 
+
+class EinitModule {
+	
+	string rid;
+	
+	int enable  (void *, struct einit_event *);
+	int disable (void *, struct einit_event *);
+	int custom (void *, char *, struct einit_event *);
+	int cleanup (EinitModule m);
+	int scanmodules (EinitModule m);
+	
+	public:
+	void call(const string rid, const string action);
+  string getAttribute (const string rid, const string attribute);
+  string getName (const string rid);
+  vector<string> stringToVector(const string rid, const string attr);
+  vector<string> getProvides (const string rid);
+  vector<string> getRequires (const string rid);
+  vector<string> getAfter (const string rid);
+  vector<string> getBefore (const string rid);
+  vector<string> getStatus (const string rid);
+  vector<string> getOptions (const string rid);
+   
+};
+
 /*!\brief The Main eINIT Object
  *
  * This is the main object to manipulate eINIT with. You should only have one instance of this in your program.
@@ -108,11 +133,7 @@ class Einit {
  *
  */
 class EinitFilesystem {
-	
-	IxpClient *einit_ipc_9p_client = NULL;
-	pid_t einit_ipc_9p_client_pid = 0;
-
-	
+		
 	int readCallback (string *path, int (*callback)(string, size_t, void *), void *cdata);
 	int readCallbackLimited (string *path, int (*callback)(string, size_t, void *), void *cdata, int fragments);
 
@@ -124,26 +145,3 @@ class EinitFilesystem {
 	
 };
 
-class EinitModule {
-	
-	string rid;
-	
-	int enable  (void *, struct einit_event *);
-	int disable (void *, struct einit_event *);
-	int custom (void *, char *, struct einit_event *);
-	int cleanup (EinitModule m);
-	int scanmodules (EinitModule m);
-	
-	public:
-	void call(const string rid, const string action);
-  string getAttribute (const string rid, const string attribute);
-  string getName (const string rid);
-  vector<string> EinitModule::stringToVector(const string rid, const string attr);
-  vector<string> getProvides (const string rid);
-  vector<string> getRequires (const string rid);
-  vector<string> getAfter (const string rid);
-  vector<string> getBefore (const string rid);
-  vector<string> getStatus (const string rid);
-  vector<string> getOptions (const string rid);
-   
-}
