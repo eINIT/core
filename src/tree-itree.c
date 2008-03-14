@@ -124,14 +124,8 @@ struct stree *streefind (const struct stree *stree, const char *key, enum tree_s
  }
 */
 
- while ((it = itreefind (it, keyhash, options))) {
-  struct stree *st = it->value;
-  if (strmatch (st->key, key)) {
-   return st;
-  } else {
-   options = tree_find_next;
-  }
- }
+ if ((it = itreefind (it, keyhash, options)))
+  return it->value;
 
  return NULL;
 }
