@@ -207,6 +207,8 @@ void einit_ipc_core_helpers_ipc_read (struct einit_event *ev) {
          ev->stringset = set_str_add (ev->stringset, "deprecated");
         if (cur->module->mode & einit_feedback_job)
          ev->stringset = set_str_add (ev->stringset, "job-feedback");
+        if (cur->module->mode & einit_module_event_actions)
+         ev->stringset = set_str_add (ev->stringset, "event-based");
        }
 
        break;
