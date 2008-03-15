@@ -37,10 +37,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <einit/exec.h>
 #include <einit/module.h>
+#include <einit/bitch.h>
 #include <einit/utility.h>
 #include <einit/config.h>
 #include <sys/select.h>
 #include <fcntl.h>
+
+struct einit_exec_data **einit_exec_running = NULL;
+pthread_mutex_t einit_exec_running_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+int einit_handle_pipe_fragment(char *data, ssize_t len, pid_t pid, char *rid) {
+}
 
 pid_t einit_exec (struct einit_exec_data *x) {
  pid_t p = efork();
@@ -106,6 +113,10 @@ pid_t einit_exec (struct einit_exec_data *x) {
 
  if (!(x->options & einit_exec_no_pipe)) {
   close (feedbackpipe [1]);
+  x->readpipe = feedbackpipe [0];
+
+  if (!x->handle_pipe_fragment)
+   x->handle_pipe_fragment = einit_handle_pipe_fragment;
  }
 
  if (x->options & einit_exec_create_session) {
@@ -117,6 +128,10 @@ pid_t einit_exec (struct einit_exec_data *x) {
       ((curpgrp = tcgetpgrp(ctty = 0)) < 0) ||
       ((curpgrp = tcgetpgrp(ctty = 1)) < 0)) tcsetpgrp(ctty, p); // set foreground group
  }
+
+ emutex_lock (&einit_exec_running_mutex);
+ einit_exec_running = (struct einit_exec_data **)set_noa_add ((void **)einit_exec_running, x);
+ emutex_unlock (&einit_exec_running_mutex);
 
  return p;
 }
