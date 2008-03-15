@@ -14,7 +14,8 @@ ModuleContents =
    IDAttribute,
    attribute code { text },
    attribute user { text }?,
-   attribute group { text }?
+   attribute group { text }?,
+   attribute options { text }?
   }* &
 
   element pidfile { StringAttribute }? &
@@ -26,22 +27,9 @@ ModuleContents =
 
   element options { StringAttribute }? &
 
-  element script {
-   attribute file { text },
-   attribute actions { text }
-  }? &
-
   element preload-binaries { StringAttribute }? &
   element auto-enable { StringAttribute }?
  }
-
-DaemonAttributes =
- attribute command { text } &
- attribute restart { Boolean } ?
-
-ShellAttributes = 
- (( attribute enable { text } & attribute disable { text } ) |
-  ( attribute script { text } & attribute script-actions { text } ))
 
 ModuleDependenciesRequired =
  attribute provides { text }

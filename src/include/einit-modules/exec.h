@@ -81,9 +81,6 @@ struct dexecinfo {
  enum daemon_options options;
 
  time_t pidfiles_last_update;
-
- char *script;
- char **script_actions;
 };
 
 struct daemonst {

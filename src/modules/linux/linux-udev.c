@@ -108,10 +108,7 @@ struct dexecinfo linux_udev_dexec = {
 
  .options = daemon_model_forking,
 
- .pidfiles_last_update = 0,
-
- .script = NULL,
- .script_actions = NULL
+ .pidfiles_last_update = 0
 };
 
 #if 0

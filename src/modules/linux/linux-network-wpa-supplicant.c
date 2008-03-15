@@ -311,8 +311,6 @@ int linux_network_wpa_supplicant_module_configure (struct lmodule *this) {
   interface_daemon->pidfile = NULL;
   interface_daemon->need_files = NULL;
   interface_daemon->oattrs = NULL;
-  interface_daemon->script = NULL;
-  interface_daemon->script_actions = NULL;
 
   this->param = interface_daemon;
  }
