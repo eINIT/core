@@ -68,6 +68,7 @@ struct einit_exec_data {
  char *rid;
 
  char **environment;
+ char **variables;
 
  int readpipe;
  pid_t pid;
@@ -75,7 +76,7 @@ struct einit_exec_data {
  int status;
 
  int (*handle_pipe_fragment)(struct einit_exec_data *);
- int (*handle_dead_process)(struct einit_exec_data *);
+ void (*handle_dead_process)(struct einit_exec_data *);
 
  void *custom;
 };

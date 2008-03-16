@@ -206,6 +206,9 @@ pid_t einit_exec_auto (char * c) {
 struct einit_exec_data * einit_exec_create_exec_data_from_string (char * c) {
  struct einit_exec_data * x = ecalloc (1, sizeof (struct einit_exec_data));
 
+ x->command = c;
+ x->options |= einit_exec_shell;
+
  return x;
 }
 
