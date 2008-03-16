@@ -23,6 +23,22 @@ env = Environment(options = opts,
 
 env.Append (CFLAGS = '-Wall')
 
+if os.environ.has_key('TARGET_PREFIX'):
+ env.Prepend (CC = os.environ['TARGET_PREFIX'])
+ env.Prepend (CXX = os.environ['TARGET_PREFIX'])
+ env.Prepend (AR = os.environ['TARGET_PREFIX'])
+ env.Prepend (RANLIB = os.environ['TARGET_PREFIX'])
+ env.Prepend (LD = os.environ['TARGET_PREFIX'])
+
+if os.environ.has_key('PATH'):
+ env['PATH'] = os.environ['PATH']
+
+if os.environ.has_key('HOSTCC'):
+ env['HOSTCC'] = os.environ['HOSTCC']
+
+if os.environ.has_key('LDFLAGS'):
+ env['LDFLAGS'] = os.environ['LDFLAGS']
+
 if os.environ.has_key('CFLAGS'):
  env.Append (CFLAGS = os.environ['CFLAGS'])
 
