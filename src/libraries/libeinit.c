@@ -78,6 +78,7 @@ struct exported_function *cfg_getnode_fs = NULL;
 struct exported_function *cfg_filter_fs = NULL;
 struct exported_function *cfg_getpath_fs = NULL;
 struct exported_function *cfg_prefix_fs = NULL;
+struct exported_function *cfg_callback_prefix_fs = NULL;
 
 char einit_new_node = 0;
 struct utsname osinfo = {};
