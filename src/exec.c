@@ -237,7 +237,13 @@ void einit_exec_pipe_handle (fd_set *rfds) {
 
     if ((r == 0) || ((r < 0) && (errno != EAGAIN) && (errno != EINTR))) { /* pipe has died -> waitpid() */
      close (einit_exec_running[i]->readpipe);
-     waitpid(einit_exec_running[i]->pid, &(einit_exec_running[i]->status), 0);
+
+     do {
+      waitpid(einit_exec_running[i]->pid, &(einit_exec_running[i]->status), 0);
+     } while (!WIFEXITED(einit_exec_running[i]->status) && !WIFSIGNALED(einit_exec_running[i]->status));
+
+     if (einit_exec_running[i]->handle_dead_process)
+	  einit_exec_running[i]->handle_dead_process (einit_exec_running[i]);
     }
    }
   }
