@@ -42,11 +42,32 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/config.h>
 #include <sys/select.h>
 #include <fcntl.h>
+#include <errno.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 
 struct einit_exec_data **einit_exec_running = NULL;
 pthread_mutex_t einit_exec_running_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-int einit_handle_pipe_fragment(char *data, ssize_t len, pid_t pid, char *rid) {
+int einit_handle_pipe_fragment(struct einit_exec_data *x) {
+ char buffer[BUFFERSIZE];
+ int ret = read(x->readpipe, buffer, BUFFERSIZE-1);
+
+ if (ret > 0) {
+  buffer[ret] = 0;
+  if (!x->rid) {
+   notice (5, "%s", buffer);
+  } else {
+   struct einit_event evx = evstaticinit(einit_feedback_module_status);
+   evx.rid = x->rid;
+   evx.string = buffer;
+   evx.status = status_working;
+   event_emit(&evx, einit_event_flag_broadcast);
+   evstaticdestroy (evx);
+  }
+ }
+
+ return ret;
 }
 
 pid_t einit_exec (struct einit_exec_data *x) {
@@ -190,17 +211,35 @@ struct einit_exec_data * einit_exec_create_exec_data_from_string (char * c) {
 
 
 int einit_exec_pipe_prepare (fd_set *rfds) {
- int rv = 0;
-/* FD_SET(einit_ipc_pipe_fd, rfds);
+ int rv = 0, i = 0;
 
- if (einit_ipc_pipe_fd > rv)
-  rv = einit_ipc_pipe_fd;*/
+ emutex_lock (&einit_exec_running_mutex);
+ if (einit_exec_running)
+  for (; einit_exec_running[i]; i++) if (einit_exec_running[i]->readpipe) {
+   FD_SET(einit_exec_running[i]->readpipe, rfds);
+
+   if (einit_exec_running[i]->readpipe > rv)
+    rv = einit_exec_running[i]->readpipe;
+  }
+ emutex_unlock (&einit_exec_running_mutex);
 
  return rv;
 }
 
 void einit_exec_pipe_handle (fd_set *rfds) {
-/* if (FD_ISSET (einit_ipc_pipe_fd, rfds)) {
-  einit_process_raw_event (einit_ipc_pipe_fd);
- }*/
+ int i = 0;
+
+ emutex_lock (&einit_exec_running_mutex);
+ if (einit_exec_running)
+  for (; einit_exec_running[i]; i++) if (einit_exec_running[i]->readpipe) {
+   if (FD_ISSET (einit_exec_running[i]->readpipe, rfds)) {
+    int r = einit_exec_running[i]->handle_pipe_fragment (einit_exec_running[i]);
+
+    if ((r == 0) || ((r < 0) && (errno != EAGAIN) && (errno != EINTR))) { /* pipe has died -> waitpid() */
+     close (einit_exec_running[i]->readpipe);
+     waitpid(einit_exec_running[i]->pid, &(einit_exec_running[i]->status), 0);
+    }
+   }
+  }
+ emutex_unlock (&einit_exec_running_mutex);
 }

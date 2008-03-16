@@ -72,8 +72,10 @@ struct einit_exec_data {
  int readpipe;
  pid_t pid;
 
- int (*handle_pipe_fragment)(char *, ssize_t, pid_t, char *rid);
- int (*handle_dead_process)(pid_t, char *);
+ int status;
+
+ int (*handle_pipe_fragment)(struct einit_exec_data *);
+ int (*handle_dead_process)(struct einit_exec_data *);
 };
 
 pid_t einit_exec (struct einit_exec_data *);
