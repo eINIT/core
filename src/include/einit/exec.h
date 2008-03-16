@@ -76,6 +76,8 @@ struct einit_exec_data {
 
  int (*handle_pipe_fragment)(struct einit_exec_data *);
  int (*handle_dead_process)(struct einit_exec_data *);
+
+ void *custom;
 };
 
 pid_t einit_exec (struct einit_exec_data *);
