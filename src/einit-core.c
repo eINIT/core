@@ -193,15 +193,16 @@ stack_t signalstack;
 
 void sched_signal_sigint (int, siginfo_t *, void *);
 void sched_signal_sigalrm (int, siginfo_t *, void *);
+void sched_signal_sigchld (int, siginfo_t *, void *);
 void sched_run_sigchild ();
 
 char sigint_called = 0;
 
 int einit_ipc_pipe_fd = -1;
+int einit_alarm_pipe_write;
+int einit_alarm_pipe_read = -1;
 
 extern char shutting_down;
-
-void sched_signal_sigalrm (int signal, siginfo_t *siginfo, void *context);
 
 time_t *sched_timer_data = NULL;
 
@@ -347,6 +348,10 @@ void sched_reset_event_handlers () {
  action.sa_flags = SA_SIGINFO | SA_NODEFER | SA_ONSTACK;
  if ( sigaction (SIGALRM, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
 
+ action.sa_sigaction = sched_signal_sigchld;
+ action.sa_flags = SA_SIGINFO | SA_NODEFER | SA_ONSTACK;
+ if ( sigaction (SIGCHLD, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
+
  action.sa_flags = SA_SIGINFO | SA_NODEFER | SA_ONSTACK;
  action.sa_sigaction = sched_signal_sigint;
  if ( sigaction (SIGINT, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
@@ -399,6 +404,12 @@ void sched_signal_sigalrm (int signal, siginfo_t *siginfo, void *context) {
  return;
 }
 
+void sched_signal_sigchld (int signal, siginfo_t *siginfo, void *context) {
+ /* same for this one, just making sure we dont have this ignored */
+
+ return;
+}
+
 struct fdprep {
  int (*f)(fd_set *);
  struct fdprep *n;
@@ -427,10 +438,20 @@ void einit_add_fd_handler_function (void (*fdhandle)(fd_set *)) {
 
 int einit_raw_ipc_prepare (fd_set *rfds) {
  int rv = 0;
- FD_SET(einit_ipc_pipe_fd, rfds);
 
- if (einit_ipc_pipe_fd > rv)
-  rv = einit_ipc_pipe_fd;
+ if (einit_ipc_pipe_fd != -1) {
+  FD_SET(einit_ipc_pipe_fd, rfds);
+
+  if (einit_ipc_pipe_fd > rv)
+   rv = einit_ipc_pipe_fd;
+ }
+
+ if (einit_alarm_pipe_read != -1) {
+  FD_SET(einit_alarm_pipe_read, rfds);
+
+  if (einit_alarm_pipe_read > rv)
+   rv = einit_alarm_pipe_read;
+ }
 
  return rv;
 }
@@ -438,6 +459,11 @@ int einit_raw_ipc_prepare (fd_set *rfds) {
 void einit_raw_ipc_handle (fd_set *rfds) {
  if (FD_ISSET (einit_ipc_pipe_fd, rfds)) {
   einit_process_raw_event (einit_ipc_pipe_fd);
+ }
+
+ if (FD_ISSET (einit_alarm_pipe_read, rfds)) {
+  char buffer[BUFFERSIZE];
+  read (einit_alarm_pipe_read, buffer, BUFFERSIZE);
  }
 }
 
@@ -485,12 +511,11 @@ int einit_main_loop() {
  sigemptyset(&sigmask);
  sigaddset(&sigmask, SIGINT);
  sigaddset(&sigmask, SIGALRM);
+ sigaddset(&sigmask, SIGCHLD);
  sigprocmask(SIG_BLOCK, &sigmask, &osigmask);
 
- if (einit_ipc_pipe_fd != -1) {
-  einit_add_fd_prepare_function(einit_raw_ipc_prepare);
-  einit_add_fd_handler_function(einit_raw_ipc_handle);
- }
+ einit_add_fd_prepare_function(einit_raw_ipc_prepare);
+ einit_add_fd_handler_function(einit_raw_ipc_handle);
 
  while (1) {
   int selectres;
@@ -527,6 +552,7 @@ int main(int argc, char **argv, char **environ) {
  char *einit_crash_data = NULL;
  char suppress_version = 0;
  char do_wait = 0;
+ int alarm_pipe[2];
 
 #if defined(__linux__) && defined(PR_SET_NAME)
  prctl (PR_SET_NAME, "einit [core]", 0, 0, 0);
@@ -692,6 +718,11 @@ int main(int argc, char **argv, char **environ) {
 
 /* update the process environment, just in case */
   update_local_environment();
+
+  if (!pipe (alarm_pipe)) {
+   einit_alarm_pipe_read = alarm_pipe[0];
+   einit_alarm_pipe_write = alarm_pipe[1];
+  }
 
 /*  struct einit_event ev = evstaticinit(einit_core_update_modules);
   event_emit (&ev, einit_event_flag_broadcast);

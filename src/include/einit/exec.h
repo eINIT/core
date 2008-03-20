@@ -53,7 +53,8 @@ enum einit_exec_options {
  einit_exec_no_shell       = 0x0010,
  einit_exec_shell          = 0x0020,
  einit_exec_no_pipe        = 0x0100,
- einit_exec_create_session = 0x1000
+ einit_exec_create_session = 0x1000,
+ einit_exec_daemonise      = 0x2000
 };
 
 struct einit_exec_data {
@@ -82,6 +83,8 @@ struct einit_exec_data {
 };
 
 pid_t einit_exec (struct einit_exec_data *);
+pid_t einit_exec_as_daemon (struct einit_exec_data *);
+
 int einit_exec_wait(pid_t);
 
 pid_t einit_exec_without_shell (char **);

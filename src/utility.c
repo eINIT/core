@@ -1199,3 +1199,9 @@ pid_t efork() {
 
  return child;
 }
+
+int einit_alarm_pipe_write = -1;
+
+void einit_ping_core() {
+ write (einit_alarm_pipe_write, ".\n", 2);
+}

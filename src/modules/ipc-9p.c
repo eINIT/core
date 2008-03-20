@@ -657,7 +657,8 @@ void *einit_ipc_9p_listen (void *param) {
   einit_add_fd_prepare_function(einit_ipc_9p_prepare);
   einit_add_fd_handler_function(einit_ipc_9p_handle);
 
-  kill (getpid(), SIGALRM); /* make the main thread pick up our new functions */
+  /*kill (getpid(), SIGALRM);*/
+  einit_ping_core(); /* make the main thread pick up our new functions */
  } else {
   notice (1, "could not initialise 9p server");
  }

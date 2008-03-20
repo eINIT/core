@@ -275,6 +275,8 @@ void update_local_environment();
 
 pid_t efork(); /* fork reliably... i.e. use clone() on linux */
 
+void einit_ping_core();
+
 uint32_t StrSuperFastHash (const char * data, int *len);
 
 #endif /* _UTILITY_H */

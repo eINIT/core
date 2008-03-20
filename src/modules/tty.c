@@ -497,6 +497,10 @@ void einit_tty_disable_feedback () {
 int einit_tty_configure (struct lmodule *this) {
  module_init (this);
 
+ if (coremode & einit_mode_sandbox) {
+  return 0;
+ }
+
  exec_configure(this);
 
  event_listen (einit_process_died, einit_tty_process_event_handler);

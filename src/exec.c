@@ -53,8 +53,13 @@ int einit_handle_pipe_fragment(struct einit_exec_data *x) {
  char buffer[BUFFERSIZE];
  int ret = read(x->readpipe, buffer, BUFFERSIZE-1);
 
+ fprintf (stderr, "dumdidum\n");
+
  if (ret > 0) {
   buffer[ret] = 0;
+
+  fprintf (stderr, "buffer: %s\n", buffer);
+
   if (!x->rid) {
    notice (5, "%s", buffer);
   } else {
@@ -65,14 +70,27 @@ int einit_handle_pipe_fragment(struct einit_exec_data *x) {
    event_emit(&evx, einit_event_flag_broadcast);
    evstaticdestroy (evx);
   }
+ } else if (ret < 0) {
+  if (!x->rid) {
+   notice (5, "%s", strerror(errno));
+  } else {
+   struct einit_event evx = evstaticinit(einit_feedback_module_status);
+   evx.rid = x->rid;
+   evx.string = str_stabilise(strerror(errno));
+   evx.status = status_working;
+   event_emit(&evx, einit_event_flag_broadcast);
+   evstaticdestroy (evx);
+  }
+ } else {
+  fprintf (stderr, "end of file on pipe\n");
  }
+
+ fprintf (stderr, "XdumdidumX\n");
 
  return ret;
 }
 
 pid_t einit_exec (struct einit_exec_data *x) {
- pid_t p = efork();
-
  char *sh[4] = { "/bin/sh", "-c", NULL, NULL };
  char **c = NULL;
 
@@ -90,8 +108,13 @@ pid_t einit_exec (struct einit_exec_data *x) {
  if (!(x->options & einit_exec_no_pipe)) {
   if (pipe (feedbackpipe) == -1) {
    x->options |= einit_exec_no_pipe;
+  } else {
+   fcntl (feedbackpipe[0], F_SETFL, O_NONBLOCK);
+   fcntl (feedbackpipe[1], F_SETFL, O_NONBLOCK);
   }
  }
+
+ pid_t p = efork();
 
  if (p < 0) {
   if (!(x->options & einit_exec_no_pipe)) {
@@ -103,33 +126,57 @@ pid_t einit_exec (struct einit_exec_data *x) {
  }
 
  if (!p) { /* child process */
-  if (x->options & einit_exec_create_session) {
-   setsid();
-  }
+  pid_t sc = 0;
+  if (x->options & einit_exec_daemonise) sc = efork();
 
-  if (x->gid && (setgid (x->gid) == -1)) perror ("setting gid");
-  if (x->uid && (setuid (x->uid) == -1)) perror ("setting uid");
+  if (!sc) {
+   if (x->options & einit_exec_create_session) {
+    setsid();
+   }
 
-  if (!(x->options & einit_exec_keep_stdin)) close (0);
+   if (x->gid && (setgid (x->gid) == -1)) perror ("setting gid");
+   if (x->uid && (setuid (x->uid) == -1)) perror ("setting uid");
 
-  close (1);
+   if (!(x->options & einit_exec_keep_stdin)) close (0);
 
-  if (!(x->options & einit_exec_no_pipe)) {
+   close (1);
+
+   if (!(x->options & einit_exec_no_pipe)) {
+    close (feedbackpipe [0]);
+
+    fcntl (feedbackpipe[1], F_SETFD, 0);
+    close (2);
+    dup2 (feedbackpipe [1], 1);
+    dup2 (feedbackpipe [1], 2);
+    close (feedbackpipe [1]);
+   }
+
+   dup2 (2, 1);
+
+   execve (c[0], c, environment);
+
+   _exit (EXIT_FAILURE);
+  /* we don't return from this 'ere child process, evar */
+  } else if (sc > 0) {
+   char buffer[128];
+
    close (feedbackpipe [0]);
 
-   fcntl (feedbackpipe[1], F_SETFD, 0);
-   close (2);
-   dup2 (feedbackpipe [1], 1);
-   dup2 (feedbackpipe [1], 2);
+   snprintf (buffer, 128, "einit|pid|%i\n", sc);
+   write (feedbackpipe [1], buffer, strlen(buffer));
    close (feedbackpipe [1]);
+
+   _exit (EXIT_SUCCESS);
+  } else { /* this means the second fork failed */
+   char buffer[128];
+   close (feedbackpipe [0]);
+
+   snprintf (buffer, 128, "einit|error|efork|%i\n", errno);
+   write (feedbackpipe [1], buffer, strlen(buffer));
+   close (feedbackpipe [1]);
+
+   _exit (EXIT_FAILURE);
   }
-
-  dup2 (2, 1);
-
-  execve (c[0], c, environment);
-
-  _exit (EXIT_FAILURE);
-  /* we don't return from this 'ere child process, evar */
  }
 
  if (!(x->options & einit_exec_no_pipe)) {
@@ -150,9 +197,13 @@ pid_t einit_exec (struct einit_exec_data *x) {
       ((curpgrp = tcgetpgrp(ctty = 1)) < 0)) tcsetpgrp(ctty, p); // set foreground group
  }
 
+ x->pid = p;
+
  emutex_lock (&einit_exec_running_mutex);
  einit_exec_running = (struct einit_exec_data **)set_noa_add ((void **)einit_exec_running, x);
  emutex_unlock (&einit_exec_running_mutex);
+
+ einit_ping_core();
 
  return p;
 }
@@ -216,6 +267,8 @@ struct einit_exec_data * einit_exec_create_exec_data_from_string (char * c) {
 int einit_exec_pipe_prepare (fd_set *rfds) {
  int rv = 0, i = 0;
 
+ fprintf (stderr, "einit_exec_pipe_prepare()\n");
+
  emutex_lock (&einit_exec_running_mutex);
  if (einit_exec_running)
   for (; einit_exec_running[i]; i++) if (einit_exec_running[i]->readpipe) {
@@ -232,23 +285,48 @@ int einit_exec_pipe_prepare (fd_set *rfds) {
 void einit_exec_pipe_handle (fd_set *rfds) {
  int i = 0;
 
+ fprintf (stderr, "einit_exec_pipe_handle()\n");
+
+ struct einit_exec_data **needtohandle = NULL;
  emutex_lock (&einit_exec_running_mutex);
  if (einit_exec_running)
-  for (; einit_exec_running[i]; i++) if (einit_exec_running[i]->readpipe) {
-   if (FD_ISSET (einit_exec_running[i]->readpipe, rfds)) {
-    int r = einit_exec_running[i]->handle_pipe_fragment (einit_exec_running[i]);
+  needtohandle = (struct einit_exec_data **)set_noa_dup (einit_exec_running);
+ emutex_unlock (&einit_exec_running_mutex);
 
-    if ((r == 0) || ((r < 0) && (errno != EAGAIN) && (errno != EINTR))) { /* pipe has died -> waitpid() */
-     close (einit_exec_running[i]->readpipe);
+ if (needtohandle) {
+  for (; needtohandle[i]; i++) {
+   if (needtohandle[i]->readpipe) {
+    fprintf (stderr, "checking pipe: %i\n", needtohandle[i]->readpipe);
+    if (FD_ISSET (needtohandle[i]->readpipe, rfds)) {
+     int r = needtohandle[i]->handle_pipe_fragment (needtohandle[i]);
 
-     do {
-      waitpid(einit_exec_running[i]->pid, &(einit_exec_running[i]->status), 0);
-     } while (!WIFEXITED(einit_exec_running[i]->status) && !WIFSIGNALED(einit_exec_running[i]->status));
+     if ((r == 0) || ((r < 0) && (errno != EAGAIN) && (errno != EINTR))) { /* pipe has died -> waitpid() */
+      close (needtohandle[i]->readpipe);
 
-     if (einit_exec_running[i]->handle_dead_process)
-	  einit_exec_running[i]->handle_dead_process (einit_exec_running[i]);
+      do {
+       waitpid(needtohandle[i]->pid, &(needtohandle[i]->status), 0);
+      } while (!WIFEXITED(needtohandle[i]->status) && !WIFSIGNALED(needtohandle[i]->status));
+
+      handle_dead_process:
+
+      if (needtohandle[i]->handle_dead_process)
+       needtohandle[i]->handle_dead_process (needtohandle[i]);
+
+      emutex_lock (&einit_exec_running_mutex);
+      einit_exec_running = (struct einit_exec_data **)setdel ((void **)einit_exec_running, needtohandle[i]);
+      emutex_unlock (&einit_exec_running_mutex);
+     }
+    }
+   } else { /* no pipe... still check if the pid has died */
+    fprintf (stderr, "checking process: %i\n", needtohandle[i]->pid);
+
+    waitpid(needtohandle[i]->pid, &(needtohandle[i]->status), WNOHANG);
+    if (WIFEXITED(needtohandle[i]->status) || WIFSIGNALED(needtohandle[i]->status)) {
+     goto handle_dead_process;
     }
    }
   }
- emutex_unlock (&einit_exec_running_mutex);
+
+  efree (needtohandle);
+ }
 }
