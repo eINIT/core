@@ -45,6 +45,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <ctype.h>
 
 struct einit_exec_data **einit_exec_running = NULL;
 pthread_mutex_t einit_exec_running_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -104,16 +105,137 @@ int einit_handle_pipe_fragment(struct einit_exec_data *x) {
  return ret;
 }
 
+char *einit_apply_environment (char *command, char **environment) {
+ uint32_t i = 0;
+ char **variables = NULL;
+
+ if (environment) {
+  for (; environment[i]; i++) {
+   char *r = estrdup (environment[i]);
+   char *n = strchr (r, '=');
+
+   if (n) {
+    *n = 0;
+    n++;
+
+    if (*n && !inset ((const void **)variables, r, SET_TYPE_STRING)) {
+     variables = set_str_add (variables, r);
+     variables = set_str_add (variables, n);
+    }
+   }
+
+   efree (r);
+  }
+ }
+
+ if (variables) {
+  command = apply_variables (command, (const char **)variables);
+
+#ifdef DEBUG
+  write (2, command, strlen (command));
+  write (2, "\n", 1);
+#endif
+
+  efree (variables);
+ }
+
+ return command;
+}
+
+char **einit_create_environment (char **environment, char **variables) {
+ int i = 0;
+ char *variablevalue = NULL;
+ if (variables) for (i = 0; variables[i]; i++) {
+  if ((variablevalue = strchr (variables[i], '/'))) {
+   /* special treatment if we have an attribue specifier in the variable name */
+   char *name = NULL, *filter = variablevalue+1;
+   struct cfgnode *node;
+   *variablevalue = 0;
+   name = (char *)str_stabilise(variables[i]);
+   *variablevalue = '/';
+
+   if ((node = cfg_getnode (name, NULL)) && node->arbattrs) {
+    size_t bkeylen = strlen (name)+2, pvlen = 1;
+    char *key = emalloc (bkeylen);
+    char *pvalue = NULL;
+    regex_t pattern;
+
+    if (!eregcomp(&pattern, filter)) {
+     int y = 0;
+     *key = 0;
+     strcat (key, name);
+     *(key+bkeylen-2) = '/';
+     *(key+bkeylen-1) = 0;
+
+     for (y = 0; node->arbattrs[y]; y+=2) if (!regexec (&pattern, node->arbattrs[y], 0, NULL, 0)) {
+      size_t attrlen = strlen (node->arbattrs[y])+1;
+      char *subkey = emalloc (bkeylen+attrlen);
+      *subkey = 0;
+      strcat (subkey, key);
+      strcat (subkey, node->arbattrs[y]);
+      environment = straddtoenviron (environment, subkey, node->arbattrs[y+1]);
+      efree (subkey);
+
+      if (pvalue) {
+       pvalue=erealloc (pvalue, pvlen+attrlen);
+       *(pvalue+pvlen-2) = ' ';
+       *(pvalue+pvlen-1) = 0;
+       strcat (pvalue, node->arbattrs[y]);
+       pvlen += attrlen;
+      } else {
+       pvalue=emalloc (pvlen+attrlen);
+       *pvalue = 0;
+       strcat (pvalue, node->arbattrs[y]);
+       pvlen += attrlen;
+      }
+     }
+
+     eregfree (&pattern);
+    }
+
+    if (pvalue)  {
+     uint32_t txi = 0;
+     for (; pvalue[txi]; txi++) {
+      if (!isalnum (pvalue[txi]) && (pvalue[txi] != ' ')) pvalue[txi] = '_';
+     }
+     *(key+bkeylen-2) = 0;
+     environment = straddtoenviron (environment, key, pvalue);
+
+     efree (pvalue);
+    }
+    efree (key);
+   }
+  } else {
+   /* else: just add it */
+   char *variablevalue = cfg_getstring (variables[i], NULL);
+   if (variablevalue)
+    environment = straddtoenviron (environment, variables[i], variablevalue);
+  }
+ }
+
+ return environment;
+}
+
 pid_t einit_exec (struct einit_exec_data *x) {
  char *sh[4] = { "/bin/sh", "-c", NULL, NULL };
  char **c = NULL;
 
  char **environment = set_str_dup_stable(einit_global_environment);
+ if (x->environment) {
+  int i = 0;
+  for (; x->environment[i]; i++) {
+   environment = set_str_add_stable (environment, x->environment[i]);
+  }
+ }
+ environment = einit_create_environment (environment, x->variables);
 
  if (x->options & einit_exec_no_shell) {
-  c = x->command_d;
+  int i = 0;
+  if (x->command_d) for (; x->command_d[i]; i++) {
+   c = set_str_add_stable (c, einit_apply_environment(x->command_d[i], environment));
+  }
  } else {
-  sh[2] = (char *)x->command;
+  sh[2] = (char *)einit_apply_environment(x->command, environment);
   c = sh;
  }
 
