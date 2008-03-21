@@ -530,9 +530,13 @@ int einit_main_loop() {
 }
 
 void core_process_died (struct einit_event *ev) {
- mod_update_pids();
- ev->rid = mod_lookup_pid(ev->integer);
- event_emit (ev, 0);
+ if (!ev->rid) {
+  mod_update_pids();
+  ev->rid = mod_lookup_pid(ev->integer);
+
+  if (ev->rid)
+   event_emit (ev, 0);
+ }
 }
 
 /* t3h m41n l00ps0rzZzzz!!!11!!!1!1111oneeleven11oneone11!!11 */
