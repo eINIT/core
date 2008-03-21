@@ -530,11 +530,11 @@ int einit_main_loop() {
 }
 
 void core_process_died (struct einit_event *ev) {
- if (!ev->rid || strmatch (ev->rid, "monitor")) {
+ if (!ev->rid || strmatch (ev->rid, "einit-monitor")) {
   mod_update_pids();
   ev->rid = mod_lookup_pid(ev->integer);
 
-  if (ev->rid && !strmatch (ev->rid, "monitor"))
+  if (ev->rid && !strmatch (ev->rid, "einit-monitor"))
    event_emit (ev, 0);
  }
 }
