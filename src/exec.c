@@ -281,7 +281,7 @@ struct einit_exec_data * einit_exec_create_exec_data_from_string (char * c) {
 int einit_exec_pipe_prepare (fd_set *rfds) {
  int rv = 0, i = 0;
 
- fprintf (stderr, "einit_exec_pipe_prepare()\n");
+// fprintf (stderr, "einit_exec_pipe_prepare()\n");
 
  emutex_lock (&einit_exec_running_mutex);
  if (einit_exec_running)
@@ -299,7 +299,7 @@ int einit_exec_pipe_prepare (fd_set *rfds) {
 void einit_exec_pipe_handle (fd_set *rfds) {
  int i = 0;
 
- fprintf (stderr, "einit_exec_pipe_handle()\n");
+// fprintf (stderr, "einit_exec_pipe_handle()\n");
 
  struct einit_exec_data **needtohandle = NULL;
  emutex_lock (&einit_exec_running_mutex);
@@ -310,7 +310,7 @@ void einit_exec_pipe_handle (fd_set *rfds) {
  if (needtohandle) {
   for (; needtohandle[i]; i++) {
    if (needtohandle[i]->readpipe) {
-    fprintf (stderr, "checking pipe: %i\n", needtohandle[i]->readpipe);
+//    fprintf (stderr, "checking pipe: %i\n", needtohandle[i]->readpipe);
     if (FD_ISSET (needtohandle[i]->readpipe, rfds)) {
      int r = needtohandle[i]->handle_pipe_fragment (needtohandle[i]);
 
@@ -332,7 +332,7 @@ void einit_exec_pipe_handle (fd_set *rfds) {
      }
     }
    } else { /* no pipe... still check if the pid has died */
-    fprintf (stderr, "checking process: %i\n", needtohandle[i]->pid);
+//    fprintf (stderr, "checking process: %i\n", needtohandle[i]->pid);
 
     waitpid(needtohandle[i]->pid, &(needtohandle[i]->status), WNOHANG);
     if (WIFEXITED(needtohandle[i]->status) || WIFSIGNALED(needtohandle[i]->status)) {
