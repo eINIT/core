@@ -123,18 +123,6 @@ void core_einit_event_handler_update_modules (struct einit_event *ev) {
  evstaticdestroy(update_event);
 }
 
-void core_einit_event_handler_recover (struct einit_event *ev) {
- struct lmodule *lm = mlist;
-
- while (lm) {
-  if (lm->recover) {
-   lm->recover (lm);
-  }
-
-  lm = lm->next;
- }
-}
-
 void core_event_einit_boot_root_device_ok (struct einit_event *ev) {
  int e;
  fprintf (stderr, "scheduling startup switches.\n");
@@ -541,11 +529,16 @@ int einit_main_loop() {
  }
 }
 
+void core_process_died (struct einit_event *ev) {
+ mod_update_pids();
+ ev->rid = mod_lookup_pid(ev->integer);
+ event_emit (ev, 0);
+}
+
 /* t3h m41n l00ps0rzZzzz!!!11!!!1!1111oneeleven11oneone11!!11 */
 int main(int argc, char **argv, char **environ) {
  int i;
  int pthread_errno;
- char need_recovery = 0;
  char debug = 0;
  int crash_pipe = 0;
 // char crash_threshold = 5;
@@ -562,10 +555,10 @@ int main(int argc, char **argv, char **environ) {
  config_configure();
 
  event_listen (einit_core_update_modules, core_einit_event_handler_update_modules);
- event_listen (einit_core_recover, core_einit_event_handler_recover);
  event_listen (einit_timer_set, sched_timer_event_handler_set);
 
  event_listen (einit_core_module_action_complete, core_einit_core_module_action_complete);
+ event_listen (einit_process_died, core_process_died);
 
  if (argv) einit_argv = set_str_dup_stable (argv);
 
@@ -605,9 +598,6 @@ int main(int argc, char **argv, char **environ) {
        einit_default_startup_configuration_files[0]++;
 
       coremode |= einit_mode_sandbox;
-      need_recovery = 1;
-     } else if (strmatch(argv[i], "--recover")) {
-      need_recovery = 1;
      } else if (strmatch(argv[i], "--command-pipe")) {
       einit_ipc_pipe_fd = parse_integer (argv[i+1]);
       fcntl (einit_ipc_pipe_fd, F_SETFD, FD_CLOEXEC);
@@ -743,14 +733,6 @@ int main(int argc, char **argv, char **environ) {
   } else {
 /* actual init code */
    event_listen (einit_boot_root_device_ok, core_event_einit_boot_root_device_ok);
-
-   if (need_recovery) {
-    fprintf (stderr, "need to recover from something...\n");
-
-    struct einit_event eml = evstaticinit(einit_core_recover);
-    event_emit (&eml, einit_event_flag_broadcast);
-    evstaticdestroy(eml);
-   }
 
    if (einit_crash_data) {
     fprintf (stderr, "submitting crash data...\n");

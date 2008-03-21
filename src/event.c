@@ -481,7 +481,6 @@ char *event_code_to_string (const uint32_t code) {
   case einit_core_secondary_main_loop:         return "core/secondary-main-loop";
 
   case einit_core_crash_data:                  return "core/crash-data";
-  case einit_core_recover:                     return "core/recover";
 
   case einit_mount_do_update:                  return "mount/do-update";
   case einit_mount_node_mounted:               return "mount/node-mounted";
@@ -620,7 +619,6 @@ uint32_t event_string_to_code (const char *code) {
      else if (strmatch (tcode[1], "secondary-main-loop"))         ret = einit_core_secondary_main_loop;
 
      else if (strmatch (tcode[1], "crash-data"))                  ret = einit_core_crash_data;
-     else if (strmatch (tcode[1], "recover"))                     ret = einit_core_recover;
      break;
     case einit_event_subsystem_mount:
      if (strmatch (tcode[1], "do-update"))                        ret = einit_mount_do_update;

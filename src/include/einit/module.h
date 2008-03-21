@@ -160,8 +160,10 @@ enum einit_module_status {
 /*!< Status Information: Configure: Module won't be used */
  status_block            = 0x040000,
 /*!< Status Information: Configure: Module doesn't want to be loaded ever again */
- status_configure_done   = 0x200000
+ status_configure_done   = 0x200000,
 /*!< Status Information: Configure: Module has already done all it needs to do */
+
+ status_death_pending    = 0x400000
 };
 /*!\} */
 
@@ -218,7 +220,8 @@ struct lmodule {
 
  char **functions;                              /*!< field for custom functions */
 
- int (*recover) (struct lmodule *);             /*!< Pointer to the module's recover()-function */
+ pid_t pid;
+ char *pidfile;
 };
 
 /*!\brief Scan for modules
@@ -263,6 +266,8 @@ struct lmodule *mod_lookup_rid (const char *rid);
 struct lmodule *mod_lookup_source (const char *source);
 int mod_update_sources (char **source);
 int mod_update_source (const char *source);
+void mod_update_pids ();
+char *mod_lookup_pid (pid_t pid);
 
 /*!\ingroup serviceusagequeries
  * \{ */

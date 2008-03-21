@@ -46,6 +46,7 @@ extern "C" {
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <einit/configuration.h>
 
 enum einit_exec_options {
  einit_exec_default        = 0x0000,
@@ -80,6 +81,8 @@ struct einit_exec_data {
  void (*handle_dead_process)(struct einit_exec_data *);
 
  void *custom;
+
+ struct lmodule *module;
 };
 
 pid_t einit_exec (struct einit_exec_data *);

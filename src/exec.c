@@ -53,24 +53,38 @@ int einit_handle_pipe_fragment(struct einit_exec_data *x) {
  char buffer[BUFFERSIZE];
  int ret = read(x->readpipe, buffer, BUFFERSIZE-1);
 
- fprintf (stderr, "dumdidum\n");
+// fprintf (stderr, "dumdidum\n");
 
  if (ret > 0) {
   buffer[ret] = 0;
+  char **sp = str2set ('\n', buffer);
+  int i = 0;
+  for (; sp[i]; i++) {
+   if (strprefix (sp[i], "einit|")) {
+    char **cmd = str2set ('|', sp[i]);
 
-  fprintf (stderr, "buffer: %s\n", buffer);
+    if (cmd[0] && cmd[1] && cmd[2]) {
+     if (x->module && strmatch (cmd[1], "pid")) {
+      x->module->pid = parse_integer (cmd[2]);
+     }
+    }
 
-  if (!x->rid) {
-   notice (5, "%s", buffer);
-  } else {
-   struct einit_event evx = evstaticinit(einit_feedback_module_status);
-   evx.rid = x->rid;
-   evx.string = buffer;
-   evx.status = status_working;
-   event_emit(&evx, einit_event_flag_broadcast);
-   evstaticdestroy (evx);
+    efree (cmd);
+   } else {
+    if (!x->rid) {
+     notice (5, "%s", buffer);
+    } else {
+     struct einit_event evx = evstaticinit(einit_feedback_module_status);
+     evx.rid = x->rid;
+     evx.string = sp[i];
+     evx.status = status_working;
+     event_emit(&evx, einit_event_flag_broadcast);
+     evstaticdestroy (evx);
+    }
+   }
   }
- } else if (ret < 0) {
+  efree (sp);
+ }/* else if (ret < 0) {
   if (!x->rid) {
    notice (5, "%s", strerror(errno));
   } else {
@@ -81,11 +95,11 @@ int einit_handle_pipe_fragment(struct einit_exec_data *x) {
    event_emit(&evx, einit_event_flag_broadcast);
    evstaticdestroy (evx);
   }
- } else {
+ }*/ /* else {
   fprintf (stderr, "end of file on pipe\n");
- }
+ }*/
 
- fprintf (stderr, "XdumdidumX\n");
+// fprintf (stderr, "XdumdidumX\n");
 
  return ret;
 }

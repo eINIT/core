@@ -115,9 +115,6 @@ int mount_umount (char *, struct device_data *, struct mountpoint_data *, struct
 int mount_do_mount_generic (char *, char *, struct device_data *, struct mountpoint_data *, struct einit_event *);
 int mount_do_umount_generic (char *, char *, char, struct device_data *, struct mountpoint_data *, struct einit_event *);
 
-int einit_mount_recover (struct lmodule *);
-int einit_mount_recover_module (struct lmodule *);
-
 #if 0
 void einit_mount_mount_ipc_handler(struct einit_event *);
 void einit_mount_mount_handler(struct einit_event *);
@@ -959,8 +956,6 @@ char *mount_mp_to_fsck_service_name (char *mp) {
 int einit_mountpoint_configure (struct lmodule *tm) {
  tm->enable = (int (*)(void *, struct einit_event *))emount;
  tm->disable = (int (*)(void *, struct einit_event *))eumount;
-
- tm->recover = einit_mount_recover_module;
 
 // tm->param = tm->module->rid + 6;
 
@@ -2085,37 +2080,6 @@ void einit_mount_update_configuration () {
  mount_update_devices();
 }
 
-int einit_mount_recover (struct lmodule *lm) {
-
- return status_ok;
-}
-
-int einit_mount_recover_module (struct lmodule *module) {
- struct device_data *dd = NULL;
- struct stree *t;
-
- emutex_lock (&mounter_dd_by_mountpoint_mutex);
- if (mounter_dd_by_mountpoint && (t = streefind (mounter_dd_by_mountpoint, module->param, tree_find_first))) {
-  dd = t->value;
- }
- emutex_unlock (&mounter_dd_by_mountpoint_mutex);
-
- if (dd) {
-  struct stree *st = streefind (dd->mountpoints, module->param, tree_find_first);
-
-  if (st) {
-   struct mountpoint_data *mp = st->value;
-
-   if (mp && (mp->status & device_status_mounted)) {
-    notice (3, "recovering %s", module->module->rid);
-    mod (einit_module_enable | einit_module_ignore_dependencies, module, NULL);
-   }
-  }
- }
-
- return status_ok;
-}
-
 void eumount_root () {
  struct einit_event eml = evstaticinit(einit_core_manipulate_services);
  eml.stringset = set_str_add (NULL, "fs-root");
@@ -2174,8 +2138,6 @@ void einit_mount_einit_event_handler_crash_data (struct einit_event *ev) {
 int einit_mount_configure (struct lmodule *r) {
  struct stat st;
  module_init (r);
-
- thismodule->recover = einit_mount_recover;
 
  /* pexec configuration */
  exec_configure (this);

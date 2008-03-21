@@ -472,6 +472,32 @@ struct lmodule *mod_lookup_rid (const char *rid) {
  return module;
 }
 
+char *mod_lookup_pid (pid_t pid) {
+ struct lmodule *module = mlist;
+ while (module) {
+  if (module->pid == pid) {
+   break;
+  }
+
+  module = module->next;
+ }
+
+ return module->module->rid;
+}
+
+void mod_update_pids () {
+ struct lmodule *module = mlist;
+ while (module) {
+  char *buf;
+  if (module->pidfile && (buf = readfile (module->pidfile))) {
+   module->pid = parse_integer (buf);
+   efree (buf);
+  }
+
+  module = module->next;
+ }
+}
+
 struct lmodule *mod_lookup_source (const char *source) {
  if (!source) return NULL;
 
