@@ -1001,7 +1001,10 @@ void module_logic_spawn_set_enable (struct lmodule **spawn) {
  int i = 0;
  for (; spawn[i]; i++) {
   if (spawn[i+1]) {
-   ethread_spawn_detached_run (module_logic_do_enable, spawn[i]);
+   if (spawn[i]->module->mode & einit_module_event_actions)
+    mod (einit_module_enable, spawn[i], NULL);
+   else
+    ethread_spawn_detached_run (module_logic_do_enable, spawn[i]);
   } else {
    mod (einit_module_enable, spawn[i], NULL);
   }
@@ -1011,7 +1014,10 @@ void module_logic_spawn_set_enable (struct lmodule **spawn) {
 void module_logic_spawn_set_enable_all (struct lmodule **spawn) {
  int i = 0;
  for (; spawn[i]; i++) {
-  ethread_spawn_detached_run (module_logic_do_enable, spawn[i]);
+  if (spawn[i]->module->mode & einit_module_event_actions)
+   mod (einit_module_enable, spawn[i], NULL);
+  else
+   ethread_spawn_detached_run (module_logic_do_enable, spawn[i]);
  }
 }
 
@@ -1019,7 +1025,10 @@ void module_logic_spawn_set_disable (struct lmodule **spawn) {
  int i = 0;
  for (; spawn[i]; i++) {
   if (spawn[i+1]) {
-   ethread_spawn_detached_run (module_logic_do_disable, spawn[i]);
+   if (spawn[i]->module->mode & einit_module_event_actions)
+    mod (einit_module_disable, spawn[i], NULL);
+   else
+    ethread_spawn_detached_run (module_logic_do_disable, spawn[i]);
   } else {
    mod (einit_module_disable, spawn[i], NULL);
   }
@@ -1029,7 +1038,10 @@ void module_logic_spawn_set_disable (struct lmodule **spawn) {
 void module_logic_spawn_set_disable_all (struct lmodule **spawn) {
  int i = 0;
  for (; spawn[i]; i++) {
-  ethread_spawn_detached_run (module_logic_do_disable, spawn[i]);
+  if (spawn[i]->module->mode & einit_module_event_actions)
+   mod (einit_module_disable, spawn[i], NULL);
+  else
+   ethread_spawn_detached_run (module_logic_do_disable, spawn[i]);
  }
 }
 
