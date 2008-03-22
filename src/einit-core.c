@@ -530,7 +530,7 @@ int einit_main_loop() {
 }
 
 void core_process_died (struct einit_event *ev) {
- fprintf (stderr, "(*) pid: %i, rid: %s\n", ev->integer, ev->rid);
+ fprintf (stderr, "(*) pid: %i, rid: %s|.\n", ev->integer, ev->rid);
 
  if (!ev->rid || strmatch (ev->rid, "einit-monitor")) {
   fprintf (stderr, "pid: %i, rid: %s\n", ev->integer, ev->rid);
