@@ -160,6 +160,7 @@ void einit_process_raw_event (int fd) {
    if ((i > 2) && (epre_buffer[i-2] == '\n') && (epre_buffer[i-1] == '.') && (epre_buffer[i] == '\n')) {
     epre_buffer[i] = 0;
     epre_buffer[i-1] = 0;
+    epre_buffer[i-2] = 0;
 
     einit_event_loop_decoder (epre_buffer, i, NULL);
 
