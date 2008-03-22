@@ -482,7 +482,7 @@ char *mod_lookup_pid (pid_t pid) {
   module = module->next;
  }
 
- return module->module->rid;
+ return (module && module->module) ? module->module->rid : NULL;
 }
 
 void mod_update_pids () {
