@@ -157,12 +157,13 @@ void einit_process_raw_event (int fd) {
   retry:
 
   for (i = 0; i <= epre_offset; i++) {
-   if ((i > 2) && (epre_buffer[i-2] == '\n') && (epre_buffer[i-1] == '.') && (epre_buffer[i] == '\n')) {
+   if ((i > 3) && (epre_buffer[i-2] == '\n') && (epre_buffer[i-1] == '.') && (epre_buffer[i] == '\n')) {
     epre_buffer[i] = 0;
     epre_buffer[i-1] = 0;
     epre_buffer[i-2] = 0;
 
-    einit_event_loop_decoder (epre_buffer, i, NULL);
+    if (epre_buffer[0])
+     einit_event_loop_decoder (epre_buffer, i, NULL);
 
     if (epre_offset - i + 1) {
      memmove (epre_buffer, epre_buffer + i + 1, epre_offset - i + 1);
