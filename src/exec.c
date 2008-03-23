@@ -438,28 +438,28 @@ void einit_exec_pipe_handle (fd_set *rfds) {
 
      if ((r == 0) || ((r < 0) && (errno != EAGAIN) && (errno != EINTR))) { /* pipe has died -> waitpid() */
       close (needtohandle[i]->readpipe);
-
-      do {
-       waitpid(needtohandle[i]->pid, &(needtohandle[i]->status), 0);
-      } while (!WIFEXITED(needtohandle[i]->status) && !WIFSIGNALED(needtohandle[i]->status));
-
-      handle_dead_process:
-
-      if (needtohandle[i]->handle_dead_process)
-       needtohandle[i]->handle_dead_process (needtohandle[i]);
-
-      emutex_lock (&einit_exec_running_mutex);
-      einit_exec_running = (struct einit_exec_data **)setdel ((void **)einit_exec_running, needtohandle[i]);
-      emutex_unlock (&einit_exec_running_mutex);
+	  needtohandle[i]->readpipe = 0;
      }
     }
-   } else { /* no pipe... still check if the pid has died */
+   }
+
+   if (needtohandle[i]->pid) { /* no pipe... still check if the pid has died */
 //    fprintf (stderr, "checking process: %i\n", needtohandle[i]->pid);
 
     waitpid(needtohandle[i]->pid, &(needtohandle[i]->status), WNOHANG);
     if (WIFEXITED(needtohandle[i]->status) || WIFSIGNALED(needtohandle[i]->status)) {
-     goto handle_dead_process;
+     if (needtohandle[i]->handle_dead_process) {
+      needtohandle[i]->handle_dead_process (needtohandle[i]);
+     }
+
+     needtohandle[i]->pid = 0;
     }
+   }
+
+   if (!needtohandle[i]->pid && !needtohandle[i]->readpipe) {
+    emutex_lock (&einit_exec_running_mutex);
+    einit_exec_running = (struct einit_exec_data **)setdel ((void **)einit_exec_running, needtohandle[i]);
+	emutex_unlock (&einit_exec_running_mutex);
    }
   }
 
