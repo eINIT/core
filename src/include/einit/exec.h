@@ -88,8 +88,6 @@ struct einit_exec_data {
 pid_t einit_exec (struct einit_exec_data *);
 pid_t einit_exec_as_daemon (struct einit_exec_data *);
 
-int einit_exec_wait(pid_t);
-
 pid_t einit_exec_without_shell (char **);
 void einit_exec_without_shell_sequence (char ***);
 
