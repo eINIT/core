@@ -78,7 +78,7 @@ int einit_handle_pipe_fragment(struct einit_exec_data *x) {
      struct einit_event evx = evstaticinit(einit_feedback_module_status);
      evx.rid = x->rid;
      evx.string = sp[i];
-     evx.status = status_working;
+     evx.status = x->module ? x->module : status_working;
      event_emit(&evx, einit_event_flag_broadcast);
      evstaticdestroy (evx);
     }
