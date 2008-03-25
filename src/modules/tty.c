@@ -118,8 +118,6 @@ void einit_tty_process_event_handler (struct einit_event *);
 void *einit_tty_watcher (intptr_t pid_i) {
  pid_t pid = (pid_t)pid_i;
 
- fprintf (stderr, "this pid died (tty): %i", pid);
-
  emutex_lock (&ttys_mutex);
  struct ttyst *cur = ttys;
  struct ttyst *prev = NULL;

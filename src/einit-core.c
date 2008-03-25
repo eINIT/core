@@ -532,15 +532,9 @@ int einit_main_loop() {
 }
 
 void core_process_died (struct einit_event *ev) {
-// fprintf (stderr, "(*) pid: %i, rid: %s|.\n", ev->integer, ev->rid);
-
  if (!ev->rid || strmatch (ev->rid, "einit-monitor")) {
-//  fprintf (stderr, "pid: %i, rid: %s\n", ev->integer, ev->rid);
-
   mod_update_pids();
   ev->rid = mod_lookup_pid(ev->integer);
-
-//  fprintf (stderr, "pid: %i, rid: %s\n", ev->integer, ev->rid);
 
   if (ev->rid && !strmatch (ev->rid, "einit-monitor"))
    event_emit (ev, 0);
@@ -551,8 +545,6 @@ void core_process_died (struct einit_event *ev) {
 int main(int argc, char **argv, char **environ) {
  int i;
  int pthread_errno;
- char debug = 0;
- int crash_pipe = 0;
 // char crash_threshold = 5;
  char *einit_crash_data = NULL;
  char suppress_version = 0;
@@ -616,15 +608,13 @@ int main(int argc, char **argv, char **environ) {
 
       i++;
      } else if (strmatch(argv[i], "--crash-pipe")) {
-      crash_pipe = parse_integer (argv[i+1]);
-      fcntl (crash_pipe, F_SETFD, FD_CLOEXEC);
+      sched_trace_target = parse_integer (argv[i+1]);
+      fcntl (sched_trace_target, F_SETFD, FD_CLOEXEC);
 
       i++;
      } else if (strmatch(argv[i], "--crash-data")) {
       einit_crash_data = estrdup (argv[i+1]);
       i++;
-     } else if (strmatch(argv[i], "--debug")) {
-      debug = 1;
      } else if (strmatch(argv[i], "--do-wait")) {
       do_wait = 1;
      }
@@ -683,8 +673,6 @@ int main(int argc, char **argv, char **environ) {
 
  sched_reset_event_handlers();
  einit_exec_setup();
-
- sched_trace_target = crash_pipe;
 
 /* actual system initialisation */
   if (!suppress_version) {
@@ -763,12 +751,5 @@ int main(int argc, char **argv, char **environ) {
    fprintf (stderr, "main loop.\n");
   }
 
-  return einit_main_loop();
-
-/* this should never be reached... */
- if (einit_initial_environment) efree (einit_initial_environment);
-
- fprintf (stderr, "okay, you're in trouble: I couldn't reach my main loop, or it quit\n");
-
- return EXIT_FAILURE;
+ return einit_main_loop();
 }
