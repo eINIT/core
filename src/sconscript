@@ -1,4 +1,4 @@
-Import(['env', 'InstallDirSbin', 'InstallDirLib', 'InstallDirLibBin', 'InternalModules', 'InstallDirInclude', 'AssemblyDir', 'ASMFunctionsAvailable', 'uname'])
+Import(['env', 'InstallDirSbin', 'InstallDirLib', 'InstallDirLibBin', 'InternalModules', 'InstallDirInclude', 'AssemblyDir', 'ASMFunctionsAvailable', 'uname', 'ObjectsLibIXP'])
 
 import glob
 
@@ -22,7 +22,7 @@ CodeEinitLogD = ['einit-log.c']
 
 CodeEinitSysVD = ['tools/einit-sysvd.c']
 
-CodeLibEinit = AssemblyFunctions + ['libraries/libeinit.c', 'bitch.c', 'event.c', 'utility.c', 'exec.c', 'strings.c'] + CodeSet + CodeSTree + CodeITree
+CodeLibEinit = AssemblyFunctions + ['libraries/libeinit.c', 'bitch.c', 'event.c', 'utility.c', 'exec.c', 'strings.c'] + CodeSet + CodeSTree + CodeITree + ObjectsLibIXP
 
 linkCore = '-Wl,-export-dynamic'
 
@@ -53,10 +53,10 @@ einitLogD = env.Program ('einit-log', CodeEinitLogD, LIBS=['einit'], LIBPATH=['.
 einitSysVD = env.Program ('einit-sysvd', CodeEinitSysVD, LIBS=['einit'], LIBPATH=['.'])
 
 if uname == 'Linux':
- libEinit = env.SharedLibrary ('einit', CodeLibEinit, LIBS=['ixp-local', 'pthread'], LIBPATH=['#libixp'], SHLINKFLAGS='-shared -Wl,-soname,libeinit.so.3.0.0')
+ libEinit = env.SharedLibrary ('einit', CodeLibEinit, LIBS=['pthread'], SHLINKFLAGS='-shared -Wl,-soname,libeinit.so.3.0.0')
  libEinitPP = env.SharedLibrary ('einit++', 'libraries/libeinit++.c++', LIBS=['einit'], LIBPATH=['.'], SHLINKFLAGS='-shared -Wl,-soname,libeinit++.so.3.0.0')
 else:
- libEinit = env.SharedLibrary ('einit', CodeLibEinit, LIBS=['ixp-local', 'pthread'], LIBPATH=['#libixp'])
+ libEinit = env.SharedLibrary ('einit', CodeLibEinit, LIBS=['pthread'])
  libEinitPP = env.SharedLibrary ('einit++', 'libraries/libeinit++.c++', LIBS=['einit'], LIBPATH=['.'])
 
 env.Install (InstallDirLibBin, einitCore)

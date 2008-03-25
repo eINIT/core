@@ -8,4 +8,8 @@ objects = []
 for i in files:
  objects += env.SharedObject (i, CPPPATH=['.'])
 
-env.StaticLibrary ('ixp-local', objects)
+# env.StaticLibrary ('ixp-local', objects)
+
+ObjectsLibIXP = objects;
+
+Export ('ObjectsLibIXP')
