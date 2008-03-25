@@ -478,8 +478,6 @@ char *event_code_to_string (const uint32_t code) {
   case einit_core_module_action_execute:       return "core/module-action-execute";
   case einit_core_module_action_complete:      return "core/module-action-complete";
 
-  case einit_core_secondary_main_loop:         return "core/secondary-main-loop";
-
   case einit_core_crash_data:                  return "core/crash-data";
 
   case einit_mount_do_update:                  return "mount/do-update";
@@ -615,8 +613,6 @@ uint32_t event_string_to_code (const char *code) {
 
      else if (strmatch (tcode[1], "module-action-execute"))       ret = einit_core_module_action_execute;
      else if (strmatch (tcode[1], "module-action-complete"))      ret = einit_core_module_action_complete;
-
-     else if (strmatch (tcode[1], "secondary-main-loop"))         ret = einit_core_secondary_main_loop;
 
      else if (strmatch (tcode[1], "crash-data"))                  ret = einit_core_crash_data;
      break;

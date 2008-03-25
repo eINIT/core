@@ -123,8 +123,6 @@ enum einit_event_code {
  einit_core_module_action_execute   = einit_event_subsystem_core     | 0x601,
  einit_core_module_action_complete  = einit_event_subsystem_core     | 0x602,
 
- einit_core_secondary_main_loop     = einit_event_subsystem_core     | 0xfef,
-
  einit_core_crash_data              = einit_event_subsystem_core     | 0xffd,
 
 /* einit_event_subsystem_mount: */

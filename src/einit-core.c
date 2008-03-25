@@ -736,11 +736,7 @@ int main(int argc, char **argv, char **environ) {
   event_emit (&update_event, einit_event_flag_broadcast);
   evstaticdestroy(update_event);
 
-  if (do_wait) {
-   struct einit_event eml = evstaticinit(einit_core_secondary_main_loop);
-   event_emit (&eml, einit_event_flag_broadcast);
-   evstaticdestroy(eml);
-  } else {
+  if (!do_wait) {
 /* actual init code */
    event_listen (einit_boot_root_device_ok, core_event_einit_boot_root_device_ok);
 
