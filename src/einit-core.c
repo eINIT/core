@@ -740,8 +740,6 @@ int main(int argc, char **argv, char **environ) {
    struct einit_event eml = evstaticinit(einit_core_secondary_main_loop);
    event_emit (&eml, einit_event_flag_broadcast);
    evstaticdestroy(eml);
-
-   return einit_main_loop();
   } else {
 /* actual init code */
    event_listen (einit_boot_root_device_ok, core_event_einit_boot_root_device_ok);
@@ -767,9 +765,9 @@ int main(int argc, char **argv, char **environ) {
    }
 
    fprintf (stderr, "main loop.\n");
-
-   return einit_main_loop();
   }
+
+  return einit_main_loop();
 
 /* this should never be reached... */
  if (einit_initial_environment) efree (einit_initial_environment);

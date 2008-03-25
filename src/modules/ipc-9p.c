@@ -623,6 +623,7 @@ int einit_ipc_9p_prepare (fd_set *rfds) {
   if(c->read) {
    if(i < c->fd)
     i = c->fd;
+
    FD_SET(c->fd, rfds);
   }
 
@@ -640,10 +641,7 @@ void einit_ipc_9p_handle (fd_set *rfds) {
  }
 }
 
-void *einit_ipc_9p_listen (void *param) {
- intptr_t fdp = (intptr_t)param;
- int fd = fdp;
-
+void einit_ipc_9p_listen (int fd) {
  fcntl (fd, F_SETFD, FD_CLOEXEC);
 
  IxpConn* connection = ixp_listen(&einit_ipc_9p_server, fd, &einit_ipc_9p_srv, serve_9pcon, NULL); 
@@ -761,7 +759,7 @@ void *einit_ipc_9p_thread_function (void *unused_parameter) {
 
  einit_global_environment = straddtoenviron (einit_global_environment, "EINIT_9P_ADDRESS", address);
 
- einit_ipc_9p_listen((void *)fd);
+ einit_ipc_9p_listen(fd);
 
  return NULL;
 }
@@ -772,11 +770,13 @@ void *einit_ipc_9p_thread_function_address (char *address) {
  intptr_t fd = ixp_announce (address);
 
  if (!fd) {
+  einit_ipc_9p_running = 0;
+
   notice (1, "cannot initialise 9p server");
   return NULL;
  }
 
- einit_ipc_9p_listen((void *)fd);
+ einit_ipc_9p_listen(fd);
 
  return NULL;
 }
@@ -866,12 +866,6 @@ void einit_ipc_9p_ipc_write (struct einit_event *ev) {
  }
 }
 
-const char *einit_ipc_9p_cl_address = NULL;
-
-void einit_ipc_9p_secondary_main_loop (struct einit_event *ev) {
- einit_ipc_9p_thread_function_address ((char *)einit_ipc_9p_cl_address);
-}
-
 int einit_ipc_9p_configure (struct lmodule *irr) {
  module_init(irr);
 
@@ -895,8 +889,7 @@ int einit_ipc_9p_configure (struct lmodule *irr) {
   }
 
   if (address) {
-   einit_ipc_9p_cl_address = str_stabilise (address);
-   event_listen (einit_core_secondary_main_loop, einit_ipc_9p_secondary_main_loop);
+   einit_ipc_9p_thread_function_address (address);
   }
  }
 
