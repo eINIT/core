@@ -83,9 +83,6 @@ buildBundleE('03-base', ModulesBase, '.', menv)
 
 buildBundleE('04-desktop', ModulesPosixDesktop, 'posix', menv)
 
-if 'ipc-9p' in ExternalModules:
- buildModule ('ipc-9p', '.', menv.Clone (LIBS=['ixp-local'], LIBPATH=['#libixp']))
-
 if 'module-logic-v4' in ExternalModules:
  buildModule ('module-logic-v4', '.', menv.Clone (LIBS=librt))
 

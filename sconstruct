@@ -100,11 +100,11 @@ if f:
 
 AssemblyDir = '#asm/' + arch + '-' + uname.lower() + '-' + libc
 
-SpecialModules = ['00-configuration-stree', '01-configuration-xml-expat', 'ipc-9p', 'module-logic-v4']
+SpecialModules = ['00-configuration-stree', '01-configuration-xml-expat', 'module-logic-v4']
 
 Modules = []
 
-ModulesBase = ['fqdn', 'exec', 'mount', 'tty', 'process', 'module-group', 'module-network-v2', 'parse-sh', 'module-checkpoint', 'ipc-core-helpers', 'module-transformations']
+ModulesBase = ['fqdn', 'exec', 'mount', 'tty', 'process', 'module-group', 'module-network-v2', 'parse-sh', 'module-checkpoint', 'ipc-core-helpers', 'module-transformations', 'ipc-9p']
 
 ModulesLinux = ['linux-mdev', 'linux-static-dev', 'linux-sysconf', 'linux-mount', 'linux-process', 'linux-kernel-modules', 'linux-udev', 'linux-hotplug', 'linux-cpufreq', 'linux-bootchart', 'linux-network', 'linux-network-wpa-supplicant', 'linux-network-bridge', 'linux-network-bonding', 'linux-urandom', 'linux-splash-invoker']
 
