@@ -428,7 +428,7 @@ void einit_exec_pipe_handle (fd_set *rfds) {
  if (needtohandle) {
   for (; needtohandle[i]; i++) {
    if (needtohandle[i]->readpipe) {
-//    fprintf (stderr, "checking pipe: %i\n", needtohandle[i]->readpipe);
+    fprintf (stderr, "checking pipe: %i\n", needtohandle[i]->readpipe);
     if (FD_ISSET (needtohandle[i]->readpipe, rfds)) {
      int r = needtohandle[i]->handle_pipe_fragment (needtohandle[i]);
 
@@ -440,7 +440,7 @@ void einit_exec_pipe_handle (fd_set *rfds) {
    }
 
    if (needtohandle[i]->pid) { /* check if the pid has died */
-//    fprintf (stderr, "checking process: %i\n", needtohandle[i]->pid);
+    fprintf (stderr, "checking process: %i\n", needtohandle[i]->pid);
 
     int p = waitpid(needtohandle[i]->pid, &(needtohandle[i]->status), WNOHANG);
 
