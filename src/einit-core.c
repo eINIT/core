@@ -447,11 +447,11 @@ int einit_raw_ipc_prepare (fd_set *rfds) {
 }
 
 void einit_raw_ipc_handle (fd_set *rfds) {
- if (FD_ISSET (einit_ipc_pipe_fd, rfds)) {
+ if ((einit_ipc_pipe_fd != -1) && FD_ISSET (einit_ipc_pipe_fd, rfds)) {
   einit_process_raw_event (einit_ipc_pipe_fd);
  }
 
- if (FD_ISSET (einit_alarm_pipe_read, rfds)) {
+ if ((einit_alarm_pipe_read != -1) && FD_ISSET (einit_alarm_pipe_read, rfds)) {
   char buffer[BUFFERSIZE];
   read (einit_alarm_pipe_read, buffer, BUFFERSIZE);
  }

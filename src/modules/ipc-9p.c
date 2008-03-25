@@ -764,7 +764,7 @@ void *einit_ipc_9p_thread_function (void *unused_parameter) {
  return NULL;
 }
 
-void *einit_ipc_9p_thread_function_address (char *address) {
+void einit_ipc_9p_thread_function_address (char *address) {
  einit_ipc_9p_running = 1;
 
  intptr_t fd = ixp_announce (address);
@@ -773,12 +773,8 @@ void *einit_ipc_9p_thread_function_address (char *address) {
   einit_ipc_9p_running = 0;
 
   notice (1, "cannot initialise 9p server");
-  return NULL;
- }
-
- einit_ipc_9p_listen(fd);
-
- return NULL;
+ } else
+  einit_ipc_9p_listen(fd);
 }
 
 void einit_ipc_9p_boot_event_handler_root_device_ok (struct einit_event *ev) {
