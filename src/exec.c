@@ -250,6 +250,15 @@ pid_t einit_exec (struct einit_exec_data *x) {
   }
  }
 
+ if (c) {
+  int i = 0;
+  for (; c[i]; i++) {
+   fprintf (stderr, "exec: %i, %s\n", i, c[i]);
+  }
+ } else {
+  fprintf (stderr, "no command?\n");
+ }
+
  pid_t p = efork();
 
  if (p < 0) {
