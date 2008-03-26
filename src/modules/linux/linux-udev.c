@@ -110,7 +110,7 @@ void linux_udev_post_evmsactivate (struct einit_exec_data *xd) {
   char *xtx[] = { "/sbin/udevsettle", "--timeout=60", NULL };
   einit_exec_without_shell_with_function_on_process_death (xtx, linux_udev_post_secondary_udevsettle, thismodule);
  } else {
-  char *xtx[] = { "/sbin/udevadm settle", "--timeout=60", NULL };
+  char *xtx[] = { "/sbin/udevadm", "settle", "--timeout=60", NULL };
   einit_exec_without_shell_with_function_on_process_death (xtx, linux_udev_post_secondary_udevsettle, thismodule);
  }
 }
@@ -152,7 +152,7 @@ void linux_udev_post_udevtrigger (struct einit_exec_data *xd) {
   char *xtx[] = { "/sbin/udevsettle", "--timeout=60", NULL };
   einit_exec_without_shell_with_function_on_process_death (xtx, linux_udev_post_udevsettle, thismodule);
  } else {
-  char *xtx[] = { "/sbin/udevadm settle", "--timeout=60", NULL };
+  char *xtx[] = { "/sbin/udevadm", "settle", "--timeout=60", NULL };
   einit_exec_without_shell_with_function_on_process_death (xtx, linux_udev_post_udevsettle, thismodule);
  }
 }
@@ -175,10 +175,10 @@ void linux_udev_post_execute (struct einit_exec_data *xd) {
   }
  } else {
   if (n && n->flag) {
-   char *xtx[] = { "/sbin/udevadm trigger", NULL };
+   char *xtx[] = { "/sbin/udevadm", "trigger", NULL };
    einit_exec_without_shell_with_function_on_process_death (xtx, linux_udev_post_udevtrigger, thismodule);
   } else {
-   char *xtx[] = { "/sbin/udevadm trigger", "--attr-match=dev", NULL };
+   char *xtx[] = { "/sbin/udevadm", "trigger", "--attr-match=dev", NULL };
    einit_exec_without_shell_with_function_on_process_death (xtx, linux_udev_post_udevtrigger, thismodule);
   }
  }
