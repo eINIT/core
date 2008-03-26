@@ -372,7 +372,7 @@ pid_t einit_exec_without_shell_with_function_on_process_death_keep_stdin (char *
  struct einit_exec_data *x = ecalloc (1, sizeof (struct einit_exec_data));
 
  x->command_d = c;
- x->options = einit_exec_no_shell | einit_exec_keep_stdi;
+ x->options = einit_exec_no_shell | einit_exec_keep_stdin;
  x->module = module;
  x->handle_dead_process = handle_dead_process;
 
