@@ -495,7 +495,7 @@ void einit_exec_setup() {
 
 /* end of exec.c code */
 
-int einit_main_loop() {
+int einit_main_loop(char early_bootup) {
  sigset_t sigmask, osigmask;
 
  sigemptyset(&sigmask);
@@ -506,6 +506,14 @@ int einit_main_loop() {
 
  einit_add_fd_prepare_function(einit_raw_ipc_prepare);
  einit_add_fd_handler_function(einit_raw_ipc_handle);
+
+ if (early_bootup) {
+  fprintf (stderr, "running early bootup code...\n");
+
+  struct einit_event eml = evstaticinit(einit_boot_early);
+  event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread_multi_wait);
+  evstaticdestroy(eml);
+ }
 
  while (1) {
   int selectres;
@@ -739,17 +747,7 @@ int main(int argc, char **argv, char **environ) {
     efree (einit_crash_data);
     einit_crash_data = NULL;
    }
-
-   {
-    fprintf (stderr, "running early bootup code...\n");
-
-    struct einit_event eml = evstaticinit(einit_boot_early);
-    event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread_multi_wait);
-    evstaticdestroy(eml);
-   }
-
-   fprintf (stderr, "main loop.\n");
   }
 
- return einit_main_loop();
+  return einit_main_loop(!do_wait);
 }
