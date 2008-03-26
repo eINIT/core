@@ -46,7 +46,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <errno.h>
 #include <sys/stat.h>
 
-#include <einit-modules/exec.h>
+#include <einit/exec.h>
 
 #include <sys/mount.h>
 
@@ -80,86 +80,109 @@ module_register(linux_udev_self);
 
 #endif
 
-char linux_udev_enabled = 0;
-
 void linux_udev_load_kernel_extensions() {
  struct einit_event eml = evstaticinit(einit_boot_load_kernel_extensions);
  event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread_multi_wait);
  evstaticdestroy(eml);
 }
 
-struct dexecinfo linux_udev_dexec = {
- .id = "daemon-udev",
- .command = "/sbin/udevd --daemon; pidof udevd>/dev/udev.pid",
- .prepare = NULL,
- .cleanup = NULL,
- .is_up = NULL,
- .is_down = NULL,
- .variables = NULL,
- .uid = 0,
- .gid = 0,
- .user = NULL, .group = NULL,
- .restart = 1,
- .cb = NULL,
- .environment = NULL,
- .pidfile = "/dev/udev.pid",
- .need_files = NULL,
- .oattrs = NULL,
+void linux_udev_post_secondary_vgchange (struct einit_exec_data *xd) {
+ struct einit_event eml = evstaticinit(einit_boot_devices_available);
+ event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread_multi_wait);
+ evstaticdestroy(eml);
+}
 
- .options = daemon_model_forking,
-
- .pidfiles_last_update = 0
-};
-
-#if 0
-void linux_udev_ping_for_uevents(char *dir, char depth) {
+void linux_udev_post_secondary_udevsettle (struct einit_exec_data *xd) {
  struct stat st;
 
- if (!dir || lstat (dir, &st)) return;
-
- if (S_ISLNK (st.st_mode)) {
-  return;
+ if (!stat ("/sbin/vgchange", &st)) {
+  char *xtx[] = { "/sbin/vgchange", NULL };
+  einit_exec_without_shell_with_function_on_process_death (xtx, linux_udev_post_secondary_vgchange, thismodule);
+ } else {
+  linux_udev_post_secondary_vgchange (xd);
  }
+}
 
- if (S_ISDIR (st.st_mode)) {
-  DIR *d;
-  struct dirent *e;
+void linux_udev_post_evmsactivate (struct einit_exec_data *xd) {
+ struct stat st;
 
-  d = eopendir (dir);
-  if (d != NULL) {
-   while ((e = ereaddir (d))) {
-    if (strmatch (e->d_name, ".") || strmatch (e->d_name, "..")) {
-     continue;
-    }
+ if (stat ("/sbin/udevadm", &st)) {
+  char *xtx[] = { "/sbin/udevsettle", "--timeout=60", NULL };
+  einit_exec_without_shell_with_function_on_process_death (xtx, linux_udev_post_secondary_udevsettle, thismodule);
+ } else {
+  char *xtx[] = { "/sbin/udevadm settle", "--timeout=60", NULL };
+  einit_exec_without_shell_with_function_on_process_death (xtx, linux_udev_post_secondary_udevsettle, thismodule);
+ }
+}
 
-    char *f = joinpath ((char *)dir, e->d_name);
+void linux_udev_post_vgscan (struct einit_exec_data *xd) {
+ struct stat st;
 
-    if (f) {
-     if (!lstat (f, &st) && !S_ISLNK (st.st_mode) && S_ISDIR (st.st_mode)) {
-      if (depth > 0) {
-       linux_udev_ping_for_uevents (f, depth - 1);
-      }
-     }
+ if (!stat ("/sbin/evms_activate", &st)) {
+  char *xtx[] = { "/sbin/evms_activate", "-q", NULL };
+  einit_exec_without_shell_with_function_on_process_death (xtx, linux_udev_post_evmsactivate, thismodule);
+ } else {
+  linux_udev_post_evmsactivate(xd);
+ }
+}
 
-     efree (f);
-    }
-   }
+void linux_udev_post_udevsettle (struct einit_exec_data *xd) {
+ struct stat st;
+ mount ("usbfs", "/proc/bus/usb", "usbfs", 0, NULL);
 
-   eclosedir(d);
+ /* let's not forget about raid setups and the like here... */
+ if (!stat ("/sbin/lvm", &st)) {
+  char *xtx[] = { "/sbin/lvm", "vgscan", "-P", "--mkdnodes", "--ignorelockingfailure", NULL };
+  einit_exec_without_shell_with_function_on_process_death (xtx, linux_udev_post_vgscan, thismodule);
+ } else {
+  linux_udev_post_vgscan(xd);
+ }
+}
+
+void linux_udev_post_udevtrigger (struct einit_exec_data *xd) {
+ struct stat st;
+
+ fputs ("loading kernel extensions...\n", stderr);
+
+ linux_udev_load_kernel_extensions();
+
+ fputs ("waiting for udev to process all events...\n", stderr);
+
+ if (stat ("/sbin/udevadm", &st)) {
+  char *xtx[] = { "/sbin/udevsettle", "--timeout=60", NULL };
+  einit_exec_without_shell_with_function_on_process_death (xtx, linux_udev_post_udevsettle, thismodule);
+ } else {
+  char *xtx[] = { "/sbin/udevadm settle", "--timeout=60", NULL };
+  einit_exec_without_shell_with_function_on_process_death (xtx, linux_udev_post_udevsettle, thismodule);
+ }
+}
+
+void linux_udev_post_execute (struct einit_exec_data *xd) {
+ struct stat st;
+ struct cfgnode *n = cfg_getnode ("configuration-system-coldplug", NULL);
+ /* again, i should check for an appropriate kernel version... */
+ /* this should be all nodes that'll be needed... */
+
+ fputs ("populating /dev with udevtrigger...\n", stderr);
+
+ if (stat ("/sbin/udevadm", &st)) {
+  if (n && n->flag) {
+   char *xtx[] = { "/sbin/udevtrigger", NULL };
+   einit_exec_without_shell_with_function_on_process_death (xtx, linux_udev_post_udevtrigger, thismodule);
+  } else {
+   char *xtx[] = { "/sbin/udevtrigger", "--attr-match=dev", NULL };
+   einit_exec_without_shell_with_function_on_process_death (xtx, linux_udev_post_udevtrigger, thismodule);
+  }
+ } else {
+  if (n && n->flag) {
+   char *xtx[] = { "/sbin/udevadm trigger", NULL };
+   einit_exec_without_shell_with_function_on_process_death (xtx, linux_udev_post_udevtrigger, thismodule);
+  } else {
+   char *xtx[] = { "/sbin/udevadm trigger", "--attr-match=dev", NULL };
+   einit_exec_without_shell_with_function_on_process_death (xtx, linux_udev_post_udevtrigger, thismodule);
   }
  }
-
- char *x = joinpath (dir, "uevent");
- FILE *uev = fopen (x, "w");
-
- if (uev) {
-  fputs ("add", uev);
-  fclose (uev);
- }
-
- efree (x);
 }
-#endif
 
 /* TODO: maybe... maybe not, anyway...
    * using tarballs
@@ -167,154 +190,69 @@ void linux_udev_ping_for_uevents(char *dir, char depth) {
    * the /dev/root rule (not sure if that makes terribly much sense, it never did run properly before anyway)
    * coldplug support
    * re-implement udevsettle in C */
+void linux_udev_run() {
+ struct stat st;
 
-int linux_udev_run() {
- if (!linux_udev_enabled) {
-  linux_udev_enabled = 1;
-  struct stat st;
+ mount ("proc", "/proc", "proc", 0, NULL);
+ mount ("sys", "/sys", "sysfs", 0, NULL);
+ mount ("udev", "/dev", "tmpfs", 0, NULL);
 
-  mount ("proc", "/proc", "proc", 0, NULL);
-  mount ("sys", "/sys", "sysfs", 0, NULL);
-  mount ("udev", "/dev", "tmpfs", 0, NULL);
+ mkdir ("/dev/pts", 0777);
+ mount ("devpts", "/dev/pts", "devpts", 0, NULL);
 
-  mkdir ("/dev/pts", 0777);
-  mount ("devpts", "/dev/pts", "devpts", 0, NULL);
+ mkdir ("/dev/shm", 0777);
+ mount ("shm", "/dev/shm", "tmpfs", 0, NULL);
 
-  mkdir ("/dev/shm", 0777);
-  mount ("shm", "/dev/shm", "tmpfs", 0, NULL);
+ dev_t ldev = (5 << 8) | 1;
+ mknod ("/dev/console", S_IFCHR, ldev);
+ ldev = (5 << 8) | 0;
+ mknod ("/dev/tty", S_IFCHR, ldev);
+ ldev = (1 << 8) | 3;
+ mknod ("/dev/null", S_IFCHR, ldev);
 
-  dev_t ldev = (5 << 8) | 1;
-  mknod ("/dev/console", S_IFCHR, ldev);
-  ldev = (5 << 8) | 0;
-  mknod ("/dev/tty", S_IFCHR, ldev);
-  ldev = (1 << 8) | 3;
-  mknod ("/dev/null", S_IFCHR, ldev);
+ char min = 0;
+ for (; min < 24; min++) {
+  ldev = (4 << 8) | min;
+  char buffer[BUFFERSIZE];
+  esprintf (buffer, BUFFERSIZE, "/dev/tty%d", min);
+  mknod (buffer, S_IFCHR, ldev);
+ }
 
-  char min = 0;
-  for (; min < 24; min++) {
-   ldev = (4 << 8) | min;
-   char buffer[BUFFERSIZE];
-   esprintf (buffer, BUFFERSIZE, "/dev/tty%d", min);
-   mknod (buffer, S_IFCHR, ldev);
+ symlink ("/proc/self/fd", "/dev/fd");
+ symlink ("fd/0", "/dev/stdin");
+ symlink ("fd/1", "/dev/stdout");
+ symlink ("fd/2", "/dev/stderr");
+
+ if (!stat ("/proc/kcore", &st)) {
+  /* create kernel core symlink */
+  symlink ("/proc/kcore", "/dev/core");
+ }
+
+ if (!stat ("/proc/sys/kernel/hotplug", &st)) {
+ /* i should check for an appropriate kernel version here... 2.6.14 methinks */
+ /* set netlink handler */
+  FILE *f = fopen ("/proc/sys/kernel/hotplug", "w");
+  if (f) {
+   fputs ("\n", f);
+   fclose (f);
   }
+ }
 
-  symlink ("/proc/self/fd", "/dev/fd");
-  symlink ("fd/0", "/dev/stdin");
-  symlink ("fd/1", "/dev/stdout");
-  symlink ("fd/2", "/dev/stderr");
+ fputs ("starting udev...\n", stderr);
 
-  if (!stat ("/proc/kcore", &st)) {
-/* create kernel core symlink */
-   symlink ("/proc/kcore", "/dev/core");
-  }
-
-  if (!stat ("/proc/sys/kernel/hotplug", &st)) {
-/* i should check for an appropriate kernel version here... 2.6.14 methinks */
-/* set netlink handler */
-   FILE *f = fopen ("/proc/sys/kernel/hotplug", "w");
-   if (f) {
-    fputs ("\n", f);
-    fclose (f);
-   }
-  }
-
-  fputs ("starting udev...\n", stderr);
-
-  startdaemon(&linux_udev_dexec, NULL);
-
-  struct cfgnode *n = cfg_getnode ("configuration-system-coldplug", NULL);
-/* again, i should check for an appropriate kernel version... */
-/* this should be all nodes that'll be needed... */
-
-/*
-  if (n && n->flag) {
-   linux_udev_ping_for_uevents("/sys", 5);
-  } else {
-   linux_udev_ping_for_uevents("/sys/class", 4);
-   linux_udev_ping_for_uevents("/sys/block", 3);
-  }
-*/
-
-//  sleep (1);
-
-  fputs ("populating /dev with udevtrigger...\n", stderr);
-
-  if (stat ("/sbin/udevadm", &st)) {
-   if (n && n->flag) {
-    qexec ("/sbin/udevtrigger");
-   } else {
-    qexec ("/sbin/udevtrigger --attr-match=dev");
-   }
-  } else {
-   if (n && n->flag) {
-    qexec ("/sbin/udevadm trigger");
-   } else {
-    qexec ("/sbin/udevadm trigger --attr-match=dev");
-   }
-  }
-
-//  qexec (EINIT_LIB_BASE "/modules-xml/udev.sh enable");
-
-  fputs ("loading kernel extensions...\n", stderr);
-
-  linux_udev_load_kernel_extensions();
-
-  fputs ("waiting for udev to process all events...\n", stderr);
-
-//  sleep (1);
-
-  if (stat ("/sbin/udevadm", &st)) {
-   qexec ("/sbin/udevsettle --timeout=60");
-  } else {
-   qexec ("/sbin/udevadm settle --timeout=60");
-  }
-
-  mount ("usbfs", "/proc/bus/usb", "usbfs", 0, NULL);
-
-/* let's not forget about raid setups and the like here... */
-  if (!stat ("/sbin/lvm", &st)) {
-   qexec ("/sbin/lvm vgscan -P --mknodes --ignorelockingfailure");
-  }
-  if (!stat ("/sbin/evms_activate", &st)) {
-   qexec ("/sbin/evms_activate -q");
-  }
-
-  qexec ("/sbin/udevsettle --timeout=60");
-
-  if (!stat ("/sbin/vgchange", &st)) {
-   qexec ("/sbin/vgchange -a y");
-  }
-
-  return status_ok;
- } else
-  return status_failed;
+ char *xtx[] = { "/sbin/udevd", "--daemon", NULL };
+ einit_exec_without_shell_with_function_on_process_death (xtx, linux_udev_post_execute, thismodule);
 }
 
-void linux_udev_shutdown() {
- if (linux_udev_enabled) {
-/*  qexec (EINIT_LIB_BASE "/modules-xml/udev.sh on-shutdown");
-  qexec (EINIT_LIB_BASE "/modules-xml/udev.sh disable");*/
-  stopdaemon (&linux_udev_dexec, NULL);
- }
+void linux_udev_shutdown_vgchange (struct einit_exec_data *xd) {
 }
 
 void linux_udev_shutdown_imminent() {
  struct stat st;
 
- if (linux_udev_enabled) {
-  if (!stat ("/sbin/vgchange", &st)) {
-   qexec ("/sbin/vgchange -a n");
-  }
-
-  linux_udev_enabled = 0;
- }
-}
-
-void linux_udev_boot_event_handler (struct einit_event *ev) {
- if (linux_udev_run() == status_ok) {
-  struct einit_event eml = evstaticinit(einit_boot_devices_available);
-  event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread_multi_wait);
-  evstaticdestroy(eml);
+ if (!stat ("/sbin/vgchange", &st)) {
+  char *xtx[] = { "/sbin/vgchange", "-a", "n", NULL };
+  einit_exec_without_shell_with_function_on_process_death (xtx, linux_udev_shutdown_vgchange, thismodule);
  }
 }
 
@@ -327,11 +265,7 @@ int linux_udev_configure (struct lmodule *pa) {
   return status_configure_failed | status_not_in_use;
  }
 
- exec_configure(pa);
-
- event_listen (einit_boot_early, linux_udev_boot_event_handler);
- event_listen (einit_power_down_scheduled, linux_udev_shutdown);
- event_listen (einit_power_reset_scheduled, linux_udev_shutdown);
+ event_listen (einit_boot_early, linux_udev_run);
  event_listen (einit_power_down_imminent, linux_udev_shutdown_imminent);
  event_listen (einit_power_reset_imminent, linux_udev_shutdown_imminent);
 

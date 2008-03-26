@@ -356,6 +356,21 @@ pid_t einit_exec_without_shell (char ** c) {
  return p;
 }
 
+pid_t einit_exec_without_shell_with_function_on_process_death (char ** c, void (*handle_dead_process)(struct einit_exec_data *), struct lmodule *module) {
+ struct einit_exec_data x;
+ memset (&x, 0, sizeof(struct einit_exec_data));
+
+ x.command_d = c;
+ x.options |= einit_exec_no_shell;
+ x.module = module;
+ x.handle_dead_process = handle_dead_process;
+
+ pid_t p = einit_exec (&x);
+
+ return p;
+}
+
+
 void einit_exec_without_shell_sequence (char *** sequence) {
  while (*sequence) {
   einit_exec_without_shell (*sequence);

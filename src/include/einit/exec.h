@@ -91,12 +91,13 @@ pid_t einit_exec_as_daemon (struct einit_exec_data *);
 pid_t einit_exec_without_shell (char **);
 void einit_exec_without_shell_sequence (char ***);
 
+pid_t einit_exec_without_shell_with_function_on_process_death (char **, void (*)(struct einit_exec_data *), struct lmodule *);
+
 pid_t einit_exec_with_shell (char *);
 
 pid_t einit_exec_auto (char *);
 
 struct einit_exec_data *  einit_exec_create_exec_data_from_string (char *);
-
 
 #endif
 
