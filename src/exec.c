@@ -441,8 +441,11 @@ void einit_exec_pipe_handle (fd_set *rfds) {
 
    if (needtohandle[i]->pid) { /* check if the pid has died */
     fprintf (stderr, "checking process: %i\n", needtohandle[i]->pid);
+    int p;
 
-    int p = waitpid(needtohandle[i]->pid, &(needtohandle[i]->status), WNOHANG);
+    retry_waitpid:
+
+    p = waitpid(needtohandle[i]->pid, &(needtohandle[i]->status), WNOHANG);
 
     if ((p > 0) && (WIFEXITED(needtohandle[i]->status) || WIFSIGNALED(needtohandle[i]->status))) {
      if (needtohandle[i]->handle_dead_process) {
@@ -452,12 +455,16 @@ void einit_exec_pipe_handle (fd_set *rfds) {
      needtohandle[i]->pid = 0;
     }
 
-    if ((p < 0) && (errno != EINTR)) {
-     if (needtohandle[i]->handle_dead_process) {
-      needtohandle[i]->handle_dead_process (needtohandle[i]);
-     }
+    if (p < 0) {
+     if (errno != EINTR) {
+      if (needtohandle[i]->handle_dead_process) {
+       needtohandle[i]->handle_dead_process (needtohandle[i]);
+      }
 
-     needtohandle[i]->pid = 0;
+      needtohandle[i]->pid = 0;
+     } else {
+      goto retry_waitpid;
+     }
     }
    }
 
