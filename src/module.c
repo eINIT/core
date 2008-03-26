@@ -359,7 +359,7 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
  module->status |= status_working;
 
  /* check if the task requested has already been done (or if it can be done at all) */
- if ((task & einit_module_enable) && (!((module->module->mode & einit_module_event_actions) && !module->enable) || (module->status & status_enabled))) {
+ if ((task & einit_module_enable) && ((!(module->module->mode & einit_module_event_actions) && !module->enable) || (module->status & status_enabled))) {
   wontload:
     module->status ^= status_working;
 
@@ -369,7 +369,7 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
   return status_idle;
  }
 
- if ((task & einit_module_disable) && (!((module->module->mode & einit_module_event_actions) && !module->disable) || (module->status & status_disabled) || (module->status == status_idle)))
+ if ((task & einit_module_disable) && ((!(module->module->mode & einit_module_event_actions) && !module->disable) || (module->status & status_disabled) || (module->status == status_idle)))
   goto wontload;
 
  if (task & einit_module_enable) {
