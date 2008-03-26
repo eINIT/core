@@ -385,17 +385,23 @@ void sched_reset_event_handlers () {
 void sched_signal_sigint (int signal, siginfo_t *siginfo, void *context) {
  sigint_called = 1;
 
+ einit_ping_core();
+
  return;
 }
 
 void sched_signal_sigalrm (int signal, siginfo_t *siginfo, void *context) {
 /* nothing to do here... really */
 
+ einit_ping_core();
+
  return;
 }
 
 void sched_signal_sigchld (int signal, siginfo_t *siginfo, void *context) {
  /* same for this one, just making sure we dont have this ignored */
+
+ einit_ping_core();
 
  return;
 }
@@ -496,13 +502,13 @@ void einit_exec_setup() {
 /* end of exec.c code */
 
 int einit_main_loop(char early_bootup) {
- sigset_t sigmask, osigmask;
+/* sigset_t sigmask, osigmask;
 
  sigemptyset(&sigmask);
  sigaddset(&sigmask, SIGINT);
  sigaddset(&sigmask, SIGALRM);
  sigaddset(&sigmask, SIGCHLD);
- sigprocmask(SIG_BLOCK, &sigmask, &osigmask);
+ sigprocmask(SIG_BLOCK, &sigmask, &osigmask);*/
 
  einit_add_fd_prepare_function(einit_raw_ipc_prepare);
  einit_add_fd_handler_function(einit_raw_ipc_handle);
@@ -533,7 +539,8 @@ int einit_main_loop(char early_bootup) {
   fd_set rfds;
   int c = einit_prepare_fdset (&rfds);
 
-  selectres = pselect(c, &rfds, NULL, NULL, 0, &osigmask);
+//  selectres = pselect(c, &rfds, NULL, NULL, 0, &osigmask);
+  selectres = select(c, &rfds, NULL, NULL, 0);
 
   if (selectres > 0) einit_handle_fdset (&rfds);
  }
