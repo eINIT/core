@@ -445,7 +445,9 @@ void einit_exec_pipe_handle (fd_set *rfds) {
    if (needtohandle[i]->readpipe) {
     fprintf (stderr, "checking pipe: %i\n", needtohandle[i]->readpipe);
     if (FD_ISSET (needtohandle[i]->readpipe, rfds)) {
+     fprintf (stderr, "reading pipe: %i\n", needtohandle[i]->readpipe);
      int r = needtohandle[i]->handle_pipe_fragment (needtohandle[i]);
+     fprintf (stderr, "done reading pipe: %i\n", needtohandle[i]->readpipe);
 
      if ((r == 0) || ((r < 0) && (errno != EAGAIN) && (errno != EINTR))) {
       close (needtohandle[i]->readpipe);
@@ -463,6 +465,8 @@ void einit_exec_pipe_handle (fd_set *rfds) {
     p = waitpid(needtohandle[i]->pid, &(needtohandle[i]->status), WNOHANG);
 
     if ((p > 0) && (WIFEXITED(needtohandle[i]->status) || WIFSIGNALED(needtohandle[i]->status))) {
+     fprintf (stderr, "process dead: %i\n", needtohandle[i]->pid);
+
      if (needtohandle[i]->handle_dead_process) {
       needtohandle[i]->handle_dead_process (needtohandle[i]);
      }
@@ -471,6 +475,8 @@ void einit_exec_pipe_handle (fd_set *rfds) {
     }
 
     if (p < 0) {
+     fprintf (stderr, "error while checking process's status: %i\n", needtohandle[i]->pid);
+
      if (errno != EINTR) {
       if (needtohandle[i]->handle_dead_process) {
        needtohandle[i]->handle_dead_process (needtohandle[i]);
