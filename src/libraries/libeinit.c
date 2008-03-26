@@ -461,6 +461,54 @@ int einit_read_callback_limited (char **path, int (*callback)(char *, size_t, vo
  return 0;
 }
 
+int einit_read_callback_skip (char **path, int (*callback)(char *, size_t, void *), void *cdata, int fragments) {
+ char *buffer = einit_render_path (path);
+
+ IxpCFid *f = ixp_open (einit_ipc_9p_client, buffer, P9_OREAD);
+
+ if (f) {
+  intptr_t rn = 0;
+  void *buf = NULL;
+  intptr_t blen = 0;
+
+  buf = malloc (f->iounit);
+  if (!buf) {
+   ixp_close (f);
+   return 0;
+  }
+
+  do {
+   buf = realloc (buf, blen + f->iounit);
+   if (buf == NULL) {
+    ixp_close (f);
+    return 0;
+   }
+
+   rn = ixp_read (f, (char *)(buf + blen), f->iounit);
+   if (rn > 0) {
+    blen = blen + rn;
+   }
+
+   if ((rn < f->iounit) && blen) {
+    *(((char *)buf) + blen) = 0;
+
+    if (fragments <= 0)
+     callback (buf, blen, cdata);
+    else
+     fragments--;
+
+    blen = 0;
+   }
+  } while (rn > 0);
+
+  ixp_close (f);
+ }
+
+ efree (buffer);
+
+ return 0;
+}
+
 int einit_write (char **path, const char *data) {
  if (!data) return 0;
 
@@ -652,6 +700,20 @@ int einit_event_loop_decoder (char *fragment, size_t size, void *data) {
 void einit_event_loop () {
  char *path[3] = { "events", "feed", NULL };
  einit_read_callback (path, einit_event_loop_decoder, NULL);
+}
+
+void einit_event_loop_skip_old () {
+ char *path[3] = { "events", "count", NULL };
+ char *count_s = einit_read (path);
+
+ if (count_s) {
+  int count = parse_integer (count_s);
+
+  path[1] = "feed";
+  einit_read_callback_skip (path, einit_event_loop_decoder, NULL, count);
+
+  efree (count_s);
+ }
 }
 
 void einit_replay_events() {
