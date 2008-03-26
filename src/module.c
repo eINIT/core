@@ -378,6 +378,8 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
 
   evstaticdestroy (e);
 
+  emutex_unlock (&module->mutex);
+
   return status_working;
  }
 
@@ -562,7 +564,7 @@ int mod_complete (char *rid, enum einit_module_task task, enum einit_module_stat
  mod_completion_handler (module, fb, task);
  evdestroy (fb);
 
- mod_update_usage_table(module);
+ mod_update_usage_table (module);
 
  if (shutting_down) {
   if ((task & einit_module_disable) && (module->status & (status_enabled | status_failed))) {
@@ -614,7 +616,8 @@ void mod_update_usage_table (struct lmodule *module) {
   }
  }
 
- emutex_unlock (&module->mutex);
+ if (!(module->module->mode & einit_module_event_actions))
+  emutex_unlock (&module->mutex);
 
 /* more cleanup code */
  ha = streelinear_prepare(service_usage);
