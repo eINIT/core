@@ -240,8 +240,8 @@ void linux_udev_run() {
 
  fputs ("starting udev...\n", stderr);
 
- char *xtx[] = { "/sbin/udevd", "--daemon", NULL };
- einit_exec_without_shell_with_function_on_process_death_keep_stdin (xtx, linux_udev_post_execute, thismodule);
+ char *xtx[] = { "/sbin/udevd", NULL };
+ einit_exec_without_shell_with_function_on_process_death_options (xtx, linux_udev_post_execute, thismodule, einit_exec_keep_stdin | einit_exec_daemonise);
 }
 
 void linux_udev_shutdown_vgchange (struct einit_exec_data *xd) {
