@@ -92,6 +92,7 @@ pid_t einit_exec_without_shell (char **);
 void einit_exec_without_shell_sequence (char ***);
 
 pid_t einit_exec_without_shell_with_function_on_process_death (char **, void (*)(struct einit_exec_data *), struct lmodule *);
+pid_t einit_exec_without_shell_with_function_on_process_death_keep_stdin (char **, void (*)(struct einit_exec_data *), struct lmodule *);
 
 pid_t einit_exec_with_shell (char *);
 
