@@ -358,6 +358,30 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
 
  module->status |= status_working;
 
+ /* check if the task requested has already been done (or if it can be done at all) */
+ if ((task & einit_module_enable) && (!((module->module->mode & einit_module_event_actions) && !module->enable) || (module->status & status_enabled))) {
+  wontload:
+    module->status ^= status_working;
+
+  mod_completion_handler_no_change (module, task);
+
+  emutex_unlock (&module->mutex);
+  return status_idle;
+ }
+
+ if ((task & einit_module_disable) && (!((module->module->mode & einit_module_event_actions) && !module->disable) || (module->status & status_disabled) || (module->status == status_idle)))
+  goto wontload;
+
+ if (task & einit_module_enable) {
+  if (!mod_service_requirements_met(module))
+   goto wontload;
+ } else if (task & einit_module_disable) {
+  if (!mod_service_not_in_use(module))
+   goto wontload;
+ }
+
+ skipdependencies:
+
  if (module->module->mode & einit_module_event_actions) {
   char *action = custom_command;
 
@@ -370,8 +394,6 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
   if (!action)
    goto wontload;
 
-  emutex_unlock (&module->mutex);
-
   struct einit_event e = evstaticinit (einit_core_module_action_execute);
   e.rid = module->module->rid;
   e.string = (char *)str_stabilise(action);
@@ -382,30 +404,6 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
 
   return status_working;
  }
-
- /* check if the task requested has already been done (or if it can be done at all) */
- if ((task & einit_module_enable) && (!module->enable || (module->status & status_enabled))) {
-  wontload:
-    module->status ^= status_working;
-
-  mod_completion_handler_no_change (module, task);
-
-  emutex_unlock (&module->mutex);
-  return status_idle;
- }
-
- if ((task & einit_module_disable) && (!module->disable || (module->status & status_disabled) || (module->status == status_idle)))
-  goto wontload;
-
- if (task & einit_module_enable) {
-  if (!mod_service_requirements_met(module))
-   goto wontload;
- } else if (task & einit_module_disable) {
-  if (!mod_service_not_in_use(module))
-   goto wontload;
- }
-
- skipdependencies:
 
 /* inform everyone about what's going to happen */
  mod_emit_pre_hook_event (module, task);
@@ -616,8 +614,7 @@ void mod_update_usage_table (struct lmodule *module) {
   }
  }
 
- if (!(module->module->mode & einit_module_event_actions))
-  emutex_unlock (&module->mutex);
+ emutex_unlock (&module->mutex);
 
 /* more cleanup code */
  ha = streelinear_prepare(service_usage);
