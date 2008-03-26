@@ -450,6 +450,8 @@ void einit_exec_pipe_handle (fd_set *rfds) {
      fprintf (stderr, "done reading pipe: %i\n", needtohandle[i]->readpipe);
 
      if ((r == 0) || ((r < 0) && (errno != EAGAIN) && (errno != EINTR))) {
+      fprintf (stderr, "pipe's dead: %i\n", needtohandle[i]->readpipe);
+
       close (needtohandle[i]->readpipe);
       needtohandle[i]->readpipe = 0;
      }
