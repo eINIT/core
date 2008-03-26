@@ -370,6 +370,8 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
   if (!action)
    goto wontload;
 
+  emutex_unlock (&module->mutex);
+
   struct einit_event e = evstaticinit (einit_core_module_action_execute);
   e.rid = module->module->rid;
   e.string = (char *)str_stabilise(action);
@@ -377,8 +379,6 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
   event_emit (&e, einit_event_flag_broadcast);
 
   evstaticdestroy (e);
-
-  emutex_unlock (&module->mutex);
 
   return status_working;
  }
