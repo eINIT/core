@@ -56,7 +56,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <asm/ioctls.h>
 #include <linux/vt.h>
 
-#include <einit-modules/exec.h>
+#include <einit/exec.h>
 
 #define EXPECTED_EIV 1
 
@@ -110,21 +110,48 @@ void linux_sysconf_ctrl_alt_del () {
 void linux_sysconf_hwclock() {
  char *options = cfg_getstring ("configuration-services-hwclock/options", NULL);
  if (!options) options = "--utc";
- char tmp [BUFFERSIZE];
 
- esprintf (tmp, BUFFERSIZE, "/sbin/hwclock --hctosys %s", options);
+ char **xtx = NULL;
 
- qexec (tmp);
+ xtx = set_str_add_stable (xtx, "/sbin/hwclock");
+ xtx = set_str_add_stable (xtx, "--hctosys");
+
+ if (options && options[0]) {
+  char **x = str2set (' ', options);
+  if (x) {
+   int i = 0;
+   for (; x[i]; i++) {
+    xtx = set_str_add_stable (xtx, x[i]);
+   }
+   efree (x);
+  }
+ }
+
+ einit_exec_without_shell (xtx);
 }
 
 void linux_sysconf_shutdown_hwclock() {
  char *options = cfg_getstring ("configuration-services-hwclock/options", NULL);
  if (!options) options = "--utc";
- char tmp [BUFFERSIZE];
 
- esprintf (tmp, BUFFERSIZE, "/sbin/hwclock --systohc %s", options);
+ char **xtx = NULL;
 
- qexec (tmp);
+ xtx = set_str_add_stable (xtx, "/sbin/hwclock");
+ xtx = set_str_add_stable (xtx, "--systohc");
+
+ if (options && options[0]) {
+  char **x = str2set (' ', options);
+  if (x) {
+   int i = 0;
+   for (; x[i]; i++) {
+    xtx = set_str_add_stable (xtx, x[i]);
+   }
+   efree (x);
+  }
+ }
+
+ einit_exec_without_shell (xtx);
+
 }
 
 void linux_sysconf_shutdown(struct einit_event *ev) {

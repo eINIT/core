@@ -252,6 +252,15 @@ pid_t einit_exec (struct einit_exec_data *x) {
 
  if (c) {
   int i = 0;
+
+  if (c[0][0] != '/') {
+   char **w = which (c[0]);
+   if (w && w[0]) {
+    c[0] = str_stabilise (w[0]);
+    efree (w);
+   }
+  }
+
   for (; c[i]; i++) {
    fprintf (stderr, "exec: %i, %s\n", i, c[i]);
   }

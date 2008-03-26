@@ -46,7 +46,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/utility.h>
 #include <errno.h>
 
-#include <einit-modules/exec.h>
+#include <einit/exec.h>
 
 #include <pthread.h>
 
@@ -89,8 +89,6 @@ const struct smodule linux_mdev_self = {
 module_register(linux_mdev_self);
 
 #endif
-
-char linux_mdev_enabled = 0;
 
 #define NETLINK_BUFFER 1024*1024*64
 
@@ -260,10 +258,24 @@ void *linux_mdev_hotplug(void *ignored) {
  return linux_mdev_hotplug (NULL);
 }
 
-int linux_mdev_run() {
- if (!linux_mdev_enabled) {
-  linux_mdev_enabled = 1;
+void linux_mdev_post_execute (struct einit_exec_data *xd) {
+ chmod ("/dev/null", 0777);
+ chmod ("/dev/zero", 0666);
+ chmod ("/dev/console", 0660);
+ chmod ("/dev/ptmx", 0777);
+ chmod ("/dev/random", 0777);
+ chmod ("/dev/urandom", 0777);
 
+ linux_mdev_load_kernel_extensions();
+
+ mount ("usbfs", "/proc/bus/usb", "usbfs", 0, NULL);
+
+ struct einit_event eml = evstaticinit(einit_boot_devices_available);
+ event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread_multi_wait);
+ evstaticdestroy(eml);
+}
+
+void linux_mdev_run() {
   mount ("proc", "/proc", "proc", 0, NULL);
   mount ("sys", "/sys", "sysfs", 0, NULL);
   mount ("mdev", "/dev", "tmpfs", 0, NULL);
@@ -295,30 +307,8 @@ int linux_mdev_run() {
    fclose (he);
   }
 
-  qexec ("mdev -s");
-
-  chmod ("/dev/null", 0777);
-  chmod ("/dev/zero", 0666);
-  chmod ("/dev/console", 0660);
-  chmod ("/dev/ptmx", 0777);
-  chmod ("/dev/random", 0777);
-  chmod ("/dev/urandom", 0777);
-
-  linux_mdev_load_kernel_extensions();
-
-  mount ("usbfs", "/proc/bus/usb", "usbfs", 0, NULL);
-
-  return status_ok;
- } else
-  return status_failed;
-}
-
-void linux_mdev_boot_event_handler (struct einit_event *ev) {
- if (linux_mdev_run() == status_ok) {
-  struct einit_event eml = evstaticinit(einit_boot_devices_available);
-  event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread_multi_wait);
-  evstaticdestroy(eml);
- }
+  char *xtx[] = { "mdev", "-s", NULL };
+  einit_exec_without_shell_with_function_on_process_death_options (xtx, linux_mdev_post_execute, thismodule, einit_exec_keep_stdin | einit_exec_daemonise);
 }
 
 int linux_mdev_configure (struct lmodule *pa) {
@@ -330,9 +320,7 @@ int linux_mdev_configure (struct lmodule *pa) {
   return status_configure_failed | status_not_in_use;
  }
 
- exec_configure(pa);
-
- event_listen (einit_boot_early, linux_mdev_boot_event_handler);
+ event_listen (einit_boot_early, linux_mdev_run);
 
  return 0;
 }

@@ -106,7 +106,6 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
 
 int eexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, const char *user, const char *group, char **local_environment, struct einit_event *status);
 
-int qexec_f (char *command);
 int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status);
 int stop_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status);
 char **create_environment_f (char **environment, const char **variables);
@@ -804,64 +803,6 @@ int eexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
  return status_failed;
 }
 
-
-int qexec_f (char *command) {
- size_t len;
- strtrim (command);
- char do_fork = 0;
- int pidstatus = 0;
-
- if (!command[0]) return status_failed;
-
- len = strlen (command);
- if (command[len-1] == '&') {
-  command[len-1] = 0;
-  do_fork = 1;
-  if (!command[0]) return status_failed;
- }
-
- char **exvec = str2set (' ', command);
- pid_t child;
-
-#ifdef __linux__
- if ((child = syscall(__NR_clone, CLONE_STOPPED | SIGCHLD, 0, NULL, NULL, NULL)) < 0) {
-  return status_failed;
- }
-#else
- retry_fork:
-
- if ((child = fork()) < 0) {
-  goto retry_fork;
-
-  return status_failed;
- }
-#endif
- else if (child == 0) {
-/* make sure einit's thread is in a proper state */
-#ifndef __linux__
-  sched_yield();
-#endif
-
-  disable_core_dumps ();
-
-  close (1);
-  dup2 (2, 1);
-
-  execve (exvec[0], exvec, einit_global_environment);
- } else {
-#ifdef __linux__
-  kill (child, SIGCONT);
-#endif
-
-  while (waitpid (child, &pidstatus, WNOHANG) != child) ;
- }
-
- if (exvec) efree (exvec);
-
- if (WIFEXITED(pidstatus) && (WEXITSTATUS(pidstatus) == EXIT_SUCCESS)) return status_ok;
- return status_failed;
-}
-
 void *dexec_watcher (intptr_t pid_i) {
  pid_t pid = (pid_t)pid_i;
 
@@ -1290,8 +1231,6 @@ int einit_exec_configure (struct lmodule *irr) {
  function_register ("einit-create-environment", 1, create_environment_f);
  function_register ("einit-check-variables", 1, check_variables_f);
  function_register ("einit-apply-envfile", 1, apply_envfile_f);
-
- function_register ("einit-execute-command-q", 1, qexec_f);
 
  return 0;
 }

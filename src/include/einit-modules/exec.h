@@ -107,7 +107,6 @@ struct execst {
 
 /* function types */
 typedef int (*pexec_function)(const char *, const char **, uid_t, gid_t, const char *, const char *, char **, struct einit_event *);
-typedef int (*qexec_function)(char *);
 typedef int (*daemon_function)(struct dexecinfo *, struct einit_event *);
 typedef char **(*environment_function)(char **, const char **);
 
@@ -116,7 +115,6 @@ typedef void (*variable_checkup_function)(const char *, const char **, FILE *);
 /* functions */
 pexec_function f_pxe;
 pexec_function f_exe;
-qexec_function f_qxe;
 daemon_function f_start_daemon, f_stop_daemon;
 environment_function f_create_environment;
 variable_checkup_function f_check_variables;
@@ -129,8 +127,6 @@ variable_checkup_function f_check_variables;
 #define pexec_simple(command, status) pexec (command, NULL, 0, 0, NULL, NULL, NULL, status);
 
 #define eexec(command, variables, uid, gid, user, group, local_environment, status) ((f_exe || (f_exe = function_find_one("einit-execute-command-in-main-loop", 1, NULL)))? f_exe(command, variables, uid, gid, user, group, local_environment, status) : status_failed)
-
-#define qexec(command) ((f_qxe || (f_qxe = function_find_one("einit-execute-command-q", 1, NULL)))? f_qxe(command) : status_failed)
 
 #define startdaemon(execheader, status) ((f_start_daemon || (f_start_daemon = function_find_one("einit-execute-daemon", 1, NULL)))? f_start_daemon(execheader, status) : status_failed)
 #define stopdaemon(execheader, status) ((f_stop_daemon || (f_stop_daemon = function_find_one("einit-stop-daemon", 1, NULL)))? f_stop_daemon(execheader, status) : status_failed)
@@ -146,7 +142,6 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
 
 int eexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, const char *user, const char *group, char **local_environment, struct einit_event *status);
 
-int qexec_f (char *command);
 int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status);
 int stop_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status);
 char **create_environment_f (char **environment, const char **variables);
@@ -157,8 +152,6 @@ char **create_environment_f (char **environment, const char **variables);
 #define pexec_v1(command,variables,env,status) pexec (command, variables, 0, 0, NULL, NULL, env, status)
 
 #define eexec(command, variables, uid, gid, user, group, local_environment, status) eexec_f(command, variables, uid, gid, user, group, local_environment, status)
-
-#define qexec(command) qexec_f(command)
 
 #define startdaemon(execheader, status) start_daemon_f(execheader, status)
 #define stopdaemon(execheader, status) stop_daemon_f(execheader, status)
