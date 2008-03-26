@@ -345,27 +345,25 @@ pid_t einit_exec (struct einit_exec_data *x) {
 }
 
 pid_t einit_exec_without_shell (char ** c) {
- struct einit_exec_data x;
- memset (&x, 0, sizeof(struct einit_exec_data));
+ struct einit_exec_data *x = ecalloc (1, sizeof (struct einit_exec_data));
 
- x.command_d = c;
- x.options |= einit_exec_no_shell;
+ x->command_d = c;
+ x->options |= einit_exec_no_shell;
 
- pid_t p = einit_exec (&x);
+ pid_t p = einit_exec (x);
 
  return p;
 }
 
 pid_t einit_exec_without_shell_with_function_on_process_death (char ** c, void (*handle_dead_process)(struct einit_exec_data *), struct lmodule *module) {
- struct einit_exec_data x;
- memset (&x, 0, sizeof(struct einit_exec_data));
+ struct einit_exec_data *x = ecalloc (1, sizeof (struct einit_exec_data));
 
- x.command_d = c;
- x.options |= einit_exec_no_shell;
- x.module = module;
- x.handle_dead_process = handle_dead_process;
+ x->command_d = c;
+ x->options |= einit_exec_no_shell;
+ x->module = module;
+ x->handle_dead_process = handle_dead_process;
 
- pid_t p = einit_exec (&x);
+ pid_t p = einit_exec (x);
 
  return p;
 }
@@ -380,13 +378,12 @@ void einit_exec_without_shell_sequence (char *** sequence) {
 }
 
 pid_t einit_exec_with_shell (char * c) {
- struct einit_exec_data x;
- memset (&x, 0, sizeof(struct einit_exec_data));
+ struct einit_exec_data *x = ecalloc (1, sizeof (struct einit_exec_data));
 
- x.command = c;
- x.options |= einit_exec_shell;
+ x->command = c;
+ x->options |= einit_exec_shell;
 
- pid_t p = einit_exec (&x);
+ pid_t p = einit_exec (x);
 
  return p;
 }
@@ -450,10 +447,11 @@ void einit_exec_pipe_handle (fd_set *rfds) {
      fprintf (stderr, "done reading pipe: %i\n", needtohandle[i]->readpipe);
 
      if ((r == 0) || ((r < 0) && (errno != EAGAIN) && (errno != EINTR))) {
+      int p = needtohandle[i]->readpipe;
       fprintf (stderr, "pipe's dead: %i\n", needtohandle[i]->readpipe);
 
-      close (needtohandle[i]->readpipe);
       needtohandle[i]->readpipe = 0;
+      close (p);
      }
     }
    }
