@@ -42,7 +42,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/bitch.h>
 #include <einit/utility.h>
 
-#include <einit-modules/exec.h>
+#include <einit/exec.h>
 
 #include <string.h>
 
@@ -160,10 +160,13 @@ void linux_hotplug_hotplug_event_handler (struct einit_event *ev) {
     if (cd) {
      command = set2str (';', (const char **)cd);
 
-     pexec(command, NULL, 0, 0, NULL, NULL, env, NULL);
+     struct einit_exec_data *xd = einit_exec_create_exec_data_from_string (command);
+     xd->environment = env;
+
+     einit_exec (xd);
 
      efree (cd);
-     efree (command);
+//     efree (command);
     }
 
     efree (env);
@@ -243,7 +246,6 @@ void linux_hotplug_hotplug_event_handler (struct einit_event *ev) {
 
 int linux_hotplug_configure (struct lmodule *tm) {
  module_init (tm);
- exec_configure (tm);
 
  char *dm = cfg_getstring("configuration-system-device-manager", NULL);
 
