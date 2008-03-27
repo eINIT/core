@@ -93,14 +93,17 @@ extern "C" {
 /*!\ingroup modulemdefinition
  * \{ */
 enum einit_module_options {
- einit_module              = 0x0,
+ einit_module               = 0x0000,
 /*!< Module-type: Nothing special, move along... */
- einit_module_deprecated    = 0x10,
+ einit_module_deprecated    = 0x0010,
 /*!< Module-option: Deprecated module: only try if nothing else worked */
 
- einit_module_event_actions = 0x100,
+ einit_module_event_actions = 0x0100,
 /*!< Module-type: Special module that doesn't have any regular enable/disable/whatever actions, but is
      instead relying on events for this purpose. */
+ einit_module_fork_actions  = 0x0200,
+/*!< Module-type: Special module that does have regular enable/disable/whatever actions, but they need
+     to be executed in their own process since they need to block or similar... */
 
  einit_feedback_job         = 0x1000
 /*!< Feedback-option: Say "OK" when this module is enabled, don't say anything when disabled */

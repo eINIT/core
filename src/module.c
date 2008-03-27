@@ -332,6 +332,41 @@ void mod_completion_handler_no_change (struct lmodule *module, enum einit_module
  evstaticdestroy (ees);
 }
 
+struct completion_callback_data {
+ struct einit_event *fb;
+ enum einit_module_task task;
+ struct lmodule *module;
+ int status;
+};
+
+int mod_completion_callback (struct completion_callback_data *x) {
+ x->module->status = x->status;
+
+ mod_completion_handler (x->module, x->fb, x->task);
+ evdestroy (x->fb);
+
+ mod_update_usage_table(x->module);
+
+ if (shutting_down) {
+  if ((x->task & einit_module_disable) && (x->module->status & (status_enabled | status_failed))) {
+   return mod (einit_module_custom, x->module, "zap");
+  }
+ }
+
+ return x->module->status;
+}
+
+int mod_completion_callback_wrapper (struct einit_event *fb, enum einit_module_task task, struct lmodule *module, int status) {
+ struct completion_callback_data x;
+
+ x.fb = fb;
+ x.task = task;
+ x.module = module;
+ x.status = status;
+
+ return mod_completion_callback (&x);
+}
+
 int mod (enum einit_module_task task, struct lmodule *module, char *custom_command) {
  struct einit_event *fb;
  unsigned int ret;
@@ -414,45 +449,30 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
 
  if (task & einit_module_custom) {
   if (strmatch (custom_command, "zap")) {
-   char zerror = module->status & status_failed ? 1 : 0;
+   module->status = status_disabled | (module->status & status_failed);
    fb->string = "module ZAP'd.";
-   module->status = status_idle;
-   module->status = status_disabled;
-   if (zerror)
-    module->status |= status_failed;
   } else if (module->custom) {
    module->status = module->custom(module->param, custom_command, fb);
   } else {
    module->status = (module->status & (status_enabled | status_disabled)) | status_failed | status_command_not_implemented;
   }
  } else if (task & einit_module_enable) {
-   ret = module->enable (module->param, fb);
-   if (ret & status_ok) {
-    module->status = status_ok | status_enabled;
-   } else {
-    module->status = status_failed | status_disabled;
-   }
+  ret = module->enable (module->param, fb);
+  if (ret & status_ok) {
+   module->status = status_ok | status_enabled;
+  } else {
+   module->status = status_failed | status_disabled;
+  }
  } else if (task & einit_module_disable) {
-   ret = module->disable (module->param, fb);
-   if (ret & status_ok) {
-    module->status = status_ok | status_disabled;
-   } else {
-    module->status = status_failed | status_enabled;
-   }
- }
-
- mod_completion_handler (module, fb, task);
- evdestroy (fb);
-
- mod_update_usage_table(module);
-
- if (shutting_down) {
-  if ((task & einit_module_disable) && (module->status & (status_enabled | status_failed))) {
-   mod (einit_module_custom, module, "zap");
+  ret = module->disable (module->param, fb);
+  if (ret & status_ok) {
+   module->status = status_ok | status_disabled;
+  } else {
+   module->status = status_failed | status_enabled;
   }
  }
 
- return module->status;
+ return mod_completion_callback_wrapper (fb, task, module, module->status);
 }
 
 struct lmodule *mod_lookup_rid (const char *rid) {
