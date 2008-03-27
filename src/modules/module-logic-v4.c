@@ -73,6 +73,13 @@ module_register(einit_module_logic_v4_self);
 
 #endif
 
+struct service_callback {
+ char **enable;
+ char **disable;
+ void (*callback)(void *);
+ void *para;
+};
+
 extern char shutting_down;
 struct stree *module_logic_service_list = NULL;
 
@@ -89,6 +96,8 @@ int module_logic_list_disable_max_count = 0;
 
 int module_logic_commit_count = 0;
 
+struct service_callback **module_logic_callbacks = NULL;
+
 pthread_mutex_t
  module_logic_service_list_mutex = PTHREAD_MUTEX_INITIALIZER,
  module_logic_free_on_idle_stree_mutex = PTHREAD_MUTEX_INITIALIZER,
@@ -96,13 +105,90 @@ pthread_mutex_t
  module_logic_list_enable_mutex = PTHREAD_MUTEX_INITIALIZER,
  module_logic_list_disable_mutex = PTHREAD_MUTEX_INITIALIZER,
  module_logic_active_modules_mutex = PTHREAD_MUTEX_INITIALIZER,
- module_logic_commit_count_mutex = PTHREAD_MUTEX_INITIALIZER;
+ module_logic_commit_count_mutex = PTHREAD_MUTEX_INITIALIZER,
+ module_logic_callbacks_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 pthread_cond_t
  module_logic_list_enable_ping_cond = PTHREAD_COND_INITIALIZER,
  module_logic_list_disable_ping_cond = PTHREAD_COND_INITIALIZER;
 
 void module_logic_einit_event_handler_core_configuration_update (struct einit_event *);
+
+void module_logic_call_back (char **enable, char **disable, void (*callback)(void *), void *para);
+void module_logic_do_callbacks ();
+
+void module_logic_call_back (char **enable, char **disable, void (*callback)(void *), void *para) {
+ struct service_callback cb = {
+  .enable = enable,
+  .disable = disable,
+  .callback = callback,
+  .para = para
+ };
+
+ emutex_lock (&module_logic_callbacks_mutex);
+ module_logic_callbacks = (struct service_callback **)set_fix_add ((void **)module_logic_callbacks, &cb, sizeof (cb));
+ emutex_unlock (&module_logic_callbacks_mutex);
+}
+
+void module_logic_do_callbacks () {
+ int i = 0;
+ void (*callback)(void *) = NULL;
+ void *para = NULL;
+
+ emutex_lock (&module_logic_callbacks_mutex);
+ if (module_logic_callbacks) {
+  for (; module_logic_callbacks[i]; i++) {
+   int y;
+
+   emutex_lock (&module_logic_list_enable_mutex);
+   retry_enab:
+
+   if (!module_logic_list_enable) {
+    if (module_logic_callbacks[i]->enable) efree (module_logic_callbacks[i]->enable);
+    module_logic_callbacks[i]->enable = NULL;
+   } else if (module_logic_callbacks[i]->enable) {
+    for (y = 0; module_logic_callbacks[i]->enable[y]; y++) {
+     if (!inset ((const void **)module_logic_list_enable, module_logic_callbacks[i]->enable[y], SET_TYPE_STRING)) {
+      module_logic_callbacks[i]->enable = strsetdel (module_logic_callbacks[i]->enable, module_logic_callbacks[i]->enable[y]);
+      goto retry_enab;
+     }
+    }
+   }
+   emutex_unlock (&module_logic_list_enable_mutex);
+
+   emutex_lock (&module_logic_list_disable_mutex);
+   retry_disab:
+
+   if (!module_logic_list_disable) {
+    if (module_logic_callbacks[i]->disable) efree (module_logic_callbacks[i]->disable);
+    module_logic_callbacks[i]->disable = NULL;
+   } else if (module_logic_callbacks[i]->disable) {
+    for (y = 0; module_logic_callbacks[i]->disable[y]; y++) {
+     if (!inset ((const void **)module_logic_list_disable, module_logic_callbacks[i]->disable[y], SET_TYPE_STRING)) {
+      module_logic_callbacks[i]->disable = strsetdel (module_logic_callbacks[i]->disable, module_logic_callbacks[i]->disable[y]);
+      goto retry_disab;
+     }
+    }
+   }
+   emutex_unlock (&module_logic_list_disable_mutex);
+
+   if (!module_logic_callbacks[i]->enable && !module_logic_callbacks[i]->disable) {
+    callback = module_logic_callbacks[i]->callback;
+    para = module_logic_callbacks[i]->para;
+
+    efree (module_logic_callbacks[i]);
+    module_logic_callbacks = (struct service_callback **)setdel ((void **)module_logic_callbacks, module_logic_callbacks[i]);
+    break;
+   }
+  }
+ }
+ emutex_unlock (&module_logic_callbacks_mutex);
+
+ if (callback) {
+  callback (para);
+  module_logic_do_callbacks();
+ }
+}
 
 char module_logic_service_exists_p (const char *service) {
  char rv = 0;
