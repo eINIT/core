@@ -559,7 +559,7 @@ int mod_complete (char *rid, enum einit_module_task task, enum einit_module_stat
  fb->status = status;
  module->status = status;
 
- emutex_unlock (&service_usage_mutex);
+ emutex_unlock (&module->mutex);
 
  mod_completion_handler (module, fb, task);
  evdestroy (fb);
@@ -642,6 +642,8 @@ void mod_update_usage_table (struct lmodule *module) {
 #endif
   ha = streenext (ha);
  }
+
+ emutex_unlock (&service_usage_mutex);
 
  if (enabled) {
   struct einit_event eei = evstaticinit (einit_core_service_enabled);
