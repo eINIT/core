@@ -409,42 +409,42 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
  mod_emit_pre_hook_event (module, task);
 
 /* actual loading bit */
- {
-  fb = mod_initialise_feedback_event (module, task);
-  event_emit(fb, einit_event_flag_broadcast);
+ fb = mod_initialise_feedback_event (module, task);
+ event_emit(fb, einit_event_flag_broadcast);
 
-  if (task & einit_module_custom) {
-   if (strmatch (custom_command, "zap")) {
-    char zerror = module->status & status_failed ? 1 : 0;
-    fb->string = "module ZAP'd.";
-    module->status = status_idle;
-    module->status = status_disabled;
-    if (zerror)
-     module->status |= status_failed;
-   } else if (module->custom) {
-    module->status = module->custom(module->param, custom_command, fb);
-   } else {
-    module->status = (module->status & (status_enabled | status_disabled)) | status_failed | status_command_not_implemented;
-   }
-  } else if (task & einit_module_enable) {
-    ret = module->enable (module->param, fb);
-    if (ret & status_ok) {
-     module->status = status_ok | status_enabled;
-    } else {
-     module->status = status_failed | status_disabled;
-    }
-  } else if (task & einit_module_disable) {
-    ret = module->disable (module->param, fb);
-    if (ret & status_ok) {
-     module->status = status_ok | status_disabled;
-    } else {
-     module->status = status_failed | status_enabled;
-    }
+ if (task & einit_module_custom) {
+  if (strmatch (custom_command, "zap")) {
+   char zerror = module->status & status_failed ? 1 : 0;
+   fb->string = "module ZAP'd.";
+   module->status = status_idle;
+   module->status = status_disabled;
+   if (zerror)
+    module->status |= status_failed;
+  } else if (module->custom) {
+   module->status = module->custom(module->param, custom_command, fb);
+  } else {
+   module->status = (module->status & (status_enabled | status_disabled)) | status_failed | status_command_not_implemented;
   }
-
-  mod_completion_handler (module, fb, task);
-  evdestroy (fb);
+ } else if (task & einit_module_enable) {
+   ret = module->enable (module->param, fb);
+   if (ret & status_ok) {
+    module->status = status_ok | status_enabled;
+   } else {
+    module->status = status_failed | status_disabled;
+   }
+ } else if (task & einit_module_disable) {
+   ret = module->disable (module->param, fb);
+   if (ret & status_ok) {
+    module->status = status_ok | status_disabled;
+   } else {
+    module->status = status_failed | status_enabled;
+   }
  }
+
+ emutex_unlock (&module->mutex);
+
+ mod_completion_handler (module, fb, task);
+ evdestroy (fb);
 
  mod_update_usage_table(module);
 
@@ -559,6 +559,8 @@ int mod_complete (char *rid, enum einit_module_task task, enum einit_module_stat
  fb->status = status;
  module->status = status;
 
+ emutex_unlock (&service_usage_mutex);
+
  mod_completion_handler (module, fb, task);
  evdestroy (fb);
 
@@ -614,8 +616,6 @@ void mod_update_usage_table (struct lmodule *module) {
   }
  }
 
- emutex_unlock (&module->mutex);
-
 /* more cleanup code */
  ha = streelinear_prepare(service_usage);
  while (ha) {
@@ -642,8 +642,6 @@ void mod_update_usage_table (struct lmodule *module) {
 #endif
   ha = streenext (ha);
  }
-
- emutex_unlock (&service_usage_mutex);
 
  if (enabled) {
   struct einit_event eei = evstaticinit (einit_core_service_enabled);
