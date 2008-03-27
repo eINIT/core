@@ -37,6 +37,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <string.h>
@@ -45,8 +46,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/bitch.h>
 #include <einit/utility.h>
 #include <errno.h>
-
-#include <einit-modules/exec.h>
 
 #include <pthread.h>
 
@@ -313,8 +312,6 @@ int linux_static_dev_configure (struct lmodule *pa) {
  if (!dm || strcmp (dm, "static")) {
   return status_configure_failed | status_not_in_use;
  }
-
- exec_configure(pa);
 
  event_listen (einit_boot_early, linux_static_dev_boot_event_handler);
 
