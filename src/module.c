@@ -559,10 +559,6 @@ int mod_complete (char *rid, enum einit_module_task task, enum einit_module_stat
  fb->status = status;
  module->status = status;
 
- fprintf (stderr, "mod_completion_handler(%s)\n", rid);
- mod_completion_handler (module, fb, task);
- evdestroy (fb);
-
  fprintf (stderr, "mod_update_usage_table(%s)\n", rid);
  mod_update_usage_table (module);
 
@@ -572,6 +568,10 @@ int mod_complete (char *rid, enum einit_module_task task, enum einit_module_stat
    mod (einit_module_custom, module, "zap");
   }
  }
+
+ fprintf (stderr, "mod_completion_handler(%s)\n", rid);
+ mod_completion_handler (module, fb, task);
+ evdestroy (fb);
 
  fprintf (stderr, "mod_completion(%s, done)\n", rid);
  return status;
