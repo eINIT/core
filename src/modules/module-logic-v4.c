@@ -1886,23 +1886,6 @@ void module_logic_ipc_read (struct einit_event *ev) {
  }
 }
 
-struct ch_thread_data {
- int a;
- struct lmodule *b;
- char *c;
-};
-
-void *module_logic_ipc_write_detach_action (struct ch_thread_data *da) {
- mod (da->a, da->b, da->c);
-
- if (da->c) {
-  efree (da->c);
- }
- efree (da);
-
- return NULL;
-}
-
 void module_logic_ipc_write (struct einit_event *ev) {
  char **path = ev->para;
 

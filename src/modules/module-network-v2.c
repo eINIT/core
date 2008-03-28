@@ -649,20 +649,9 @@ void einit_module_network_v2_scanmodules (struct einit_event *ev) {
   efree (automatic);
  }
 
-#if 0
  if (immediate) {
-  struct einit_event eml = evstaticinit(einit_core_manipulate_services);
-  eml.stringset = immediate;
-  eml.task = einit_module_enable;
-
-  event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread);
-  evstaticdestroy(eml);
+  einit_module_network_v2_scanmodules_enable_immediate (immediate);
  }
-#else
- if (immediate) {
-  ethread_spawn_detached ((void *(*)(void *))einit_module_network_v2_scanmodules_enable_immediate, immediate);
- }
-#endif
 
  return;
 }

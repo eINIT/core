@@ -366,20 +366,6 @@ void einit_ipc_core_helpers_ipc_read (struct einit_event *ev) {
  if (path != ev->para) efree (path);
 }
 
-struct ch_thread_data {
- int a;
- struct lmodule *b;
- char *c;
-};
-
-void *einit_ipc_core_helpers_ipc_write_detach_action (struct ch_thread_data *da) {
- mod (da->a, da->b, da->c);
-
- efree (da);
-
- return NULL;
-}
-
 void einit_ipc_core_helpers_ipc_write (struct einit_event *ev) {
  char **path = ev->para;
  if (path && path[0] && path[1] && path[2] && path[3] && path[4] && strmatch (path[0], "services") && (strmatch (path[3], "users") || strmatch (path[3], "modules") || strmatch (path[3], "providers"))) {
@@ -410,20 +396,13 @@ void einit_ipc_core_helpers_ipc_write (struct einit_event *ev) {
     while (cur) {
      if (cur->module && cur->module->rid) {
       if (strmatch (path[2], cur->module->rid)) {
-       struct ch_thread_data *da = emalloc (sizeof (struct ch_thread_data));
-       da->b = cur;
-       da->c = NULL;
-
        if (strmatch (ev->set[0], "enable")) {
-        da->a = einit_module_enable;
+        mod (einit_module_enable, cur, NULL);
        } else if (strmatch (ev->set[0], "disable")) {
-        da->a = einit_module_disable;
+        mod (einit_module_disable, cur, NULL);
        } else {
-        da->a = einit_module_custom;
-        da->c = (char *)str_stabilise (ev->set[0]);
+        mod (einit_module_custom, cur, (char *)str_stabilise (ev->set[0]));
        }
-
-       ethread_spawn_detached ((void *(*)(void *))einit_ipc_core_helpers_ipc_write_detach_action, da);
 
        break;
       }

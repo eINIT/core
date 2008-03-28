@@ -261,7 +261,6 @@ void einit_ipc_9p_fs_open (Ixp9Req *r) {
    ipc_9p_respond_serialise(r, nil);
   }
  } else
-//  ethread_spawn_detached_run ((void *(*)(void *))einit_ipc_9p_fs_open_spawn, r);
   einit_ipc_9p_fs_open_spawn(r);
 }
 
@@ -474,7 +473,6 @@ void einit_ipc_9p_fs_stat_spawn (Ixp9Req *r) {
 
 void einit_ipc_9p_fs_stat (Ixp9Req *r) {
  einit_ipc_9p_fs_stat_spawn(r);
-// ethread_spawn_detached_run ((void *(*)(void *))einit_ipc_9p_fs_stat_spawn, r);
 }
 
 void einit_ipc_9p_fs_write (Ixp9Req *r) {
@@ -544,7 +542,6 @@ void einit_ipc_9p_fs_clunk_spawn (Ixp9Req *r) {
 
 void einit_ipc_9p_fs_clunk (Ixp9Req *r) {
  einit_ipc_9p_fs_clunk_spawn(r);
-// ethread_spawn_detached_run ((void *(*)(void *))einit_ipc_9p_fs_clunk_spawn, r);
 }
 
 void einit_ipc_9p_fs_flush(Ixp9Req *r) {
@@ -846,19 +843,12 @@ void einit_ipc_9p_ipc_stat (struct einit_event *ev) {
  }
 }
 
-void *einit_ipc_9p_event_emit (void *p) {
- char *d = (char *)p;
-
- einit_event_loop_decoder(d, strlen(d), NULL);
-
- return NULL;
-}
-
 void einit_ipc_9p_ipc_write (struct einit_event *ev) {
  char **path = ev->para;
 
  if (path && path[0] && path[1] && !path[2] && ev->set[0] && strmatch (path[0], "events") &&  strmatch (path[1], "emit")) {
-  ethread_spawn_detached (einit_ipc_9p_event_emit, (void *)str_stabilise(ev->set[0]));
+  char *d = (char *)str_stabilise(ev->set[0]);
+  einit_event_loop_decoder(d, strlen(d), NULL);
  }
 }
 
