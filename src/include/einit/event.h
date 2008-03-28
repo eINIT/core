@@ -217,8 +217,8 @@ enum einit_event_code {
  einit_ipc_disable                  = einit_event_subsystem_ipc_v2   | 0x012,
 
  /* einit_event_subsystem_laptop: */
- einit_laptop_lid_open          = einit_event_subsystem_laptop     | 0x001,
- einit_laptop_lid_closed        = einit_event_subsystem_laptop     | 0x002
+ einit_laptop_lid_open              = einit_event_subsystem_laptop     | 0x001,
+ einit_laptop_lid_closed            = einit_event_subsystem_laptop     | 0x002
 };
 
 #define evstaticinit(ttype) { ttype, 0, NULL, NULL, 0, 0, 0, 0, NULL, { NULL }, NULL }

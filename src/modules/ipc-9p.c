@@ -693,7 +693,7 @@ void einit_ipc_9p_generic_event_handler (struct einit_event *ev) {
  if (einit_ipc_9p_event_update_listeners) {
   int i = 0;
   for (; einit_ipc_9p_event_update_listeners[i]; i++) {
-   ethread_spawn_detached_run ((void *(*)(void *))einit_ipc_9p_fs_reply_event, einit_ipc_9p_event_update_listeners[i]);
+   einit_ipc_9p_fs_reply_event(einit_ipc_9p_event_update_listeners[i]);
   }
   efree (einit_ipc_9p_event_update_listeners);
   einit_ipc_9p_event_update_listeners = NULL;
