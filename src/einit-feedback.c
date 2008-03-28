@@ -53,7 +53,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/tree.h>
 
 #include <curses.h>
+#if 0
 #include <pthread.h>
+#endif
 
 struct module_status {
  enum einit_module_status status;
@@ -346,7 +348,7 @@ char display_status_working_or_error(char *rid) {
  return 0;
 }
 
-pthread_mutex_t update_mutex = PTHREAD_MUTEX_INITIALIZER;
+// pthread_mutex_t update_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 void update_do() {
  retry:
@@ -493,9 +495,9 @@ void update_do() {
 }
 
 void update () {
- pthread_mutex_lock (&update_mutex);
+// pthread_mutex_lock (&update_mutex);
  update_do();
- pthread_mutex_unlock (&update_mutex);
+// pthread_mutex_unlock (&update_mutex);
 }
 
 void event_handler_mode_switching (struct einit_event *ev) {
@@ -588,7 +590,7 @@ void event_handler_broken_services (struct einit_event *ev) {
  update();
 }
 
-void *input_thread (void *ignored) {
+/*void *input_thread (void *ignored) {
  while (1) {
   switch (getch ()) {
    case 'a':
@@ -625,7 +627,7 @@ void *input_thread (void *ignored) {
     exit(EXIT_SUCCESS);
   }
  }
-}
+}*/
 
 int main(int argc, char **argv, char **env) {
  initscr();
@@ -652,7 +654,7 @@ int main(int argc, char **argv, char **env) {
   }
  }
 
- ethread_spawn_detached (input_thread, NULL);
+// ethread_spawn_detached (input_thread, NULL);
 
  event_listen (einit_core_mode_switching, event_handler_mode_switching);
  event_listen (einit_core_mode_switch_done, event_handler_mode_switch_done);
