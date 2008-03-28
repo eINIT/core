@@ -862,6 +862,13 @@ void einit_ipc_9p_ipc_write (struct einit_event *ev) {
  }
 }
 
+void einit_ipc_9p_disable_ipc_event_handler (struct einit_event *ev) {
+ if (einit_ipc_9p_running) {
+  einit_ipc_9p_running = 0;
+  ixp_server_close (&einit_ipc_9p_server);
+ }
+}
+
 int einit_ipc_9p_configure (struct lmodule *irr) {
  module_init(irr);
 
@@ -873,6 +880,8 @@ int einit_ipc_9p_configure (struct lmodule *irr) {
  event_listen (einit_ipc_write, einit_ipc_9p_ipc_write);
 
  event_listen (einit_event_subsystem_any, einit_ipc_9p_generic_event_handler);
+
+ event_listen (einit_ipc_disable, einit_ipc_9p_disable_ipc_event_handler);
 
  if (einit_argv) {
   char *address = NULL;
