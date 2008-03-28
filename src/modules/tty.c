@@ -115,9 +115,7 @@ int einit_tty_texec (struct cfgnode *);
 
 void einit_tty_process_event_handler (struct einit_event *);
 
-void *einit_tty_watcher (intptr_t pid_i) {
- pid_t pid = (pid_t)pid_i;
-
+void einit_tty_watcher (pid_t pid) {
  emutex_lock (&ttys_mutex);
  struct ttyst *cur = ttys;
  struct ttyst *prev = NULL;
@@ -152,13 +150,11 @@ void *einit_tty_watcher (intptr_t pid_i) {
   emutex_unlock (&ttys_mutex);
  }
 
- return 0;
+ return;
 }
 
 void einit_tty_process_event_handler (struct einit_event *ev) {
- intptr_t p = ev->integer;
-
- ethread_spawn_detached ((void *(*)(void *))einit_tty_watcher, (void *)p);
+ einit_tty_watcher (ev->integer);
 }
 
 int einit_tty_texec (struct cfgnode *node) {

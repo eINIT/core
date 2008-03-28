@@ -111,7 +111,7 @@ int stop_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status);
 char **create_environment_f (char **environment, const char **variables);
 void einit_exec_process_event_handler (struct einit_event *);
 
-void *dexec_watcher (pid_t pid);
+void dexec_watcher (pid_t pid);
 
 void einit_exec_update_daemons_from_pidfiles() {
  emutex_lock (&running_mutex);
@@ -151,9 +151,7 @@ void einit_exec_update_daemons_from_pidfiles() {
 void einit_exec_process_event_handler (struct einit_event *ev) {
  einit_exec_update_daemons_from_pidfiles();
 
- intptr_t p = ev->integer;
-
- dexec_watcher (p);
+ dexec_watcher (ev->integer);
 }
 
 char *apply_envfile_f (char *command, const char **environment) {
@@ -803,7 +801,7 @@ int eexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
  return status_failed;
 }
 
-void *dexec_watcher (pid_t pid) {
+void dexec_watcher (pid_t pid) {
  fprintf (stderr, "this pid died (tty): %i", pid);
 
  struct daemonst *prev = NULL;
@@ -873,7 +871,7 @@ void *dexec_watcher (pid_t pid) {
   }
  }
 
- return NULL;
+ return;
 }
 
 int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
