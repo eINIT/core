@@ -489,7 +489,7 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
   return mod_completion_callback_wrapper (fb, task, module, module->status);
  }
 
- char in_fork = 0;
+ pid_t p = -1;
 
  if (module->module->mode & einit_module_fork_actions) {
   struct completion_callback_data *x = emalloc (sizeof (struct completion_callback_data));
@@ -498,7 +498,7 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
   x->task = task;
   x->module = module;
 
-  pid_t p = einit_fork (mod_completion_callback_dead_process, x, module->module->rid, module);
+  p = einit_fork (mod_completion_callback_dead_process, x, module->module->rid, module);
 
   fprintf (stderr, "einit_fork(): %i\n", p);
   if (p > 0) return status_working;
@@ -506,8 +506,6 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
    perror ("something bad just happened");
    return status_failed;
   }
-
-  in_fork = 1;
  }
 
  if (task & einit_module_custom) {
@@ -532,9 +530,9 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
   }
  }
 
- fprintf (stderr, "exit?\n");
+ fprintf (stderr, "exit? p=%i\n", p);
 
- if (in_fork) {
+ if (p == 0) { /* private process... */
   fprintf (stderr, "exiting\n");
 
   if (module->status & status_ok) _exit (EXIT_SUCCESS);
