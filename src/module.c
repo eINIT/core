@@ -499,7 +499,7 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
   pid_t p = einit_fork (mod_completion_callback_dead_process, x, module->module->rid, module);
 
   fprintf (stderr, "einit_fork(): %i\n", p);
-  return status_working;
+  if (p > 0) return status_working;
  }
 
  if (task & einit_module_custom) {
@@ -525,10 +525,14 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
  }
 
  if (module->module->mode & einit_module_fork_actions) {
+  fprintf (stderr, "exiting\n");
+
   if (module->status & status_ok) _exit (EXIT_SUCCESS);
 
   _exit (EXIT_FAILURE);
  }
+
+ fprintf (stderr, "not exiting\n");
 
  return mod_completion_callback_wrapper (fb, task, module, module->status);
 }
