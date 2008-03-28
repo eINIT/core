@@ -500,7 +500,7 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
 
   p = einit_fork (mod_completion_callback_dead_process, x, module->module->rid, module);
 
-  fprintf (stderr, "einit_fork(): %i\n", p);
+  fprintf (stderr, "einit_fork(%s): %i\n", module->module->rid, p);
   if (p > 0) return status_working;
   if (p < 0) {
    perror ("something bad just happened");
@@ -530,7 +530,7 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
   }
  }
 
- fprintf (stderr, "exit? p=%i\n", p);
+ fprintf (stderr, "exit %s? p=%i\n", module->module->rid, p);
 
  if (p == 0) { /* private process... */
   fprintf (stderr, "exiting\n");
