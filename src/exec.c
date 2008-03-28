@@ -442,9 +442,6 @@ pid_t einit_fork (void (*handle_dead_process)(struct einit_exec_data *), void *d
 
  if (p == 0) {
   /* make sure that if we fork we're still able to emit events to the core if need be */
-  struct einit_event ev = evstaticinit (einit_ipc_disable);
-  event_emit (&ev, 0);
-  evstaticdestroy (ev);
 
   einit_connect (NULL, NULL);
  }
