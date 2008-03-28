@@ -496,7 +496,10 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
   x->task = task;
   x->module = module;
 
-  if (einit_fork (mod_completion_callback_dead_process, x)) return status_working;
+  pid_t p = einit_fork (mod_completion_callback_dead_process, x, module->module->rid, module);
+
+  fprintf (stderr, "einit_fork(): %i\n", p);
+  return status_working;
  }
 
  if (task & einit_module_custom) {

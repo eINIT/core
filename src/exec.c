@@ -427,11 +427,13 @@ pid_t einit_exec_with_shell (char * c) {
  return p;
 }
 
-pid_t einit_fork (void (*handle_dead_process)(struct einit_exec_data *), void *data) {
+pid_t einit_fork (void (*handle_dead_process)(struct einit_exec_data *), void *data, char *rid, struct lmodule *module) {
  struct einit_exec_data *x = ecalloc (1, sizeof (struct einit_exec_data));
 
  x->custom = data;
  x->handle_dead_process = handle_dead_process;
+ x->rid = rid;
+ x->module = module;
  x->options |= einit_exec_fork_only;
 
  pid_t p = einit_exec (x);

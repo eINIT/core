@@ -99,7 +99,7 @@ pid_t einit_exec_with_shell (char *);
 
 pid_t einit_exec_auto (char *);
 
-pid_t einit_fork (void (*handle_dead_process)(struct einit_exec_data *), void *data);
+pid_t einit_fork (void (*handle_dead_process)(struct einit_exec_data *), void *data, char *rid, struct lmodule *module);
 
 struct einit_exec_data *  einit_exec_create_exec_data_from_string (char *);
 
