@@ -502,7 +502,12 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
 
   fprintf (stderr, "einit_fork(): %i\n", p);
   if (p > 0) return status_working;
-  else in_fork = 1;
+  if (p < 0) {
+   perror ("something bad just happened");
+   return status_failed;
+  }
+
+  in_fork = 1;
  }
 
  if (task & einit_module_custom) {
@@ -527,17 +532,19 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
   }
  }
 
+ fprintf (stderr, "exit?\n");
+
  if (in_fork) {
   fprintf (stderr, "exiting\n");
 
   if (module->status & status_ok) _exit (EXIT_SUCCESS);
 
   _exit (EXIT_FAILURE);
+ } else {
+  fprintf (stderr, "not exiting\n");
+
+  return mod_completion_callback_wrapper (fb, task, module, module->status);
  }
-
- fprintf (stderr, "not exiting\n");
-
- return mod_completion_callback_wrapper (fb, task, module, module->status);
 }
 
 struct lmodule *mod_lookup_rid (const char *rid) {
