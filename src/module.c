@@ -390,6 +390,8 @@ void mod_completion_callback_dead_process(struct einit_exec_data *xd) {
   }
  }
 
+ x->status = x->module->status;
+
  mod_completion_callback (x);
  efree (xd->custom);
 }
