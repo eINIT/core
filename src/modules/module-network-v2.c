@@ -540,7 +540,7 @@ void einit_module_network_v2_scanmodules (struct einit_event *ev) {
      sm->eiversion = EINIT_VERSION;
      sm->eibuild = BUILDNUMBER;
      sm->version = 1;
-     sm->mode = einit_module;
+     sm->mode = einit_module | einit_module_fork_actions;
 
      esprintf (buffer, BUFFERSIZE, "carrier-%s", interfaces[i]);
      sm->si.provides = set_str_add (NULL, buffer);
@@ -564,7 +564,7 @@ void einit_module_network_v2_scanmodules (struct einit_event *ev) {
      sm->eiversion = EINIT_VERSION;
      sm->eibuild = BUILDNUMBER;
      sm->version = 1;
-     sm->mode = einit_module;
+     sm->mode = einit_module | einit_module_fork_actions;
 
      esprintf (buffer, BUFFERSIZE, "net-%s", interfaces[i]);
      sm->si.provides = set_str_add (NULL, buffer);

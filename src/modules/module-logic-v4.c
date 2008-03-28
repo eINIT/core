@@ -1087,7 +1087,7 @@ void module_logic_spawn_set_enable (struct lmodule **spawn) {
  int i = 0;
  for (; spawn[i]; i++) {
   if (spawn[i+1]) {
-   if (spawn[i]->module->mode & einit_module_event_actions)
+   if (spawn[i]->module->mode & (einit_module_event_actions | einit_module_fork_actions))
     mod (einit_module_enable, spawn[i], NULL);
    else
     ethread_spawn_detached_run (module_logic_do_enable, spawn[i]);
@@ -1100,7 +1100,7 @@ void module_logic_spawn_set_enable (struct lmodule **spawn) {
 void module_logic_spawn_set_enable_all (struct lmodule **spawn) {
  int i = 0;
  for (; spawn[i]; i++) {
-  if (spawn[i]->module->mode & einit_module_event_actions)
+  if (spawn[i]->module->mode & (einit_module_event_actions | einit_module_fork_actions))
    mod (einit_module_enable, spawn[i], NULL);
   else
    ethread_spawn_detached_run (module_logic_do_enable, spawn[i]);
