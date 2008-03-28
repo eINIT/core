@@ -46,10 +46,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit-modules/ipc.h>
 #include <string.h>
 
-#ifdef _POSIX_PRIORITY_SCHEDULING
-#include <sched.h>
-#endif
-
 int einit_module_logic_v4_configure (struct lmodule *);
 
 #if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
@@ -107,10 +103,6 @@ pthread_mutex_t
  module_logic_active_modules_mutex = PTHREAD_MUTEX_INITIALIZER,
  module_logic_commit_count_mutex = PTHREAD_MUTEX_INITIALIZER,
  module_logic_callbacks_mutex = PTHREAD_MUTEX_INITIALIZER;
-
-pthread_cond_t
- module_logic_list_enable_ping_cond = PTHREAD_COND_INITIALIZER,
- module_logic_list_disable_ping_cond = PTHREAD_COND_INITIALIZER;
 
 void module_logic_einit_event_handler_core_configuration_update (struct einit_event *);
 
@@ -1155,7 +1147,6 @@ void module_logic_spawn_set_disable_all (struct lmodule **spawn) {
 }
 
 /* in the following event handler, we (re-)build our service-name -> module(s) lookup table */
-
 void module_logic_einit_event_handler_core_module_list_update (struct einit_event *ev) {
  struct stree *new_service_list = NULL;
  struct lmodule *cur = ev->para;
@@ -1206,145 +1197,11 @@ void module_logic_einit_event_handler_core_module_list_update (struct einit_even
 }
 
 /* what we also need is a list of preferences... */
-
 void module_logic_einit_event_handler_core_configuration_update (struct einit_event *ev) {
  mod_sort_service_list_items_by_preference();
 }
 
 /* the following three events are used to make the module logics core do something */
-
-void module_logic_ping_wait (pthread_cond_t *cond, pthread_mutex_t *mutex) {
- int e;
-
-#if defined(_POSIX_TIMERS) && (_POSIX_TIMERS > 0)
- struct timespec ts;
-
- if (clock_gettime(CLOCK_REALTIME, &ts))
-  bitch (bitch_stdio, errno, "gettime failed!");
-
- ts.tv_sec += 1; /* max wait before re-evaluate */
-
- e = pthread_cond_timedwait (cond, mutex, &ts);
-#elif defined(__APPLE__)
- struct timespec ts;
- struct timeval tv;
-
- gettimeofday (&tv, NULL);
-
- ts.tv_sec = tv.tv_sec + 1; /* max wait before re-evaluate */
-
- e = pthread_cond_timedwait (cond, mutex, &ts);
-#else
- notice (2, "warning: un-timed lock.");
- e = pthread_cond_wait (cond, mutex);
-#endif
-
- if (e
-#ifdef ETIMEDOUT
-     && (e != ETIMEDOUT)
-#endif
-    ) {
-  bitch (bitch_epthreads, e, "waiting on conditional variable for plan");
- }
-}
-
-void module_logic_wait_for_services_to_be_enabled(char **services) {
- emutex_lock (&module_logic_list_enable_mutex);
-
- do {
- /* check here ... */
-
-  if (!module_logic_list_enable) {
-   emutex_unlock (&module_logic_list_enable_mutex);
-   return;
-  } else if (services) {
-   int i = 0;
-
-   for (; services[i]; i++) {
-    if (!inset ((const void **)module_logic_list_enable, services[i], SET_TYPE_STRING)) {
-     if ((services = strsetdel (services, services[i])))
-      i = -1;
-     else
-      break;
-    } else {
-#if 0
- 	 if (!module_logic_active_modules && ((modules_last_change + 1) > time(NULL))) {
-      struct lmodule **spawn = module_logic_find_things_to_enable();
-
-      if (spawn)
-       module_logic_spawn_set_enable_all (spawn);
-	  }
-#endif
-#if 0
-     fprintf (stderr, " ** still waiting for: %s\n", services[i]);
-     fflush (stderr);
-#endif
-    }
-   }
-  }
-
-  if (!services) {
-   emutex_unlock (&module_logic_list_enable_mutex);
-   return;
-  }
-
-  /* wait until we get ping'd that stuff was enabled */
-  module_logic_ping_wait (&module_logic_list_enable_ping_cond, &module_logic_list_enable_mutex);
- } while (1);
-}
-
-void module_logic_wait_for_services_to_be_disabled(char **services) {
- emutex_lock (&module_logic_list_disable_mutex);
-
- do {
-  /* check here ... */
-#if 0
-  if (!module_logic_active_modules) {
-   fprintf (stderr, "nothing in the active list...\n");
-   fflush (stderr);
-  }
-#endif
-
-  if (!module_logic_list_disable) {
-#if 0
-   fprintf (stderr, "nothing in the list...\n");
-   fflush (stderr);
-#endif
-   emutex_unlock (&module_logic_list_disable_mutex);
-   return;
-  } else if (services) {
-   int i = 0;
-
-   for (; services[i]; i++) {
-    if (!inset ((const void **)module_logic_list_disable, services[i], SET_TYPE_STRING)) {
-#if 0
-     fprintf (stderr, " ** have: %s\n", services[i]);
-     fflush (stderr);
-#endif
-
-     if ((services = strsetdel (services, services[i])))
-      i = -1;
-     else
-      break;
-#if 0
-    } else {
-     fprintf (stderr, " ** still waiting for: %s\n", services[i]);
-     fflush (stderr);
-#endif
-    }
-   }
-  }
-
-  if (!services) {
-   emutex_unlock (&module_logic_list_disable_mutex);
-   return;
-  }
-
-  /* wait until we get ping'd that stuff was disabled */
-  module_logic_ping_wait (&module_logic_list_disable_ping_cond, &module_logic_list_disable_mutex);
- } while (1);
-}
-
 struct cfgnode *module_logic_prepare_mode_switch (char *modename, char ***enable_r, char ***disable_r) {
  if (!modename) return NULL;
 
@@ -1470,6 +1327,62 @@ void module_logic_idle_actions () {
  emutex_unlock (&module_logic_free_on_idle_stree_mutex);
 }
 
+struct mode_switch_callback_data {
+ char *modename;
+ struct cfgnode *mode;
+};
+
+void module_logic_einit_event_handler_core_switch_mode_callback (void *p) {
+ struct mode_switch_callback_data *d = p;
+ char sw;
+
+ /* waiting on things to be enabled and disabled works just fine if we do it serially... */
+ if (d->mode) {
+  cmode = d->mode;
+  amode = d->mode;
+
+  if (strmatch (d->modename, "power-down")) {
+   struct einit_event ee = evstaticinit (einit_power_down_imminent);
+   event_emit (&ee, einit_event_flag_broadcast);
+   evstaticdestroy (ee);
+  } else if (strmatch (d->modename, "power-reset")) {
+   struct einit_event ee = evstaticinit (einit_power_reset_imminent);
+   event_emit (&ee, einit_event_flag_broadcast);
+   evstaticdestroy (ee);
+  }
+
+  struct einit_event eex = evstaticinit (einit_core_mode_switch_done);
+  eex.para = (void *)d->mode;
+  eex.string = d->mode->id;
+  event_emit (&eex, einit_event_flag_broadcast);
+  evstaticdestroy (eex);
+ }
+
+ emutex_lock (&module_logic_commit_count_mutex);
+ module_logic_commit_count--;
+ sw = (module_logic_commit_count == 0);
+ emutex_unlock (&module_logic_commit_count_mutex);
+
+ if (sw) {
+  struct einit_event evs = evstaticinit (einit_core_done_switching);
+  event_emit (&evs, einit_event_flag_broadcast | einit_event_flag_spawn_thread);
+  evstaticdestroy (evs);
+
+  module_logic_idle_actions();
+ }
+
+ if (d->modename && (strmatch (d->modename, "power-down") || strmatch (d->modename, "power-reset"))) {
+  usleep (50000);
+  /* at this point, we really should be dead already... */
+
+  notice (1, "exiting");
+  _exit (0);
+ }
+
+ efree (d);
+}
+
+
 void module_logic_einit_event_handler_core_switch_mode (struct einit_event *ev) {
  char sw;
 
@@ -1535,10 +1448,6 @@ void module_logic_einit_event_handler_core_switch_mode (struct einit_event *ev) 
    int i = 0;
    emutex_lock (&module_logic_list_disable_mutex);
    for (; disable[i]; i++) {
-#if 0
-    fprintf (stderr, "disable: %s\n", disable[i]);
-	fflush (stderr);
-#endif
     if (!inset ((const void **)module_logic_list_disable, disable[i], SET_TYPE_STRING))
      module_logic_list_disable = set_str_add_stable (module_logic_list_disable, disable[i]);
    }
@@ -1555,33 +1464,18 @@ void module_logic_einit_event_handler_core_switch_mode (struct einit_event *ev) 
    }
   }
 
-/* waiting on things to be enabled and disabled works just fine if we do it serially... */
-  if (enable)
-   module_logic_wait_for_services_to_be_enabled(enable);
-  if (disable)
-   module_logic_wait_for_services_to_be_disabled(disable);
+  struct mode_switch_callback_data *d = ecalloc (1, sizeof (struct mode_switch_callback_data));
 
-  if (mode) {
-   cmode = mode;
-   amode = mode;
+  d->modename = (char *)str_stabilise (ev->string);
+  d->mode = mode;
 
-   if (strmatch (ev->string, "power-down")) {
-    struct einit_event ee = evstaticinit (einit_power_down_imminent);
-    event_emit (&ee, einit_event_flag_broadcast);
-    evstaticdestroy (ee);
-   } else if (strmatch (ev->string, "power-reset")) {
-    struct einit_event ee = evstaticinit (einit_power_reset_imminent);
-    event_emit (&ee, einit_event_flag_broadcast);
-    evstaticdestroy (ee);
-   }
-
-   struct einit_event eex = evstaticinit (einit_core_mode_switch_done);
-   eex.para = (void *)mode;
-   eex.string = mode->id;
-   event_emit (&eex, einit_event_flag_broadcast);
-   evstaticdestroy (eex);
-  }
+  module_logic_call_back (enable, disable, module_logic_einit_event_handler_core_switch_mode_callback, d);
+  module_logic_do_callbacks ();
  }
+}
+
+void module_logic_fix_count_callback (void *p) {
+ char sw;
 
  emutex_lock (&module_logic_commit_count_mutex);
  module_logic_commit_count--;
@@ -1594,14 +1488,6 @@ void module_logic_einit_event_handler_core_switch_mode (struct einit_event *ev) 
   evstaticdestroy (evs);
 
   module_logic_idle_actions();
- }
-
- if (ev->string && (strmatch (ev->string, "power-down") || strmatch (ev->string, "power-reset"))) {
-  usleep (50000);
-  /* at this point, we really should be dead already... */
-
-  notice (1, "exiting");
-  _exit (0);
  }
 }
 
@@ -1636,7 +1522,8 @@ void module_logic_einit_event_handler_core_manipulate_services (struct einit_eve
    if (spawn)
     module_logic_spawn_set_enable (spawn);
 
-   module_logic_wait_for_services_to_be_enabled(set_str_dup_stable(ev->stringset));
+   module_logic_call_back (set_str_dup_stable(ev->stringset), NULL, module_logic_fix_count_callback, NULL);
+   module_logic_do_callbacks ();
   } else if (ev->task & einit_module_disable) {
    int i = 0;
    emutex_lock (&module_logic_list_disable_mutex);
@@ -1651,38 +1538,15 @@ void module_logic_einit_event_handler_core_manipulate_services (struct einit_eve
    if (spawn)
     module_logic_spawn_set_disable (spawn);
 
-   module_logic_wait_for_services_to_be_disabled(set_str_dup_stable(ev->stringset));
+   module_logic_call_back (NULL, set_str_dup_stable(ev->stringset), module_logic_fix_count_callback, NULL);
+   module_logic_do_callbacks ();
   }
- }
-
- emutex_lock (&module_logic_commit_count_mutex);
- module_logic_commit_count--;
- sw = (module_logic_commit_count == 0);
- emutex_unlock (&module_logic_commit_count_mutex);
-
- if (sw) {
-  struct einit_event evs = evstaticinit (einit_core_done_switching);
-  event_emit (&evs, einit_event_flag_broadcast | einit_event_flag_spawn_thread);
-  evstaticdestroy (evs);
-
-  module_logic_idle_actions();
  }
 }
 
 void module_logic_einit_event_handler_core_change_service_status (struct einit_event *ev) {
- char sw;
-
- emutex_lock (&module_logic_commit_count_mutex);
- sw = (module_logic_commit_count == 0);
- module_logic_commit_count++;
- emutex_unlock (&module_logic_commit_count_mutex);
-
- if (sw) {
+ if (module_logic_commit_count == 0) {
   mod_sort_service_list_items_by_preference();
-
-  struct einit_event evs = evstaticinit (einit_core_switching);
-  event_emit (&evs, einit_event_flag_broadcast | einit_event_flag_spawn_thread);
-  evstaticdestroy (evs);
  }
 
  /* do stuff here */
@@ -1699,8 +1563,6 @@ void module_logic_einit_event_handler_core_change_service_status (struct einit_e
    if (spawn)
     module_logic_spawn_set_enable (spawn);
 
-   module_logic_wait_for_services_to_be_enabled((char **)str2set(0, ev->set[0]));
-   ev->integer = !(mod_service_is_provided (ev->set[0]));
   } else if (strmatch (ev->set[1], "disable") || strmatch (ev->set[1], "stop")) {
    emutex_lock (&module_logic_list_disable_mutex);
    if (!inset ((const void **)module_logic_list_disable, ev->set[0], SET_TYPE_STRING))
@@ -1711,9 +1573,6 @@ void module_logic_einit_event_handler_core_change_service_status (struct einit_e
 
    if (spawn)
     module_logic_spawn_set_disable (spawn);
-
-   module_logic_wait_for_services_to_be_disabled((char **)str2set(0, ev->set[0]));
-   ev->integer = mod_service_is_provided (ev->set[0]);
   } else {
    struct lmodule **m = NULL;
    emutex_lock (&module_logic_service_list_mutex);
@@ -1725,7 +1584,6 @@ void module_logic_einit_event_handler_core_change_service_status (struct einit_e
    emutex_unlock (&module_logic_service_list_mutex);
 
    if (m) {
-    ev->integer = 0;
     int i = 0;
     for (; m[i]; i++) {
      int r = mod(einit_module_custom, m[i], ev->set[1]);
@@ -1734,25 +1592,8 @@ void module_logic_einit_event_handler_core_change_service_status (struct einit_e
     }
 
     efree (m);
-   } else {
-    ev->integer = 1;
    }
   }
- }
-
- /* done with stuff */
-
- emutex_lock (&module_logic_commit_count_mutex);
- module_logic_commit_count--;
- sw = (module_logic_commit_count == 0);
- emutex_unlock (&module_logic_commit_count_mutex);
-
- if (sw) {
-  struct einit_event evs = evstaticinit (einit_core_done_switching);
-  event_emit (&evs, einit_event_flag_broadcast | einit_event_flag_spawn_thread);
-  evstaticdestroy (evs);
-
-  module_logic_idle_actions();
  }
 }
 
@@ -1808,9 +1649,9 @@ void module_logic_einit_event_handler_core_service_enabled (struct einit_event *
  struct lmodule **spawn = module_logic_find_things_to_enable();
  emutex_unlock (&module_logic_list_enable_mutex);
 
-// pthread_cond_broadcast (&module_logic_list_enable_ping_cond);
-
  module_logic_emit_progress_event();
+
+ module_logic_do_callbacks ();
 
  if (spawn)
   module_logic_spawn_set_enable (spawn);
@@ -1823,9 +1664,9 @@ void module_logic_einit_event_handler_core_service_disabled (struct einit_event 
  struct lmodule **spawn = module_logic_find_things_to_disable();
  emutex_unlock (&module_logic_list_disable_mutex);
 
-// pthread_cond_broadcast (&module_logic_list_disable_ping_cond);
-
  module_logic_emit_progress_event();
+
+ module_logic_do_callbacks ();
 
  if (spawn)
   module_logic_spawn_set_disable (spawn);
@@ -1912,7 +1753,7 @@ void module_logic_einit_event_handler_core_service_update (struct einit_event *e
    module_logic_spawn_set_disable_all (spawn);
  }
 
- pthread_cond_broadcast (&module_logic_list_disable_ping_cond);
+ module_logic_do_callbacks ();
 }
 
 /* helpers for the new ipc */
