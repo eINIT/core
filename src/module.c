@@ -344,9 +344,6 @@ struct completion_callback_data {
 int mod_completion_callback (struct completion_callback_data *x) {
  x->module->status = x->status;
 
- mod_completion_handler (x->module, x->fb, x->task);
- evdestroy (x->fb);
-
  mod_update_usage_table(x->module);
 
  if (shutting_down) {
@@ -354,6 +351,9 @@ int mod_completion_callback (struct completion_callback_data *x) {
    return mod (einit_module_custom, x->module, "zap");
   }
  }
+
+ mod_completion_handler (x->module, x->fb, x->task);
+ evdestroy (x->fb);
 
  return x->module->status;
 }
@@ -638,7 +638,7 @@ int mod_update_source (const char *source) {
 }
 
 int mod_complete (char *rid, enum einit_module_task task, enum einit_module_status status) {
- fprintf (stderr, "mod_complete(%s)\n", rid);
+// fprintf (stderr, "mod_complete(%s)\n", rid);
 
  struct lmodule *module = mod_lookup_rid(rid);
 
@@ -649,21 +649,21 @@ int mod_complete (char *rid, enum einit_module_task task, enum einit_module_stat
  fb->status = status;
  module->status = status;
 
- fprintf (stderr, "mod_update_usage_table(%s)\n", rid);
+// fprintf (stderr, "mod_update_usage_table(%s)\n", rid);
  mod_update_usage_table (module);
 
  if (shutting_down) {
   if ((task & einit_module_disable) && (module->status & (status_enabled | status_failed))) {
-   fprintf (stderr, "mod(%s, zap)\n", rid);
+//   fprintf (stderr, "mod(%s, zap)\n", rid);
    mod (einit_module_custom, module, "zap");
   }
  }
 
- fprintf (stderr, "mod_completion_handler(%s)\n", rid);
+// fprintf (stderr, "mod_completion_handler(%s)\n", rid);
  mod_completion_handler (module, fb, task);
  evdestroy (fb);
 
- fprintf (stderr, "mod_completion(%s, done)\n", rid);
+// fprintf (stderr, "mod_completion(%s, done)\n", rid);
  return status;
 }
 
