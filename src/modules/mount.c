@@ -1194,7 +1194,7 @@ void einit_mount_scanmodules_mountpoints () {
   newmodule->eiversion = EINIT_VERSION;
   newmodule->eibuild = BUILDNUMBER;
   newmodule->version = 1;
-  newmodule->mode = einit_module;
+  newmodule->mode = einit_module | einit_module_fork_actions;
 
 //  esprintf (tmp, BUFFERSIZE, "mount-%s", s->key);
   newmodule->rid = (char *)str_stabilise (tmp);
@@ -1330,7 +1330,7 @@ void einit_mount_scanmodules_fscks () {
   newmodule->eiversion = EINIT_VERSION;
   newmodule->eibuild = BUILDNUMBER;
   newmodule->version = 1;
-  newmodule->mode = einit_module | einit_feedback_job;
+  newmodule->mode = einit_module | einit_feedback_job | einit_module_fork_actions;
 
 //  esprintf (tmp, BUFFERSIZE, "mount-%s", s->key);
   newmodule->rid = (char *)str_stabilise (tmp);
@@ -1631,7 +1631,7 @@ int mount_try_mount (char *mountpoint, char *fs, struct device_data *dd, struct 
 
     struct einit_event eem = evstaticinit (einit_mount_node_mounted);
     eem.string = mountpoint;
-    event_emit (&eem, einit_event_flag_broadcast);
+    event_emit (&eem, einit_event_flag_remote);
     evstaticdestroy (eem);
 
     mp->status |= device_status_mounted;
@@ -1641,7 +1641,7 @@ int mount_try_mount (char *mountpoint, char *fs, struct device_data *dd, struct 
 //    if (mount_critical && inset ((const void **)mount_critical, (const void *)mountpoint, SET_TYPE_STRING)) {
      struct einit_event ev = evstaticinit(einit_core_update_modules);
 
-     event_emit (&ev, einit_event_flag_broadcast);
+     event_emit (&ev, einit_event_flag_remote);
 
      evstaticdestroy(ev);
 //    }
@@ -1926,7 +1926,7 @@ int mount_do_umount_generic (char *mountpoint, char *fs, char step, struct devic
 
  struct einit_event eem = evstaticinit (einit_mount_node_unmounted);
  eem.string = mountpoint;
- event_emit (&eem, einit_event_flag_broadcast);
+ event_emit (&eem, einit_event_flag_remote);
  evstaticdestroy (eem);
 
  update_real_mtab();
@@ -1938,7 +1938,7 @@ int emount (char *mountpoint, struct einit_event *status) {
  if (coremode & einit_mode_sandbox) {
   if (strmatch (mountpoint, "/")) {
    struct einit_event eml = evstaticinit(einit_boot_root_device_ok);
-   event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread);
+   event_emit (&eml, einit_event_flag_remote);
    evstaticdestroy(eml);
   }
 
@@ -1962,7 +1962,7 @@ int emount (char *mountpoint, struct einit_event *status) {
 
    if ((ret == status_ok) && strmatch (mountpoint, "/")) {
     struct einit_event eml = evstaticinit(einit_boot_root_device_ok);
-    event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread);
+    event_emit (&eml, einit_event_flag_remote);
     evstaticdestroy(eml);
    }
 
@@ -2085,7 +2085,7 @@ void eumount_root () {
  eml.stringset = set_str_add (NULL, "fs-root");
  eml.task = einit_module_disable;
 
- event_emit (&eml, einit_event_flag_broadcast);
+ event_emit (&eml, einit_event_flag_remote);
  evstaticdestroy(eml);
 }
 

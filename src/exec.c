@@ -35,6 +35,7 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <einit/einit.h>
 #include <einit/exec.h>
 #include <einit/module.h>
 #include <einit/bitch.h>
@@ -308,10 +309,15 @@ pid_t einit_exec (struct einit_exec_data *x) {
 
    dup2 (2, 1);
 
-   execve (c[0], c, environment);
+   if (x->options & einit_exec_fork_only) {
+    /* return 0, like fork() would */
+    return 0;
+   } else {
+    execve (c[0], c, environment);
 
-   _exit (EXIT_FAILURE);
-  /* we don't return from this 'ere child process, evar */
+    _exit (EXIT_FAILURE);
+    /* we don't return from this 'ere child process, evar */
+   }
   } else if (sc > 0) {
    char buffer[128];
 
@@ -415,6 +421,24 @@ pid_t einit_exec_with_shell (char * c) {
  x->options |= einit_exec_shell;
 
  pid_t p = einit_exec (x);
+
+ return p;
+}
+
+pid_t einit_fork (void (*handle_dead_process)(struct einit_exec_data *), void *data) {
+ struct einit_exec_data *x = ecalloc (1, sizeof (struct einit_exec_data));
+
+ x->custom = data;
+ x->handle_dead_process = handle_dead_process;
+ x->options |= einit_exec_fork_only;
+
+ pid_t p = einit_exec (x);
+
+ if (p == 0) {
+  /* make sure that if we fork we're still able to emit events to the core if need be */
+
+  einit_connect (NULL, NULL);
+ }
 
  return p;
 }

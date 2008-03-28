@@ -53,6 +53,7 @@ enum einit_exec_options {
  einit_exec_keep_stdin     = 0x0001,
  einit_exec_no_shell       = 0x0010,
  einit_exec_shell          = 0x0020,
+ einit_exec_fork_only      = 0x0040,
  einit_exec_no_pipe        = 0x0100,
  einit_exec_create_session = 0x1000,
  einit_exec_daemonise      = 0x2000
@@ -97,6 +98,8 @@ pid_t einit_exec_without_shell_with_function_on_process_death_options (char **, 
 pid_t einit_exec_with_shell (char *);
 
 pid_t einit_exec_auto (char *);
+
+pid_t einit_fork (void (*handle_dead_process)(struct einit_exec_data *), void *data);
 
 struct einit_exec_data *  einit_exec_create_exec_data_from_string (char *);
 

@@ -49,6 +49,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <pthread.h>
 #include <errno.h>
 #include <time.h>
+#include <wait.h>
+#include <einit/exec.h>
 
 struct lmodule *mlist = NULL;
 extern char shutting_down;
@@ -367,6 +369,31 @@ int mod_completion_callback_wrapper (struct einit_event *fb, enum einit_module_t
  return mod_completion_callback (&x);
 }
 
+void mod_completion_callback_dead_process(struct einit_exec_data *xd) {
+ struct completion_callback_data *x = xd->custom;
+
+ x->status = (WIFEXITED(xd->status) && (WEXITSTATUS(xd->status) == EXIT_SUCCESS)) ? status_ok : status_failed;
+
+ if (x->task & einit_module_custom) {
+  x->module->status = (x->module->status & (status_enabled | status_disabled)) | x->status;
+ } else if (x->task & einit_module_enable) {
+  if (x->status == status_ok) {
+   x->module->status = status_ok | status_enabled;
+  } else {
+   x->module->status = status_failed | status_disabled;
+  }
+ } else if (x->task & einit_module_disable) {
+  if (x->status == status_ok) {
+   x->module->status = status_ok | status_disabled;
+  } else {
+   x->module->status = status_failed | status_enabled;
+  }
+ }
+
+ mod_completion_callback (x);
+ efree (xd->custom);
+}
+
 int mod (enum einit_module_task task, struct lmodule *module, char *custom_command) {
  struct einit_event *fb;
  unsigned int ret;
@@ -418,6 +445,12 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
  skipdependencies:
 
  if (module->module->mode & einit_module_event_actions) {
+  if ((task & einit_module_custom) && (strmatch (custom_command, "zap"))) {
+   module->status = status_disabled | (module->status & status_failed);
+
+   return mod_complete (module->module->rid, einit_module_custom, module->status);
+  }
+
   char *action = custom_command;
 
   if (task & einit_module_enable) {
@@ -447,11 +480,25 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
  fb = mod_initialise_feedback_event (module, task);
  event_emit(fb, einit_event_flag_broadcast);
 
+ if ((task & einit_module_custom) && (strmatch (custom_command, "zap"))) {
+  module->status = status_disabled | (module->status & status_failed);
+  fb->string = "module ZAP'd.";
+
+  return mod_completion_callback_wrapper (fb, task, module, module->status);
+ }
+
+ if (module->module->mode & einit_module_fork_actions) {
+  struct completion_callback_data *x = emalloc (sizeof (struct completion_callback_data));
+
+  x->fb = fb;
+  x->task = task;
+  x->module = module;
+
+  if (einit_fork (mod_completion_callback_dead_process, x)) return status_working;
+ }
+
  if (task & einit_module_custom) {
-  if (strmatch (custom_command, "zap")) {
-   module->status = status_disabled | (module->status & status_failed);
-   fb->string = "module ZAP'd.";
-  } else if (module->custom) {
+  if (module->custom) {
    module->status = module->custom(module->param, custom_command, fb);
   } else {
    module->status = (module->status & (status_enabled | status_disabled)) | status_failed | status_command_not_implemented;
@@ -470,6 +517,12 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
   } else {
    module->status = status_failed | status_enabled;
   }
+ }
+
+ if (module->module->mode & einit_module_fork_actions) {
+  if (module->status & status_ok) _exit (EXIT_SUCCESS);
+
+  _exit (EXIT_FAILURE);
  }
 
  return mod_completion_callback_wrapper (fb, task, module, module->status);
