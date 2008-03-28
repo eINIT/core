@@ -52,7 +52,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/stat.h>
 #include <einit-modules/configuration.h>
 #include <einit-modules/exec.h>
+#include <einit/exec.h>
 #include <ctype.h>
+#include <wait.h>
 
 int linux_kernel_modules_configure (struct lmodule *);
 
@@ -129,7 +131,8 @@ void *linux_kernel_modules_load_exec (void *c) {
 
 int linux_kernel_modules_load (char **modules) {
  if (!modules) return status_failed;
- pthread_t **threads = NULL;
+
+ pid_t **pids = NULL;
 
  char *modprobe_command = cfg_getstring ("configuration-command-modprobe/with-env", 0);
  uint32_t i = 0;
@@ -145,12 +148,16 @@ int linux_kernel_modules_load (char **modules) {
     notice (4, "loading kernel module: %s", modules[i]);
 
     if (modules[i+1]) {
-     pthread_t *threadid = emalloc (sizeof (pthread_t));
+     pid_t p = efork();
 
-     if (ethread_create (threadid, NULL, (void *(*)(void *))linux_kernel_modules_load_exec, applied)) {
+     if (p < 0) {
+      perror ("couldn't fork");
       linux_kernel_modules_load_exec (applied);
+     } else if (p > 0) {
+      pids = (pid_t **)set_fix_add ((void **)pids, &p, sizeof (pid_t));
      } else {
-      threads = (pthread_t **)set_noa_add ((void **)threads, threadid);
+      linux_kernel_modules_load_exec (applied);
+      _exit (EXIT_SUCCESS);
      }
     } else {
      linux_kernel_modules_load_exec (applied);
@@ -171,16 +178,14 @@ int linux_kernel_modules_load (char **modules) {
 
  efree (modules);
 
- if (threads) {
+ if (pids) {
   int i = 0;
 
-  for (; threads[i]; i++) {
-   pthread_join (*(threads[i]), NULL);
-
-   efree (threads[i]);
+  for (; pids[i]; i++) {
+   while (waitpid (*(pids[i]), NULL, 0) <= 0);
   }
 
-  efree (threads);
+  efree (pids);
  }
 
  return status_ok;
@@ -396,9 +401,14 @@ int linux_kernel_modules_module_enable (char *subsys, struct einit_event *status
   if (dwait) {
    linux_kernel_modules_load (modules);
   } else {
-   fbprintf (status, "not waiting for the result...");
+   pid_t p = einit_fork (NULL, NULL, status->rid, NULL);
 
-   ethread_spawn_detached_run ((void *(*)(void *))linux_kernel_modules_load, (void *)modules);
+   if (!p) {
+    fprintf (stderr, "not waiting for the result...");
+
+    linux_kernel_modules_load (modules);
+    _exit (EXIT_SUCCESS);
+   }
   }
  } else {
   fbprintf (status, "no kernel modules to load");
@@ -473,7 +483,7 @@ void linux_kernel_modules_node_callback (struct cfgnode *node) {
 }
 
 void linux_kernel_modules_boot_event_handler_load_kernel_extensions (struct einit_event *ev) {
- pthread_t **threads = NULL;
+ pid_t **pids = NULL;
 
  struct stree *linux_kernel_modules_nodes = cfg_prefix(MPREFIX);
  char have_generic = 0;
@@ -506,13 +516,17 @@ void linux_kernel_modules_boot_event_handler_load_kernel_extensions (struct eini
     char **modules = str2set (':', node->svalue);
 
     if (modules) {
-     pthread_t *threadid = emalloc (sizeof (pthread_t));
+     pid_t p = efork();
 
-     if (ethread_create (threadid, NULL, (void *(*)(void *))linux_kernel_modules_load, modules)) {
+     if (p < 0) {
+      perror ("couldn't fork");
       linux_kernel_modules_load (modules);
-     } else {
+     } else if (p > 0) {
       if (!node->flag)
-       threads = (pthread_t **)set_noa_add ((void **)threads, threadid);
+       pids = (pid_t **)set_fix_add ((void **)pids, &p, sizeof (pid_t));
+     } else {
+      linux_kernel_modules_load (modules);
+      _exit (EXIT_SUCCESS);
      }
     }
    }
@@ -530,27 +544,29 @@ void linux_kernel_modules_boot_event_handler_load_kernel_extensions (struct eini
   char **modules = linux_kernel_modules_get_by_subsystem ("generic", &dwait, NULL);
 
   if (modules) {
-   pthread_t *threadid = emalloc (sizeof (pthread_t));
+   pid_t p = efork();
 
-   if (ethread_create (threadid, NULL, (void *(*)(void *))linux_kernel_modules_load, modules)) {
+   if (p < 0) {
+    perror ("couldn't fork");
     linux_kernel_modules_load (modules);
-   } else {
+   } else if (p > 0) {
     if (dwait)
-     threads = (pthread_t **)set_noa_add ((void **)threads, threadid);
+     pids = (pid_t **)set_fix_add ((void **)pids, &p, sizeof (pid_t));
+   } else {
+    linux_kernel_modules_load (modules);
+    _exit (EXIT_SUCCESS);
    }
   }
  }
 
- if (threads) {
+ if (pids) {
   int i = 0;
 
-  for (; threads[i]; i++) {
-   pthread_join (*(threads[i]), NULL);
-
-   efree (threads[i]);
+  for (; pids[i]; i++) {
+   while (waitpid (*(pids[i]), NULL, 0) <= 0);
   }
 
-  efree (threads);
+  efree (pids);
  }
 
  return;
