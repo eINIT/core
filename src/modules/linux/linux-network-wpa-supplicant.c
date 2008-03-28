@@ -357,7 +357,7 @@ void linux_network_wpa_supplicant_node_callback (struct cfgnode *node) {
 
  sm->eiversion = EINIT_VERSION;
  sm->eibuild = BUILDNUMBER;
- sm->mode = einit_module | einit_feedback_job;
+ sm->mode = einit_module | einit_feedback_job | einit_module_fork_actions;
 
  esprintf (tmp, BUFFERSIZE, "wpa-supplicant-%s", interface);
  sm->si.provides = set_str_add (sm->si.provides, tmp);

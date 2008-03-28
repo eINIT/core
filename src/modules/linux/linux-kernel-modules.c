@@ -452,7 +452,7 @@ void linux_kernel_modules_scanmodules_add_subsystem (char *subsystem) {
 
  sm->eiversion = EINIT_VERSION;
  sm->eibuild = BUILDNUMBER;
- sm->mode = einit_module | einit_feedback_job;
+ sm->mode = einit_module | einit_feedback_job | einit_module_fork_actions;
 
  esprintf (tmp, BUFFERSIZE, "kern-%s", subsystem);
  sm->si.provides = set_str_add (sm->si.provides, tmp);
