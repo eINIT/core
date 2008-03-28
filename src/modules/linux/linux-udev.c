@@ -201,6 +201,10 @@ void linux_udev_run() {
  mount ("sys", "/sys", "sysfs", 0, NULL);
  mount ("udev", "/dev", "tmpfs", 0, NULL);
 
+ struct einit_event eml = evstaticinit(einit_boot_dev_writable);
+ event_emit (&eml, einit_event_flag_broadcast);
+ evstaticdestroy(eml);
+
  mkdir ("/dev/pts", 0777);
  mount ("devpts", "/dev/pts", "devpts", 0, NULL);
 

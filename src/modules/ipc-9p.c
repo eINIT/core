@@ -778,8 +778,10 @@ void einit_ipc_9p_thread_function_address (char *address) {
 }
 
 void einit_ipc_9p_boot_event_handler_root_device_ok (struct einit_event *ev) {
- notice (6, "enabling IPC (9p)");
- einit_ipc_9p_thread_function(NULL);
+ if (!einit_ipc_9p_running) {
+  notice (6, "enabling IPC (9p)");
+  einit_ipc_9p_thread_function(NULL);
+ }
 }
 
 void einit_ipc_9p_power_event_handler (struct einit_event *ev) {
@@ -872,7 +874,9 @@ void einit_ipc_9p_disable_ipc_event_handler (struct einit_event *ev) {
 int einit_ipc_9p_configure (struct lmodule *irr) {
  module_init(irr);
 
- event_listen (einit_boot_load_kernel_extensions, einit_ipc_9p_boot_event_handler_root_device_ok);
+ event_listen (einit_boot_dev_writable, einit_ipc_9p_boot_event_handler_root_device_ok);
+ event_listen (einit_boot_root_device_ok, einit_ipc_9p_boot_event_handler_root_device_ok);
+
  event_listen (einit_power_down_imminent, einit_ipc_9p_power_event_handler);
  event_listen (einit_power_reset_imminent, einit_ipc_9p_power_event_handler);
  event_listen (einit_ipc_read, einit_ipc_9p_ipc_read);

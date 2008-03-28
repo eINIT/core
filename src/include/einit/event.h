@@ -195,6 +195,8 @@ enum einit_event_code {
  einit_boot_devices_available       = einit_event_subsystem_boot     | 0x006,
  einit_boot_root_device_ok          = einit_event_subsystem_boot     | 0x007,
 
+ einit_boot_dev_writable            = einit_event_subsystem_boot     | 0x010,
+
 /* einit_event_subsystem_devices: */
 /* the naming for those is currently exactly the same as the naming for linux hotplug netlink events */
  einit_hotplug_add                  = einit_event_subsystem_hotplug  | 0x001,
