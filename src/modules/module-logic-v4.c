@@ -168,7 +168,6 @@ void module_logic_do_callbacks () {
     callback = module_logic_callbacks[i]->callback;
     para = module_logic_callbacks[i]->para;
 
-    efree (module_logic_callbacks[i]);
     module_logic_callbacks = (struct service_callback **)setdel ((void **)module_logic_callbacks, module_logic_callbacks[i]);
     break;
    }
