@@ -230,14 +230,16 @@ pid_t einit_exec (struct einit_exec_data *x) {
  }
  environment = einit_create_environment (environment, x->variables);
 
- if (x->options & einit_exec_no_shell) {
-  int i = 0;
-  if (x->command_d) for (; x->command_d[i]; i++) {
-   c = set_str_add_stable (c, einit_apply_environment(x->command_d[i], environment));
+ if (!(x->options & einit_exec_fork_only)) {
+  if (x->options & einit_exec_no_shell) {
+   int i = 0;
+   if (x->command_d) for (; x->command_d[i]; i++) {
+    c = set_str_add_stable (c, einit_apply_environment(x->command_d[i], environment));
+   }
+  } else {
+   sh[2] = (char *)einit_apply_environment(x->command, environment);
+   c = sh;
   }
- } else {
-  sh[2] = (char *)einit_apply_environment(x->command, environment);
-  c = sh;
  }
 
  int feedbackpipe[2];
@@ -265,7 +267,7 @@ pid_t einit_exec (struct einit_exec_data *x) {
 /*  for (; c[i]; i++) {
    fprintf (stderr, "exec: %i, %s\n", i, c[i]);
   }*/
- } else {
+ } else if (!(x->options & einit_exec_fork_only)) {
   return -1;
 //  fprintf (stderr, "no command?\n");
  }
