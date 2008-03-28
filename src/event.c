@@ -144,6 +144,8 @@ void *event_emit (struct einit_event *event, enum einit_event_emit_flags flags) 
  if (flags & einit_event_flag_remote) {
   char *path[] = { "events", "emit", NULL };
   einit_write (path, (char*)einit_event_encode (event));
+
+  return NULL;
  }
 
  if (flags & einit_event_flag_spawn_thread) {
