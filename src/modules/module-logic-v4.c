@@ -414,7 +414,7 @@ struct lmodule **module_logic_find_things_to_enable() {
     int y = 0;
 
     for (y = 0; candidate->si->uses[y]; y++) {
-     if ((!broken || !inset ((const void **)broken, candidate->si->requires[y], SET_TYPE_STRING)) && !inset ((const void **)module_logic_list_enable, candidate->si->uses[y], SET_TYPE_STRING)) {
+     if ((!broken || !inset ((const void **)broken, candidate->si->uses[y], SET_TYPE_STRING)) && !inset ((const void **)module_logic_list_enable, candidate->si->uses[y], SET_TYPE_STRING)) {
       module_logic_list_enable = set_str_add_stable (module_logic_list_enable, candidate->si->uses[y]);
 
       if (candidates_level1) {

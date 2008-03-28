@@ -113,63 +113,20 @@ int module_group_module_enable (char *nodename, struct einit_event *status) {
    all of the members were set as requires=. */
     return status_ok;
 
-   if (seq == sq_any) {
-/* see if any of the items are enabled */
-    for (i = 0; group[i]; i++) {
-     if (mod_service_is_provided(group[i])) goto exit_good;
-    }
-
-    for (i = 0; group[i]; i++) {
-     char **set = str2set (0, group[i]);
-     int y;
-
-     struct einit_event eml = evstaticinit(einit_core_manipulate_services);
-     eml.stringset = set;
-     eml.task = einit_module_enable;
-
-     event_emit (&eml, einit_event_flag_broadcast);
-     evstaticdestroy(eml);
-
-     efree (set);
-
-     for (y = 0; group[y]; y++) {
-      if (mod_service_is_provided(group[y])) goto exit_good;
-     }
-    }
+/* see if any of these are enabled... we used the .uses field and the .after field, so we're able to decide if this worked */
+   int enabled = 0;
+   for (i = 0; group[i]; i++) {
+    if (mod_service_is_provided(group[i])) enabled++;
    }
 
-   if (seq == sq_most) {
-/* see if all of these are enabled... */
-    int enabled = 0;
-    for (i = 0; group[i]; i++) {
-     if (mod_service_is_provided(group[i])) enabled++;
-    }
+   efree (group);
 
-    if (enabled == i)
+   if (enabled) {
 /* if everything is enabled, then we do know for sure that this group is up. */
-     goto exit_good;
-
-/* (try to... ) enable all of the group members... */
-    struct einit_event eml = evstaticinit(einit_core_manipulate_services);
-    eml.stringset = group;
-    eml.task = einit_module_enable;
-
-    event_emit (&eml, einit_event_flag_broadcast);
-    /* this will block until all of this has been tried at least once... */
-    evstaticdestroy(eml);
-
-    /* see if we have at least one enabled item */
-    for (i = 0; group[i]; i++) {
-     if (mod_service_is_provided(group[i])) goto exit_good;
-    }
+    return status_ok;
    }
 
-   efree (group);
    return status_failed;
-
-   exit_good:
-   efree (group);
-   return status_ok;
   }
  }
 
@@ -214,7 +171,7 @@ void module_group_node_callback (struct cfgnode *node) {
   }
 
   if (group) {
-   char **requires = NULL, **provides = NULL;
+   char **requires = NULL, **provides = NULL, **uses = NULL;
    char t[BUFFERSIZE];
 
    if ((seq == sq_all) || !group[1]) {
@@ -228,6 +185,8 @@ void module_group_node_callback (struct cfgnode *node) {
     after = set_str_add (after, t);
 
     efree (member_string);
+
+    uses = set_str_dup_stable (group);
    }
 
    provides = set_str_add (provides, (node->id + MODULES_PREFIX_SIZE));
@@ -247,6 +206,7 @@ void module_group_node_callback (struct cfgnode *node) {
    sm->si.provides = provides;
    sm->si.before = before;
    sm->si.after = after;
+   sm->si.uses = uses;
 
    lm = mod_add_or_update (NULL, sm, substitue_and_prune);
    lm->param = (char *)str_stabilise (node->id);
