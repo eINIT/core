@@ -176,6 +176,8 @@ struct service_information {
  char **after;          /*!< Load this module after these services, but only if they're loaded to begin with */
  char **before;         /*!< Load this module before these services, but only if they're loaded to begin with */
 
+ char **uses;           /*!< Suggest that the core load these services along with us; doesn't influence before/after behaviour on its own */
+
 #if 0
  char **notwith;        /*!< A list of services that may not be loaded together with this module; ignored. */
 #endif
