@@ -214,12 +214,6 @@ char **linux_kernel_modules_autoload_d() {
  return rv;
 }
 
-enum lkm_run_code {
- lkm_pre_dev,
- lkm_post_dev,
- lkm_shutdown
-};
-
 #define MPREFIX "configuration-kernel-modules-"
 
 char **linux_kernel_modules_get_from_node (char *node, char *dwait) {
@@ -390,109 +384,6 @@ char **linux_kernel_modules_get_by_subsystem (char *subsystem, char *dwait, stru
  return NULL;
 }
 
-int linux_kernel_modules_run (enum lkm_run_code code) {
- pthread_t **threads = NULL;
-
- if (code == lkm_pre_dev) {
-  char dwait;
-  char **modules = linux_kernel_modules_get_by_subsystem ("storage", &dwait, NULL);
-
-  if (modules) {
-   pthread_t *threadid = emalloc (sizeof (pthread_t));
-
-   if (ethread_create (threadid, NULL, (void *(*)(void *))linux_kernel_modules_load, modules)) {
-    linux_kernel_modules_load (modules);
-   } else {
-    if (dwait)
-     threads = (pthread_t **)set_noa_add ((void **)threads, threadid);
-   }
-  }
- } else if (code == lkm_post_dev) {
-  struct stree *linux_kernel_modules_nodes = cfg_prefix(MPREFIX);
-  char have_generic = 0;
-
-  if (linux_kernel_modules_nodes) {
-   struct stree *cur = streelinear_prepare(linux_kernel_modules_nodes);
-
-   while (cur) {
-    char *subsystem = cur->key + sizeof (MPREFIX) -1;
-    struct cfgnode *nod = cur->value;
-
-    if (nod && nod->arbattrs) {
-     size_t i;
-     for (i = 0; nod->arbattrs[i]; i+=2) {
-      if (strmatch (nod->arbattrs[i], "provide-service") && parse_boolean (nod->arbattrs[i+1])) {
-       goto nextgroup;
-      }
-     }
-    }
-
-    if (strmatch (subsystem, "storage")) {
-    } else {
-     struct cfgnode *node = cur->value;
-
-     if (strmatch (subsystem, "generic") || strmatch (subsystem, "arbitrary")) {
-      have_generic = 1;
-     } else if (strmatch (subsystem, "alsa") || strmatch (subsystem, "audio") || strmatch (subsystem, "sound")) {
-      goto nextgroup;
-     }
-
-     if (node && node->svalue) {
-      char **modules = str2set (':', node->svalue);
-
-      if (modules) {
-       pthread_t *threadid = emalloc (sizeof (pthread_t));
-
-       if (ethread_create (threadid, NULL, (void *(*)(void *))linux_kernel_modules_load, modules)) {
-        linux_kernel_modules_load (modules);
-       } else {
-        if (!node->flag)
-         threads = (pthread_t **)set_noa_add ((void **)threads, threadid);
-       }
-      }
-     }
-    }
-
-    nextgroup:
-
-    cur = streenext (cur);
-   }
-
-   streefree (linux_kernel_modules_nodes);
-  }
-
-  if (!have_generic) {
-   char dwait;
-   char **modules = linux_kernel_modules_get_by_subsystem ("generic", &dwait, NULL);
-
-   if (modules) {
-    pthread_t *threadid = emalloc (sizeof (pthread_t));
-
-    if (ethread_create (threadid, NULL, (void *(*)(void *))linux_kernel_modules_load, modules)) {
-     linux_kernel_modules_load (modules);
-    } else {
-     if (dwait)
-      threads = (pthread_t **)set_noa_add ((void **)threads, threadid);
-    }
-   }
-  }
- }
-
- if (threads) {
-  int i = 0;
-
-  for (; threads[i]; i++) {
-   pthread_join (*(threads[i]), NULL);
-
-   efree (threads[i]);
-  }
-
-  efree (threads);
- }
-
- return status_ok;
-}
-
 int linux_kernel_modules_module_enable (char *subsys, struct einit_event *status) {
  char dwait = 0;
  char **modules = linux_kernel_modules_get_by_subsystem (subsys, &dwait, status);
@@ -581,27 +472,95 @@ void linux_kernel_modules_node_callback (struct cfgnode *node) {
  }
 }
 
-void linux_kernel_modules_boot_event_handler_early (struct einit_event *ev) {
- linux_kernel_modules_run(lkm_pre_dev);
-}
-
 void linux_kernel_modules_boot_event_handler_load_kernel_extensions (struct einit_event *ev) {
- linux_kernel_modules_run(lkm_post_dev);
+ pthread_t **threads = NULL;
+
+ struct stree *linux_kernel_modules_nodes = cfg_prefix(MPREFIX);
+ char have_generic = 0;
+
+ if (linux_kernel_modules_nodes) {
+  struct stree *cur = streelinear_prepare(linux_kernel_modules_nodes);
+
+  while (cur) {
+   char *subsystem = cur->key + sizeof (MPREFIX) -1;
+   struct cfgnode *nod = cur->value;
+
+   if (nod && nod->arbattrs) {
+    size_t i;
+    for (i = 0; nod->arbattrs[i]; i+=2) {
+     if (strmatch (nod->arbattrs[i], "provide-service") && parse_boolean (nod->arbattrs[i+1])) {
+      goto nextgroup;
+     }
+    }
+   }
+
+   struct cfgnode *node = cur->value;
+
+   if (strmatch (subsystem, "generic") || strmatch (subsystem, "arbitrary")) {
+    have_generic = 1;
+   } else if (strmatch (subsystem, "alsa") || strmatch (subsystem, "audio") || strmatch (subsystem, "sound")) {
+    goto nextgroup;
+   }
+
+   if (node && node->svalue) {
+    char **modules = str2set (':', node->svalue);
+
+    if (modules) {
+     pthread_t *threadid = emalloc (sizeof (pthread_t));
+
+     if (ethread_create (threadid, NULL, (void *(*)(void *))linux_kernel_modules_load, modules)) {
+      linux_kernel_modules_load (modules);
+     } else {
+      if (!node->flag)
+       threads = (pthread_t **)set_noa_add ((void **)threads, threadid);
+     }
+    }
+   }
+
+   nextgroup:
+
+   cur = streenext (cur);
+  }
+
+  streefree (linux_kernel_modules_nodes);
+ }
+
+ if (!have_generic) {
+  char dwait;
+  char **modules = linux_kernel_modules_get_by_subsystem ("generic", &dwait, NULL);
+
+  if (modules) {
+   pthread_t *threadid = emalloc (sizeof (pthread_t));
+
+   if (ethread_create (threadid, NULL, (void *(*)(void *))linux_kernel_modules_load, modules)) {
+    linux_kernel_modules_load (modules);
+   } else {
+    if (dwait)
+     threads = (pthread_t **)set_noa_add ((void **)threads, threadid);
+   }
+  }
+ }
+
+ if (threads) {
+  int i = 0;
+
+  for (; threads[i]; i++) {
+   pthread_join (*(threads[i]), NULL);
+
+   efree (threads[i]);
+  }
+
+  efree (threads);
+ }
+
+ return;
 }
 
 int linux_kernel_modules_configure (struct lmodule *this) {
  module_init(this);
 
- struct stree *linux_kernel_modules_nodes = cfg_prefix(MPREFIX);
- streefree (linux_kernel_modules_nodes);
-
- if (!linux_kernel_modules_nodes) {
-  return status_configure_failed | status_not_in_use;
- }
-
  exec_configure (this);
 
- event_listen (einit_boot_early, linux_kernel_modules_boot_event_handler_early);
  event_listen (einit_boot_load_kernel_extensions, linux_kernel_modules_boot_event_handler_load_kernel_extensions);
 
 /* we always wanna see the following... */
