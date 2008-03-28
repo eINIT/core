@@ -86,6 +86,7 @@ char *einit_default_startup_mode_switches[] = { "default", NULL };  // the list 
 char *einit_default_startup_configuration_files[] = { EINIT_LIB_BASE "/einit.xml", NULL };
 
 struct lmodule *mlist;
+struct exported_function *einit_function_macro_data = NULL;
 
 int print_usage_info () {
  eputs ("eINIT " EINIT_VERSION_LITERAL "\nCopyright (c) 2006-2008, Magnus Deininger\n"
