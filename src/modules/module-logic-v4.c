@@ -1098,50 +1098,20 @@ void *module_logic_do_disable (void *module) {
 }
 
 void module_logic_spawn_set_enable (struct lmodule **spawn) {
- int i = 0;
- for (; spawn[i]; i++) {
-  if (spawn[i+1]) {
-   if (spawn[i]->module->mode & (einit_module_event_actions | einit_module_fork_actions))
-    mod (einit_module_enable, spawn[i], NULL);
-   else
-    ethread_spawn_detached_run (module_logic_do_enable, spawn[i]);
-  } else {
-   mod (einit_module_enable, spawn[i], NULL);
-  }
- }
-}
+ if (!spawn) return;
 
-void module_logic_spawn_set_enable_all (struct lmodule **spawn) {
  int i = 0;
  for (; spawn[i]; i++) {
-  if (spawn[i]->module->mode & (einit_module_event_actions | einit_module_fork_actions))
-   mod (einit_module_enable, spawn[i], NULL);
-  else
-   ethread_spawn_detached_run (module_logic_do_enable, spawn[i]);
+  mod (einit_module_enable, spawn[i], NULL);
  }
 }
 
 void module_logic_spawn_set_disable (struct lmodule **spawn) {
- int i = 0;
- for (; spawn[i]; i++) {
-  if (spawn[i+1]) {
-   if (spawn[i]->module->mode & einit_module_event_actions)
-    mod (einit_module_disable, spawn[i], NULL);
-   else
-    ethread_spawn_detached_run (module_logic_do_disable, spawn[i]);
-  } else {
-   mod (einit_module_disable, spawn[i], NULL);
-  }
- }
-}
+ if (!spawn) return;
 
-void module_logic_spawn_set_disable_all (struct lmodule **spawn) {
  int i = 0;
  for (; spawn[i]; i++) {
-  if (spawn[i]->module->mode & einit_module_event_actions)
-   mod (einit_module_disable, spawn[i], NULL);
-  else
-   ethread_spawn_detached_run (module_logic_do_disable, spawn[i]);
+  mod (einit_module_disable, spawn[i], NULL);
  }
 }
 
@@ -1434,13 +1404,7 @@ void module_logic_einit_event_handler_core_switch_mode (struct einit_event *ev) 
    struct lmodule **spawn = module_logic_find_things_to_enable();
    emutex_unlock (&module_logic_list_enable_mutex);
 
-   if (spawn) {
-    if (disable) {
-     module_logic_spawn_set_enable_all (spawn);
-    } else { /* re-use this thread if there's nothing to disable */
-     module_logic_spawn_set_enable (spawn);
-    }
-   }
+   module_logic_spawn_set_enable (spawn);
   }
 
   if (disable) {
@@ -1454,13 +1418,7 @@ void module_logic_einit_event_handler_core_switch_mode (struct einit_event *ev) 
    struct lmodule **spawn = module_logic_find_things_to_disable();
    emutex_unlock (&module_logic_list_disable_mutex);
 
-   if (spawn) {
-    if (enable) {
-     module_logic_spawn_set_disable_all (spawn);
-    } else { /* re-use this thread if there's nothing to enable*/
-     module_logic_spawn_set_disable (spawn);
-    }
-   }
+   module_logic_spawn_set_disable (spawn);
   }
 
   struct mode_switch_callback_data *d = ecalloc (1, sizeof (struct mode_switch_callback_data));
@@ -1518,8 +1476,7 @@ void module_logic_einit_event_handler_core_manipulate_services (struct einit_eve
    struct lmodule **spawn = module_logic_find_things_to_enable();
    emutex_unlock (&module_logic_list_enable_mutex);
 
-   if (spawn)
-    module_logic_spawn_set_enable (spawn);
+   module_logic_spawn_set_enable (spawn);
 
    module_logic_call_back (set_str_dup_stable(ev->stringset), NULL, module_logic_fix_count_callback, NULL);
    module_logic_do_callbacks ();
@@ -1534,8 +1491,7 @@ void module_logic_einit_event_handler_core_manipulate_services (struct einit_eve
    struct lmodule **spawn = module_logic_find_things_to_disable();
    emutex_unlock (&module_logic_list_disable_mutex);
 
-   if (spawn)
-    module_logic_spawn_set_disable (spawn);
+   module_logic_spawn_set_disable (spawn);
 
    module_logic_call_back (NULL, set_str_dup_stable(ev->stringset), module_logic_fix_count_callback, NULL);
    module_logic_do_callbacks ();
@@ -1559,9 +1515,7 @@ void module_logic_einit_event_handler_core_change_service_status (struct einit_e
    struct lmodule **spawn = module_logic_find_things_to_enable();
    emutex_unlock (&module_logic_list_enable_mutex);
 
-   if (spawn)
-    module_logic_spawn_set_enable (spawn);
-
+   module_logic_spawn_set_enable (spawn);
   } else if (strmatch (ev->set[1], "disable") || strmatch (ev->set[1], "stop")) {
    emutex_lock (&module_logic_list_disable_mutex);
    if (!inset ((const void **)module_logic_list_disable, ev->set[0], SET_TYPE_STRING))
@@ -1570,8 +1524,7 @@ void module_logic_einit_event_handler_core_change_service_status (struct einit_e
    struct lmodule **spawn = module_logic_find_things_to_disable();
    emutex_unlock (&module_logic_list_disable_mutex);
 
-   if (spawn)
-    module_logic_spawn_set_disable (spawn);
+   module_logic_spawn_set_disable (spawn);
   } else {
    struct lmodule **m = NULL;
    emutex_lock (&module_logic_service_list_mutex);
@@ -1652,8 +1605,7 @@ void module_logic_einit_event_handler_core_service_enabled (struct einit_event *
 
  module_logic_do_callbacks ();
 
- if (spawn)
-  module_logic_spawn_set_enable (spawn);
+ module_logic_spawn_set_enable (spawn);
 }
 
 void module_logic_einit_event_handler_core_service_disabled (struct einit_event *ev) {
@@ -1667,8 +1619,7 @@ void module_logic_einit_event_handler_core_service_disabled (struct einit_event 
 
  module_logic_do_callbacks ();
 
- if (spawn)
-  module_logic_spawn_set_disable (spawn);
+ module_logic_spawn_set_disable (spawn);
 }
 
 /* this is the event we use to "unblock" modules for use in future switches */
@@ -1695,8 +1646,7 @@ void module_logic_einit_event_handler_core_service_update (struct einit_event *e
    }
    emutex_unlock (&module_logic_list_enable_mutex);
 
-   if (spawn)
-    module_logic_spawn_set_enable_all (spawn);
+   module_logic_spawn_set_enable (spawn);
   }
  } else if (ev->status & (status_failed | status_disabled)) {
   if (ev->status & status_failed) {
@@ -1725,8 +1675,7 @@ void module_logic_einit_event_handler_core_service_update (struct einit_event *e
   }
   emutex_unlock (&module_logic_list_enable_mutex);
 
-  if (spawn)
-   module_logic_spawn_set_enable_all (spawn);
+  module_logic_spawn_set_enable (spawn);
 
   emutex_lock (&module_logic_list_disable_mutex);
   if (module_logic_list_disable) {
@@ -1748,8 +1697,7 @@ void module_logic_einit_event_handler_core_service_update (struct einit_event *e
   }
   emutex_unlock (&module_logic_list_disable_mutex);
 
-  if (spawn)
-   module_logic_spawn_set_disable_all (spawn);
+  module_logic_spawn_set_disable (spawn);
  }
 
  module_logic_do_callbacks ();
