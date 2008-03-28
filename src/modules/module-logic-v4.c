@@ -410,6 +410,29 @@ struct lmodule **module_logic_find_things_to_enable() {
     continue;
    }
 
+   if (candidate->si && candidate->si->uses) {
+    int y = 0;
+
+    for (y = 0; candidate->si->uses[y]; y++) {
+     if ((!broken || !inset ((const void **)broken, candidate->si->requires[y], SET_TYPE_STRING)) && !inset ((const void **)module_logic_list_enable, candidate->si->uses[y], SET_TYPE_STRING)) {
+      module_logic_list_enable = set_str_add_stable (module_logic_list_enable, candidate->si->uses[y]);
+
+      if (candidates_level1) {
+       efree (candidates_level1);
+       candidates_level1 = NULL;
+      }
+      if (services_level1) {
+       efree (services_level1);
+       services_level1 = NULL;
+      }
+
+      i = -1;
+     }
+    }
+
+    if (i == -1) continue;
+   }
+
    if (mod_service_requirements_met(candidate)) {
     candidates_level1 = (struct lmodule **)set_noa_add ((void **)candidates_level1, candidate);
 
