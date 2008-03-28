@@ -87,7 +87,7 @@ void linux_splash_invoker_psplash_boot_devices_ok () {
  eml.stringset = set_str_add (NULL, "einit-psplash");
  eml.task = einit_module_enable;
 
- event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread);
+ event_emit (&eml, einit_event_flag_remote);
  evstaticdestroy(eml);
 }
 
@@ -96,7 +96,7 @@ void linux_splash_invoker_usplash_boot_devices_ok () {
  eml.stringset = set_str_add (NULL, "einit-usplash");
  eml.task = einit_module_enable;
 
- event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread);
+ event_emit (&eml, einit_event_flag_remote);
  evstaticdestroy(eml);
 }
 
@@ -105,7 +105,7 @@ void linux_splash_invoker_exquisite_boot_devices_ok () {
  eml.stringset = set_str_add (NULL, "einit-exquisite");
  eml.task = einit_module_enable;
 
- event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread);
+ event_emit (&eml, einit_event_flag_remote);
  evstaticdestroy(eml);
 }
 

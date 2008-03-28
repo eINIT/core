@@ -92,12 +92,6 @@ module_register(linux_mdev_self);
 
 #define NETLINK_BUFFER 1024*1024*64
 
-void linux_mdev_load_kernel_extensions() {
- struct einit_event eml = evstaticinit(einit_boot_load_kernel_extensions);
- event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread_multi_wait);
- evstaticdestroy(eml);
-}
-
 void linux_mdev_hotplug_handle (char **v) {
  if (v && v[0]) {
   int i = 0;
@@ -258,6 +252,14 @@ void *linux_mdev_hotplug(void *ignored) {
  return linux_mdev_hotplug (NULL);
 }
 
+void linux_mdev_post_load_kernel_extensions (struct einit_exec_data *xd) {
+ mount ("usbfs", "/proc/bus/usb", "usbfs", 0, NULL);
+
+ struct einit_event eml = evstaticinit(einit_boot_devices_available);
+ event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread_multi_wait);
+ evstaticdestroy(eml);
+}
+
 void linux_mdev_post_execute (struct einit_exec_data *xd) {
  chmod ("/dev/null", 0777);
  chmod ("/dev/zero", 0666);
@@ -266,13 +268,15 @@ void linux_mdev_post_execute (struct einit_exec_data *xd) {
  chmod ("/dev/random", 0777);
  chmod ("/dev/urandom", 0777);
 
- linux_mdev_load_kernel_extensions();
+ pid_t p = einit_fork (linux_mdev_post_load_kernel_extensions, NULL, thismodule->module->rid, thismodule);
 
- mount ("usbfs", "/proc/bus/usb", "usbfs", 0, NULL);
+ if (p == 0) {
+  struct einit_event eml = evstaticinit(einit_boot_load_kernel_extensions);
+  event_emit (&eml, einit_event_flag_broadcast);
+  evstaticdestroy(eml);
 
- struct einit_event eml = evstaticinit(einit_boot_devices_available);
- event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread_multi_wait);
- evstaticdestroy(eml);
+  _exit (EXIT_SUCCESS);
+ }
 }
 
 void linux_mdev_run() {

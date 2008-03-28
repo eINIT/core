@@ -45,6 +45,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/config.h>
 #include <einit/bitch.h>
 #include <einit/utility.h>
+#include <einit/exec.h>
 #include <errno.h>
 
 #include <pthread.h>
@@ -93,12 +94,6 @@ module_register(linux_static_dev_self);
 char linux_static_dev_enabled = 0;
 
 #define NETLINK_BUFFER 1024*1024*64
-
-void linux_static_dev_load_kernel_extensions() {
- struct einit_event eml = evstaticinit(einit_boot_load_kernel_extensions);
- event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread_multi_wait);
- evstaticdestroy(eml);
-}
 
 void linux_static_dev_hotplug_handle (char **v) {
  if (v && v[0]) {
@@ -260,47 +255,48 @@ void *linux_static_dev_hotplug(void *ignored) {
  return linux_static_dev_hotplug (NULL);
 }
 
-int linux_static_dev_run() {
- if (!linux_static_dev_enabled) {
-  linux_static_dev_enabled = 1;
+void linux_static_dev_post_load_kernel_extensions (struct einit_exec_data *xd) {
+ mount ("usbfs", "/proc/bus/usb", "usbfs", 0, NULL);
 
-  mount ("proc", "/proc", "proc", 0, NULL);
-  mount ("sys", "/sys", "sysfs", 0, NULL);
-
-  mount ("devpts", "/dev/pts", "devpts", 0, NULL);
-
-  mount ("shm", "/dev/shm", "tmpfs", 0, NULL);
-
-  ethread_spawn_detached ((void *(*)(void *))linux_static_dev_hotplug, (void *)NULL);
-
-  FILE *he = fopen ("/proc/sys/kernel/hotplug", "w");
-  if (he) {
-   char *hotplug_handler = cfg_getstring ("configuration-system-hotplug-handler", NULL);
-
-   if (hotplug_handler) {
-    fputs (hotplug_handler, he);
-   } else {
-    fputs ("", he);
-   }
-
-   fputs ("\n", he);
-   fclose (he);
-  }
-
-  linux_static_dev_load_kernel_extensions();
-
-  mount ("usbfs", "/proc/bus/usb", "usbfs", 0, NULL);
-
-  return status_ok;
- } else
-  return status_failed;
+ struct einit_event eml = evstaticinit(einit_boot_devices_available);
+ event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread_multi_wait);
+ evstaticdestroy(eml);
 }
 
 void linux_static_dev_boot_event_handler (struct einit_event *ev) {
- if (linux_static_dev_run() == status_ok) {
-  struct einit_event eml = evstaticinit(einit_boot_devices_available);
-  event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread_multi_wait);
+ linux_static_dev_enabled = 1;
+
+ mount ("proc", "/proc", "proc", 0, NULL);
+ mount ("sys", "/sys", "sysfs", 0, NULL);
+
+ mount ("devpts", "/dev/pts", "devpts", 0, NULL);
+
+ mount ("shm", "/dev/shm", "tmpfs", 0, NULL);
+
+ ethread_spawn_detached ((void *(*)(void *))linux_static_dev_hotplug, (void *)NULL);
+
+ FILE *he = fopen ("/proc/sys/kernel/hotplug", "w");
+ if (he) {
+  char *hotplug_handler = cfg_getstring ("configuration-system-hotplug-handler", NULL);
+
+  if (hotplug_handler) {
+   fputs (hotplug_handler, he);
+  } else {
+   fputs ("", he);
+  }
+
+  fputs ("\n", he);
+  fclose (he);
+ }
+
+ pid_t p = einit_fork (linux_static_dev_post_load_kernel_extensions, NULL, thismodule->module->rid, thismodule);
+
+ if (p == 0) {
+  struct einit_event eml = evstaticinit(einit_boot_load_kernel_extensions);
+  event_emit (&eml, einit_event_flag_broadcast);
   evstaticdestroy(eml);
+
+  _exit (EXIT_SUCCESS);
  }
 }
 

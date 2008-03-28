@@ -80,12 +80,6 @@ module_register(linux_udev_self);
 
 #endif
 
-void linux_udev_load_kernel_extensions() {
- struct einit_event eml = evstaticinit(einit_boot_load_kernel_extensions);
- event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread_multi_wait);
- evstaticdestroy(eml);
-}
-
 void linux_udev_post_secondary_vgchange (struct einit_exec_data *xd) {
  struct einit_event eml = evstaticinit(einit_boot_devices_available);
  event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread_multi_wait);
@@ -139,12 +133,8 @@ void linux_udev_post_udevsettle (struct einit_exec_data *xd) {
  }
 }
 
-void linux_udev_post_udevtrigger (struct einit_exec_data *xd) {
+void linux_udev_post_load_kernel_extensions (struct einit_exec_data *xd) {
  struct stat st;
-
- fputs ("loading kernel extensions...\n", stderr);
-
- linux_udev_load_kernel_extensions();
 
  fputs ("waiting for udev to process all events...\n", stderr);
 
@@ -154,6 +144,20 @@ void linux_udev_post_udevtrigger (struct einit_exec_data *xd) {
  } else {
   char *xtx[] = { "/sbin/udevadm", "settle", "--timeout=60", NULL };
   einit_exec_without_shell_with_function_on_process_death (xtx, linux_udev_post_udevsettle, thismodule);
+ }
+}
+
+void linux_udev_post_udevtrigger (struct einit_exec_data *xd) {
+ fputs ("loading kernel extensions...\n", stderr);
+
+ pid_t p = einit_fork (linux_udev_post_load_kernel_extensions, NULL, thismodule->module->rid, thismodule);
+
+ if (p == 0) {
+  struct einit_event eml = evstaticinit(einit_boot_load_kernel_extensions);
+  event_emit (&eml, einit_event_flag_broadcast);
+  evstaticdestroy(eml);
+
+  _exit (EXIT_SUCCESS);
  }
 }
 
