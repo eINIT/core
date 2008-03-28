@@ -489,6 +489,8 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
   return mod_completion_callback_wrapper (fb, task, module, module->status);
  }
 
+ char in_fork = 0;
+
  if (module->module->mode & einit_module_fork_actions) {
   struct completion_callback_data *x = emalloc (sizeof (struct completion_callback_data));
 
@@ -500,6 +502,7 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
 
   fprintf (stderr, "einit_fork(): %i\n", p);
   if (p > 0) return status_working;
+  else in_fork = 1;
  }
 
  if (task & einit_module_custom) {
@@ -524,7 +527,7 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
   }
  }
 
- if (module->module->mode & einit_module_fork_actions) {
+ if (in_fork) {
   fprintf (stderr, "exiting\n");
 
   if (module->status & status_ok) _exit (EXIT_SUCCESS);
