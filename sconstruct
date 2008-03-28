@@ -1,15 +1,5 @@
 import os, xml.parsers.expat, commands
 
-def CheckNPTL(context):
- context.Message('Checking for nptl... ')
- pthread = commands.getoutput('getconf GNU_LIBPTHREAD_VERSION').split()
- if pthread[0] == 'NPTL':
-  result = True
- else:
-  result = False
- context.Result(result)
- return result
-
 opts = Options()
 opts.Add('libdir', 'Define the basename for library dirs', 'lib')
 opts.Add('destdir', 'Define the (installation) prefix; The Directory to install to', '')
@@ -44,8 +34,6 @@ if os.environ.has_key('CFLAGS'):
 
 if os.environ.has_key('CXXFLAGS'):
  env.Append (CXXFLAGS = os.environ['CXXFLAGS'])
-
-conf = Configure(env, custom_tests = {'CheckNPTL' : CheckNPTL})
 
 ScriptsBundle = ['libixp/sconscript',
                  'expat/sconscript']
@@ -139,10 +127,6 @@ if uname == 'FreeBSD':
  ModulesLinuxNoBundle = []
 if uname == 'Linux':
  ModulesBSD = []
- if not conf.CheckNPTL():
-  print 'GlibC is not built with nptl!'
-  Exit(1)
-  env = conf.Finnish()
 
 env['LIBS'] = []
 
