@@ -131,7 +131,7 @@ const char *str_stabilise_l (const char *s, uint32_t *h, int *l) {
  if (!s) return NULL;
  if (!s[0]) return ""; /* use a real static string for this one since it can fuck things up hard */
 
- uintptr_t pi = (uintptr_t)s;
+// uintptr_t pi = (uintptr_t)s;
  int len;
  uint32_t hash;
  char *nv = NULL;

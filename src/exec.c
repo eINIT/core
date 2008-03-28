@@ -237,7 +237,7 @@ pid_t einit_exec (struct einit_exec_data *x) {
     c = set_str_add_stable (c, einit_apply_environment(x->command_d[i], environment));
    }
   } else {
-   sh[2] = (char *)einit_apply_environment(x->command, environment);
+   sh[2] = (char *)einit_apply_environment((char *)x->command, environment);
    c = sh;
   }
  }
@@ -259,7 +259,7 @@ pid_t einit_exec (struct einit_exec_data *x) {
   if (c[0][0] != '/') {
    char **w = which (c[0]);
    if (w && w[0]) {
-    c[0] = str_stabilise (w[0]);
+    c[0] = (char *)str_stabilise (w[0]);
     efree (w);
    }
   }

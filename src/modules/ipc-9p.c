@@ -660,8 +660,6 @@ void einit_ipc_9p_listen (int fd) {
  } else {
   notice (1, "could not initialise 9p server");
  }
-
- return NULL;
 }
 
 void einit_ipc_9p_generic_event_handler (struct einit_event *ev) {
