@@ -172,7 +172,7 @@ char einit_connect_spawn(int *argc, char **argv) {
  snprintf (address, BUFFERSIZE, "unix!/tmp/einit.9p.%i", getpid());
  snprintf (filename, BUFFERSIZE, "/tmp/einit.9p.%i", getpid());
 
- int fd = 0;
+// int fd = 0;
 
  einit_ipc_9p_client_pid = fork();
 
@@ -181,7 +181,7 @@ char einit_connect_spawn(int *argc, char **argv) {
    return 0;
    break;
   case 0:
-   fd = open ("/dev/null", O_RDWR);
+/*   fd = open ("/dev/null", O_RDWR);
    if (fd) {
     close (0);
     close (1);
@@ -192,7 +192,7 @@ char einit_connect_spawn(int *argc, char **argv) {
     dup2 (fd, 2);
 
     close (fd);
-   }
+   }*/
 
    execl (EINIT_LIB_BASE "/bin/einit-core", "einit-core", "--ipc-socket", address, "--do-wait", (sandbox ? "--sandbox" : NULL), NULL);
 
