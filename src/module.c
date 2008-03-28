@@ -489,7 +489,7 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
   return mod_completion_callback_wrapper (fb, task, module, module->status);
  }
 
- pid_t p = -1;
+ pid_t p = -2;
 
  if (module->module->mode & einit_module_fork_actions) {
   struct completion_callback_data *x = emalloc (sizeof (struct completion_callback_data));

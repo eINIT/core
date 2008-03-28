@@ -280,6 +280,8 @@ pid_t einit_exec (struct einit_exec_data *x) {
    close (feedbackpipe [1]);
   }
 
+  perror ("couldn't fork");
+
   return -1;
  }
 
