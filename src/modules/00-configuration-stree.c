@@ -488,10 +488,55 @@ void einit_configuration_stree_ipc_read (struct einit_event *ev) {
   n.name = (char *)str_stabilise ("configuration");
   n.is_file = 0;
   ev->set = set_fix_add (ev->set, &n, sizeof (n));
- } else if (path && path[0] && !path[1] && strmatch(path[0], "configuration")) {
-  n.name = (char *)str_stabilise ("update");
-  n.is_file = 1;
-  ev->set = set_fix_add (ev->set, &n, sizeof (n));
+ } else if (path && path[0] && strmatch(path[0], "configuration")) {
+  if (!path[1]) {
+   n.name = (char *)str_stabilise ("update");
+   n.is_file = 1;
+   ev->set = set_fix_add (ev->set, &n, sizeof (n));
+
+   char **tmp = NULL;
+
+   struct stree *cur = streelinear_prepare(hconfiguration);
+   while (cur) {
+    struct cfgnode *node = cur->value;
+
+    if (node->arbattrs && (!tmp || !inset ((const void **)tmp, cur->key, SET_TYPE_STRING))) {
+     tmp = (char **)set_noa_add ((void **)tmp, cur->key);
+
+     n.name = (char *)str_stabilise (cur->key);
+     n.is_file = 0;
+     ev->set = set_fix_add (ev->set, &n, sizeof (n));
+    }
+
+    cur = streenext(cur);
+   }
+  } else if (!strmatch (path[1], "update")) {
+   if (!path[2]) {
+    struct cfgnode *node = cfg_getnode (path[1], NULL);
+
+    if (node && node->arbattrs) {
+     int i = 0;
+
+     for (; node->arbattrs[i]; i+=2) {
+      n.name = (char *)str_stabilise (node->arbattrs[i]);
+      n.is_file = 1;
+      ev->set = set_fix_add (ev->set, &n, sizeof (n));
+     }
+    }
+   } else {
+    struct cfgnode *node = cfg_getnode (path[1], NULL);
+
+    if (node && node->arbattrs) {
+     int i = 0;
+
+     for (; node->arbattrs[i]; i+=2) {
+      if (strmatch (node->arbattrs[i], path[2])) {
+       ev->stringset = set_str_add_stable (ev->stringset, node->arbattrs[i+1]);
+      }
+     }
+    }
+   }
+  }
  }
 }
 
@@ -520,7 +565,7 @@ void einit_configuration_stree_ipc_stat (struct einit_event *ev) {
 
  if (path && path[0]) {
   if (strmatch (path[0], "configuration")) {
-   ev->flag = (path[1] && strmatch (path[1], "update") ? 1 : 0);
+   ev->flag = (path[1] && (path[2] || strmatch (path[1], "update")) ? 1 : 0);
   }
  }
 }
