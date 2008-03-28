@@ -43,7 +43,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/utility.h>
 #include <einit/event.h>
 #include <einit/bitch.h>
-#include <pthread.h>
 #include <string.h>
 #include <fcntl.h>
 #include <sys/types.h>
@@ -99,21 +98,12 @@ module_register(einit_ipc_9p_self);
 
 #endif
 
-pthread_t einit_ipc_9p_thread;
 char einit_ipc_9p_running = 0;
 
 gid_t einit_ipc_9p_einitgid = 0;
 
 void einit_ipc_9p_boot_event_handler_root_device_ok (struct einit_event *);
 void einit_ipc_9p_power_event_handler (struct einit_event *);
-
-pthread_mutex_t
- einit_ipc_9p_event_queue_mutex = PTHREAD_MUTEX_INITIALIZER,
- einit_ipc_9p_event_update_listeners_mutex = PTHREAD_MUTEX_INITIALIZER,
- einit_ipc_9p_event_respond_mutex = PTHREAD_MUTEX_INITIALIZER;
-
-pthread_cond_t
- einit_ipc_9p_ping_cond = PTHREAD_COND_INITIALIZER;
 
 enum ipc_9p_filetype {
  i9_dir,
@@ -147,9 +137,7 @@ struct ipc_9p_fidaux {
 };
 
 Ixp9Req *ipc_9p_respond_serialise (Ixp9Req *r, const char *m) {
- emutex_lock (&einit_ipc_9p_event_respond_mutex);
  respond (r, (char *)m);
- emutex_unlock (&einit_ipc_9p_event_respond_mutex);
 
  return r;
 }
@@ -189,7 +177,7 @@ void einit_ipc_9p_fs_open_spawn (Ixp9Req *r) {
 
   ev.para = fa->path;
 
-  event_emit(&ev, einit_event_flag_broadcast);
+  event_emit(&ev, 0);
 
   if (ev.stringset) {
    struct ipc_9p_filedata *fd = ecalloc (1, sizeof (struct ipc_9p_filedata));
@@ -321,9 +309,7 @@ void einit_ipc_9p_fs_reply_event (Ixp9Req *r) {
 //  fprintf (stdout, "no more events right now\n");
 //  fflush (stdout);
 
-  emutex_lock(&einit_ipc_9p_event_update_listeners_mutex);
   einit_ipc_9p_event_update_listeners = (Ixp9Req **)set_noa_add ((void **)einit_ipc_9p_event_update_listeners, r);
-  emutex_unlock(&einit_ipc_9p_event_update_listeners_mutex);
  }
 }
 
@@ -418,7 +404,7 @@ void einit_ipc_9p_fs_stat_spawn (Ixp9Req *r) {
  struct einit_event ev = evstaticinit(einit_ipc_stat);
 
  ev.para = fa->path;
- event_emit(&ev, einit_event_flag_broadcast);
+ event_emit(&ev, 0);
 
  char is_file = ev.flag;
 
@@ -506,7 +492,6 @@ void einit_ipc_9p_fs_clunk_spawn (Ixp9Req *r) {
  struct ipc_9p_fidaux *fa = r->fid->aux;
 
  if (fa && fa->fd) {
-  emutex_lock (&einit_ipc_9p_event_update_listeners_mutex);
   repeat:
   if (einit_ipc_9p_event_update_listeners) {
    int i = 0;
@@ -518,7 +503,6 @@ void einit_ipc_9p_fs_clunk_spawn (Ixp9Req *r) {
     }
    }
   }
-  emutex_unlock (&einit_ipc_9p_event_update_listeners_mutex);
 
   struct ipc_9p_filedata *fd = fa->fd;
 
@@ -530,7 +514,7 @@ void einit_ipc_9p_fs_clunk_spawn (Ixp9Req *r) {
 
     ev.para = fa->path;
     ev.set = set_noa_add (ev.set, fd->data);
-    event_emit(&ev, einit_event_flag_broadcast);
+    event_emit(&ev, 0);
 
     evstaticdestroy (ev);
    }
@@ -547,7 +531,6 @@ void einit_ipc_9p_fs_clunk (Ixp9Req *r) {
 void einit_ipc_9p_fs_flush(Ixp9Req *r) {
 // notice (1, "einit_ipc_9p_fs_flush()");
 // ipc_9p_respond_serialise (r, nil);
- emutex_lock (&einit_ipc_9p_event_update_listeners_mutex);
  repeat:
   if (einit_ipc_9p_event_update_listeners) {
   int i = 0;
@@ -558,7 +541,6 @@ void einit_ipc_9p_fs_flush(Ixp9Req *r) {
    }
   }
  }
- emutex_unlock (&einit_ipc_9p_event_update_listeners_mutex);
 
  ipc_9p_respond_serialise (r, nil);
 }
@@ -644,8 +626,6 @@ void einit_ipc_9p_listen (int fd) {
  IxpConn* connection = ixp_listen(&einit_ipc_9p_server, fd, &einit_ipc_9p_srv, serve_9pcon, NULL); 
 
  if (connection) {
-// ixp_pthread_init();
-
   notice (1, "9p server initialised");
   /* server loop nao */
 
@@ -670,8 +650,6 @@ void einit_ipc_9p_generic_event_handler (struct einit_event *ev) {
   fputs (e->event, stderr);
  }
 
- emutex_lock (&einit_ipc_9p_event_queue_mutex);
-
  if (einit_ipc_9p_event_queue) {
   e->previous = einit_ipc_9p_event_queue->previous;
   einit_ipc_9p_event_queue->previous->next = e;
@@ -684,9 +662,6 @@ void einit_ipc_9p_generic_event_handler (struct einit_event *ev) {
   einit_ipc_9p_event_queue = e;
  }
 
- emutex_unlock (&einit_ipc_9p_event_queue_mutex);
-
- emutex_lock (&einit_ipc_9p_event_update_listeners_mutex);
  if (einit_ipc_9p_event_update_listeners) {
   int i = 0;
   for (; einit_ipc_9p_event_update_listeners[i]; i++) {
@@ -695,7 +670,6 @@ void einit_ipc_9p_generic_event_handler (struct einit_event *ev) {
   efree (einit_ipc_9p_event_update_listeners);
   einit_ipc_9p_event_update_listeners = NULL;
  }
- emutex_unlock (&einit_ipc_9p_event_update_listeners_mutex);
 }
 
 void *einit_ipc_9p_thread_function (void *unused_parameter) {
@@ -784,14 +758,13 @@ void einit_ipc_9p_power_event_handler (struct einit_event *ev) {
 
  struct einit_event nev = evstaticinit(einit_ipc_disabling);
 
- event_emit(&nev, einit_event_flag_broadcast);
+ event_emit(&nev, 0);
 
  evstaticdestroy (&nev);
 
  if (einit_ipc_9p_running) {
   einit_ipc_9p_running = 0;
   ixp_server_close (&einit_ipc_9p_server);
-//  ethread_cancel (einit_ipc_9p_thread);
  }
 }
 

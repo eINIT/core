@@ -82,7 +82,7 @@ module_register(linux_udev_self);
 
 void linux_udev_post_secondary_vgchange (struct einit_exec_data *xd) {
  struct einit_event eml = evstaticinit(einit_boot_devices_available);
- event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread_multi_wait);
+ event_emit (&eml, 0);
  evstaticdestroy(eml);
 }
 
@@ -154,7 +154,7 @@ void linux_udev_post_udevtrigger (struct einit_exec_data *xd) {
 
  if (p == 0) {
   struct einit_event eml = evstaticinit(einit_boot_load_kernel_extensions);
-  event_emit (&eml, einit_event_flag_broadcast);
+  event_emit (&eml, 0);
   evstaticdestroy(eml);
 
   _exit (EXIT_SUCCESS);
@@ -202,7 +202,7 @@ void linux_udev_run() {
  mount ("udev", "/dev", "tmpfs", 0, NULL);
 
  struct einit_event eml = evstaticinit(einit_boot_dev_writable);
- event_emit (&eml, einit_event_flag_broadcast);
+ event_emit (&eml, 0);
  evstaticdestroy(eml);
 
  mkdir ("/dev/pts", 0777);

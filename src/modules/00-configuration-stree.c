@@ -86,23 +86,16 @@ struct {
 
 struct stree *hconfiguration = NULL;
 
-pthread_mutex_t
- cfg_stree_garbage_mutex = PTHREAD_MUTEX_INITIALIZER,
- einit_configuration_stree_callbacks_mutex = PTHREAD_MUTEX_INITIALIZER;
-
 struct stree *
  einit_configuration_stree_callbacks = NULL;
 
 void cfg_stree_garbage_add_chunk (void *chunk) {
  if (!chunk) return;
- emutex_lock (&cfg_stree_garbage_mutex);
  if (!cfg_stree_garbage.chunks || (!inset ((const void **)cfg_stree_garbage.chunks, chunk, SET_NOALLOC)))
   cfg_stree_garbage.chunks = set_noa_add (cfg_stree_garbage.chunks, chunk);
- emutex_unlock (&cfg_stree_garbage_mutex);
 }
 
 void cfg_stree_garbage_free () {
- emutex_lock (&cfg_stree_garbage_mutex);
  if (cfg_stree_garbage.chunks) {
   int i = 0;
 
@@ -113,7 +106,6 @@ void cfg_stree_garbage_free () {
   efree (cfg_stree_garbage.chunks);
   cfg_stree_garbage.chunks = NULL;
  }
- emutex_unlock (&cfg_stree_garbage_mutex);
 }
 
 time_t einit_configuration_stree_garbage_free_timer = 0;
@@ -122,7 +114,6 @@ void cfg_run_callbacks_for_node (struct cfgnode *node) {
  if (!node || !node->id)
   return;
 
- emutex_lock (&einit_configuration_stree_callbacks_mutex);
  if (einit_configuration_stree_callbacks) {
   struct stree *cur = streelinear_prepare(einit_configuration_stree_callbacks);
 
@@ -136,7 +127,6 @@ void cfg_run_callbacks_for_node (struct cfgnode *node) {
    cur = streenext(cur);
   }
  }
- emutex_unlock (&einit_configuration_stree_callbacks_mutex);
 }
 
 int cfg_free () {
@@ -519,7 +509,7 @@ void einit_configuration_stree_ipc_write (struct einit_event *ev) {
    nev.string = ev->set[0];
   }
 
-  event_emit (&nev, einit_event_flag_broadcast | einit_event_flag_spawn_thread);
+  event_emit (&nev, 0);
 
   evstaticdestroy(nev);
  }
@@ -553,12 +543,10 @@ int cfg_callback_prefix_f (char *prefix, void (*callback)(struct cfgnode *)) {
  if (!prefix || !callback)
   return 0;
 
- emutex_lock (&einit_configuration_stree_callbacks_mutex);
  einit_configuration_stree_callbacks =
   streeadd (einit_configuration_stree_callbacks, prefix, callback, tree_value_noalloc, NULL);
 
  cfg_run_callback (prefix, callback);
- emutex_unlock (&einit_configuration_stree_callbacks_mutex);
 
  return 1;
 }

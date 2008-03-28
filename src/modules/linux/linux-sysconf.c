@@ -55,6 +55,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/ioctl.h>
 #include <asm/ioctls.h>
 #include <linux/vt.h>
+#include <time.h>
 
 #include <einit/exec.h>
 

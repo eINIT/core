@@ -199,7 +199,7 @@ char einit_connect_spawn(int *argc, char **argv) {
    exit (EXIT_FAILURE);
    break;
   default:
-   while (stat (filename, &st)) sched_yield();
+   while (stat (filename, &st)) usleep (100);
 
    einit_ipc_9p_client = ixp_mount (address);
 
@@ -677,7 +677,7 @@ int einit_event_loop_decoder (char *fragment, size_t size, void *data) {
 // fprintf (stderr, "new fragment: %s\n", fragment);
 
  if (ev->type) {
-  event_emit (ev, einit_event_flag_broadcast);
+  event_emit (ev, 0);
  }
 
  cleanup_exit:

@@ -46,7 +46,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <sys/stat.h>
-#include <pthread.h>
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>

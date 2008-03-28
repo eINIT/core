@@ -61,7 +61,6 @@ extern "C" {
 #include <string.h>
 #include <errno.h>
 #include <sys/stat.h>
-#include <pthread.h>
 #include <einit-modules/exec.h>
 
 /*!\name Filesystem Capabilities

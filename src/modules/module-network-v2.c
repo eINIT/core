@@ -97,9 +97,6 @@ struct network_v2_interface_descriptor {
  char *dhcp_client;
 };
 
-pthread_mutex_t einit_module_network_v2_interfaces_mutex = PTHREAD_MUTEX_INITIALIZER,
- einit_module_network_v2_get_all_addresses_mutex = PTHREAD_MUTEX_INITIALIZER;
-
 int einit_module_network_v2_emit_event (enum einit_event_code type, struct lmodule *module, struct smodule *sd, char *interface, enum interface_action action, struct einit_event *feedback);
 
 #define INTERFACES_PREFIX "configuration-network-interfaces"
@@ -210,8 +207,6 @@ struct stree *einit_module_network_v2_get_all_addresses (char *interface) {
 
  esprintf (buffer, BUFFERSIZE, INTERFACES_PREFIX "-%s-address-", interface);
 
- emutex_lock (&einit_module_network_v2_get_all_addresses_mutex);
-
  st = cfg_prefix (buffer);
  if (st) {
   struct stree *cur = streelinear_prepare (st);
@@ -242,8 +237,6 @@ struct stree *einit_module_network_v2_get_all_addresses (char *interface) {
   }
  }
 
- emutex_unlock (&einit_module_network_v2_get_all_addresses_mutex);
-
  return rv;
 }
 
@@ -268,30 +261,26 @@ int einit_module_network_v2_emit_event (enum einit_event_code type, struct lmodu
  struct einit_event ev = evstaticinit (type);
  struct stree *st = NULL;
 
- emutex_lock (&einit_module_network_v2_interfaces_mutex);
  if (einit_module_network_v2_interfaces) st = streefind (einit_module_network_v2_interfaces, interface, tree_find_first);
  if (st) {
   struct network_v2_interface_descriptor *id = st->value;
   if (id)
    d.flags = id->status;
  }
- emutex_unlock (&einit_module_network_v2_interfaces_mutex);
 
  ev.string = interface;
  ev.para = &d;
 
- event_emit (&ev, einit_event_flag_broadcast);
+ event_emit (&ev, 0);
 
  evstaticdestroy (&ev);
 
- emutex_lock (&einit_module_network_v2_interfaces_mutex);
  if (einit_module_network_v2_interfaces) st = streefind (einit_module_network_v2_interfaces, interface, tree_find_first);
  if (st) {
   struct network_v2_interface_descriptor *id = st->value;
   if (id)
    id->status = d.flags;
  }
- emutex_unlock (&einit_module_network_v2_interfaces_mutex);
 
  return d.status;
 }
@@ -350,7 +339,6 @@ int einit_module_network_v2_module_configure (struct lmodule *m) {
 
  m->param = m;
 
- emutex_lock (&einit_module_network_v2_interfaces_mutex);
  struct stree *st = NULL;
  if (einit_module_network_v2_interfaces) {
   st = streefind (einit_module_network_v2_interfaces, (m->module->rid + 13), tree_find_first);
@@ -367,7 +355,6 @@ int einit_module_network_v2_module_configure (struct lmodule *m) {
 
   einit_module_network_v2_interfaces = streeadd (einit_module_network_v2_interfaces, (m->module->rid + 13), &id, sizeof (struct network_v2_interface_descriptor), NULL);
  }
- emutex_unlock (&einit_module_network_v2_interfaces_mutex);
 
  einit_module_network_v2_emit_event (einit_network_interface_configure, m, (struct smodule *)m->module, (m->module->rid + 13), interface_nop, NULL);
 
@@ -430,7 +417,6 @@ int einit_module_network_v2_carrier_module_configure (struct lmodule *m) {
 
  m->param = m;
 
- emutex_lock (&einit_module_network_v2_interfaces_mutex);
  struct stree *st = NULL;
  if (einit_module_network_v2_interfaces) {
   st = streefind (einit_module_network_v2_interfaces, (m->module->rid + 18), tree_find_first);
@@ -447,7 +433,6 @@ int einit_module_network_v2_carrier_module_configure (struct lmodule *m) {
 
   einit_module_network_v2_interfaces = streeadd (einit_module_network_v2_interfaces, (m->module->rid + 18), &id, sizeof (struct network_v2_interface_descriptor), NULL);
  }
- emutex_unlock (&einit_module_network_v2_interfaces_mutex);
 
  einit_module_network_v2_emit_event (einit_network_interface_configure, m, (struct smodule *)m->module, (m->module->rid + 18), interface_nop, NULL);
 
@@ -504,10 +489,8 @@ void einit_module_network_v2_scanmodules (struct einit_event *ev) {
    struct lmodule *lm = NULL;
    struct lmodule *cm = NULL;
 
-   emutex_lock (&einit_module_network_v2_interfaces_mutex);
    if (einit_module_network_v2_interfaces && (st = streefind (einit_module_network_v2_interfaces, interfaces[i], tree_find_first))) {
     struct network_v2_interface_descriptor *id = st->value;
-    emutex_unlock (&einit_module_network_v2_interfaces_mutex);
 
     lm = id->module;
     cm = id->carrier_module;
@@ -523,7 +506,6 @@ void einit_module_network_v2_scanmodules (struct einit_event *ev) {
 
     fflush (stderr);
    } else {
-    emutex_unlock (&einit_module_network_v2_interfaces_mutex);
     char buffer[BUFFERSIZE];
     struct smodule *sm = NULL;
 
@@ -772,7 +754,6 @@ void einit_module_network_v2_address_automatic (struct einit_event *ev) {
       if (einit_module_network_v2_do_dhcp(d, v[i], ev->string) == status_ok) {
        ok = 1;
 
-       emutex_lock (&einit_module_network_v2_interfaces_mutex);
        struct stree *tmpst = NULL;
        if (einit_module_network_v2_interfaces) tmpst = streefind (einit_module_network_v2_interfaces, ev->string, tree_find_first);
        if (tmpst) {
@@ -780,7 +761,6 @@ void einit_module_network_v2_address_automatic (struct einit_event *ev) {
         if (id)
          id->dhcp_client = (char *)str_stabilise (v[i]);
        }
-       emutex_unlock (&einit_module_network_v2_interfaces_mutex);
 
        break;
       }
@@ -804,7 +784,6 @@ void einit_module_network_v2_address_automatic (struct einit_event *ev) {
   char *client = NULL;
   struct stree *st = NULL;
 
-  emutex_lock (&einit_module_network_v2_interfaces_mutex);
   if (einit_module_network_v2_interfaces) st = streefind (einit_module_network_v2_interfaces, ev->string, tree_find_first);
   if (st) {
    struct network_v2_interface_descriptor *id = st->value;
@@ -812,11 +791,9 @@ void einit_module_network_v2_address_automatic (struct einit_event *ev) {
     client = (char *)str_stabilise(id->dhcp_client);
    }
   }
-  emutex_unlock (&einit_module_network_v2_interfaces_mutex);
 
   if (client) {
    if (einit_module_network_v2_do_dhcp(d, client, ev->string) == status_ok) {
-    emutex_lock (&einit_module_network_v2_interfaces_mutex);
     if (einit_module_network_v2_interfaces) st = streefind (einit_module_network_v2_interfaces, ev->string, tree_find_first);
     if (st) {
      struct network_v2_interface_descriptor *id = st->value;
@@ -824,7 +801,6 @@ void einit_module_network_v2_address_automatic (struct einit_event *ev) {
       id->dhcp_client = NULL;
      }
     }
-    emutex_unlock (&einit_module_network_v2_interfaces_mutex);
    }
   }
  }

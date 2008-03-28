@@ -252,10 +252,6 @@ char **which (char *binary);
 
 int unlink_recursive (const char *file, char self);
 
-void ethread_spawn_detached (void *(*thread)(void *), void *param);
-void ethread_spawn_detached_run (void *(*thread)(void *), void *param);
-void ethread_prune_thread_pool ();
-
 #include <regex.h>
 
 int eregcomp_cache (regex_t * preg, const char * pattern, int cflags);

@@ -53,10 +53,10 @@ einitLogD = env.Program ('einit-log', CodeEinitLogD, LIBS=['einit'], LIBPATH=['.
 einitSysVD = env.Program ('einit-sysvd', CodeEinitSysVD, LIBS=['einit'], LIBPATH=['.'])
 
 if uname == 'Linux':
- libEinit = env.SharedLibrary ('einit', CodeLibEinit, LIBS=['pthread'], SHLINKFLAGS='-shared -Wl,-soname,libeinit.so.3.0.0')
+ libEinit = env.SharedLibrary ('einit', CodeLibEinit, SHLINKFLAGS='-shared -Wl,-soname,libeinit.so.3.0.0')
  libEinitPP = env.SharedLibrary ('einit++', 'libraries/libeinit++.c++', LIBS=['einit'], LIBPATH=['.'], SHLINKFLAGS='-shared -Wl,-soname,libeinit++.so.3.0.0')
 else:
- libEinit = env.SharedLibrary ('einit', CodeLibEinit, LIBS=['pthread'])
+ libEinit = env.SharedLibrary ('einit', CodeLibEinit)
  libEinitPP = env.SharedLibrary ('einit++', 'libraries/libeinit++.c++', LIBS=['einit'], LIBPATH=['.'])
 
 env.Install (InstallDirLibBin, einitCore)

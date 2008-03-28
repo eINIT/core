@@ -40,7 +40,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/event.h>
 #include <einit/utility.h>
 #include <einit/bitch.h>
-#include <pthread.h>
 
 #define EXPECTED_EIV 1
 
@@ -74,8 +73,6 @@ module_register(bsd_network_self);
 
 char **bsd_network_interfaces = NULL;
 
-pthread_mutex_t bsd_network_interfaces_mutex = PTHREAD_MUTEX_INITIALIZER;
-
 char **bsd_network_list_interfaces_ifconfig (int spawn_events) {
  char **interfaces = NULL;
  char **new_interfaces = NULL;
@@ -94,13 +91,11 @@ char **bsd_network_list_interfaces_ifconfig (int spawn_events) {
 
  if (spawn_events) {
   if (interfaces) {
-   emutex_lock (&bsd_network_interfaces_mutex);
    int i = 0;
    for (; interfaces[i]; i++) {
     if (!bsd_network_interfaces || !inset ((const void **)bsd_network_interfaces, interfaces[i], SET_TYPE_STRING))
      new_interfaces = set_str_add (new_interfaces, interfaces[i]);
    }
-   emutex_unlock (&bsd_network_interfaces_mutex);
   }
 
   if (new_interfaces) {

@@ -48,8 +48,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/exec.h>
 #include <errno.h>
 
-#include <pthread.h>
-
 #include <sys/mount.h>
 
 #include <asm/types.h>
@@ -99,7 +97,7 @@ void linux_static_dev_post_load_kernel_extensions (struct einit_exec_data *xd) {
  mount ("usbfs", "/proc/bus/usb", "usbfs", 0, NULL);
 
  struct einit_event eml = evstaticinit(einit_boot_devices_available);
- event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread_multi_wait);
+ event_emit (&eml, 0);
  evstaticdestroy(eml);
 }
 
@@ -131,7 +129,7 @@ void linux_static_dev_boot_event_handler (struct einit_event *ev) {
 
  if (p == 0) {
   struct einit_event eml = evstaticinit(einit_boot_load_kernel_extensions);
-  event_emit (&eml, einit_event_flag_broadcast);
+  event_emit (&eml, 0);
   evstaticdestroy(eml);
 
   _exit (EXIT_SUCCESS);

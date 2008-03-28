@@ -49,12 +49,9 @@ def buildBundle(target, name, modules_original, e):
 
  e.Install(target, e.LoadableModule(name, modules))
 
-librt = [ 'rt' ]
-
 if uname == 'Darwin':
 # menv.Append (LINKFLAGS = '$LINKFLAGS -Wl,-bundle_loader,src/einit-core')
  menv.Append (LINKFLAGS = '-flat_namespace -undefined suppress');
- librt = []
 
 def buildBundleET(target, name, items, dir, e):
  if items:
@@ -82,9 +79,6 @@ buildBundleE('02-linux', ModulesLinux, 'linux', menv)
 buildBundleE('03-base', ModulesBase, '.', menv)
 
 buildBundleE('04-desktop', ModulesPosixDesktop, 'posix', menv)
-
-if 'module-logic-v4' in ExternalModules:
- buildModule ('module-logic-v4', '.', menv.Clone (LIBS=librt))
 
 for x in InternalModules:
  CodeInternalModules += buildInternalModule(x, '.', env)

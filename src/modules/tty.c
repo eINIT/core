@@ -56,7 +56,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ctype.h>
 
 #include <signal.h>
-#include <pthread.h>
 #include <fcntl.h>
 
 #ifdef __linux__
@@ -108,7 +107,6 @@ module_register(einit_tty_self);
 #endif
 
 struct ttyst *ttys = NULL;
-pthread_mutex_t ttys_mutex = PTHREAD_MUTEX_INITIALIZER;
 char einit_tty_feedback_blocked = 0;
 
 int einit_tty_texec (struct cfgnode *);
@@ -116,7 +114,6 @@ int einit_tty_texec (struct cfgnode *);
 void einit_tty_process_event_handler (struct einit_event *);
 
 void einit_tty_watcher (pid_t pid) {
- emutex_lock (&ttys_mutex);
  struct ttyst *cur = ttys;
  struct ttyst *prev = NULL;
  struct cfgnode *node = NULL;
@@ -137,7 +134,6 @@ void einit_tty_watcher (pid_t pid) {
   prev = cur;
   cur = cur->next;
  }
- emutex_unlock (&ttys_mutex);
 
  if (node) {
   if (node->id) {
@@ -145,9 +141,7 @@ void einit_tty_watcher (pid_t pid) {
    esprintf (tmp, BUFFERSIZE, "einit-tty: restarting: %s\n", node->id);
    notice (6, tmp);
   }
-  emutex_lock (&ttys_mutex);
   einit_tty_texec (node);
-  emutex_unlock (&ttys_mutex);
  }
 
  return;
@@ -329,7 +323,6 @@ int einit_tty_texec (struct cfgnode *node) {
 }
 
 void einit_tty_disable_unused (char **enab_ttys) {
- emutex_lock (&ttys_mutex);
  struct ttyst *cur = ttys;
 
  while (cur) {
@@ -341,13 +334,11 @@ void einit_tty_disable_unused (char **enab_ttys) {
   }
   cur = cur->next;
  }
- emutex_unlock (&ttys_mutex);
 }
 
 char einit_tty_is_present (char *ttyname) {
  char present = 0;
 
-// emutex_lock (&ttys_mutex);
  struct ttyst *cur = ttys;
 
  while (cur) {
@@ -357,7 +348,6 @@ char einit_tty_is_present (char *ttyname) {
   }
   cur = cur->next;
  }
-// emutex_unlock (&ttys_mutex);
 
  return present;
 }
@@ -367,8 +357,6 @@ int einit_tty_in_switch = 0;
 void einit_tty_enable_vector (char **enab_ttys) {
  int i = 0;
  struct cfgnode *node = NULL;
-
- emutex_lock (&ttys_mutex);
 
  if (!enab_ttys || strmatch (enab_ttys[0], "none")) {
   notice (4, "no ttys to bring up");
@@ -390,8 +378,6 @@ void einit_tty_enable_vector (char **enab_ttys) {
 
   efree (tmpnodeid);
  }
-
- emutex_unlock (&ttys_mutex);
 }
 
 void einit_tty_update() {
@@ -422,7 +408,6 @@ void einit_tty_update() {
 
  char **enabled_ttys = NULL;
 
- emutex_lock (&ttys_mutex);
  struct ttyst *cur = ttys;
  while (cur) {
   struct cfgnode *node = cur->node;
@@ -446,7 +431,6 @@ void einit_tty_update() {
 
   cur = cur->next;
  }
- emutex_unlock (&ttys_mutex);
 
  if (enabled_ttys) {
   char *s = set2str (':', (const char **)enabled_ttys);

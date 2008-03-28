@@ -70,24 +70,6 @@ int bitch_macro (enum bitch_sauce sauce, const char *file, const int line, const
 
 #ifdef DEBUG
 
-#define emutex_lock(mutex)\
- ((errno = pthread_mutex_lock(mutex)) ? (bitch_macro (bitch_epthreads, __FILE__, __LINE__, __func__ , errno, "pthread_mutex_lock() failed."), errno) : errno)
-
-#define emutex_unlock(mutex)\
- ((errno = pthread_mutex_unlock(mutex)) ? (bitch_macro (bitch_epthreads, __FILE__, __LINE__, __func__ , errno, "pthread_mutex_unlock() failed."), errno) : errno)
-
-#define emutex_init(mutex, mattr)\
- ((errno = pthread_mutex_init(mutex, mattr)) ? (bitch_macro (bitch_epthreads, __FILE__, __LINE__, __func__ , errno, "pthread_mutex_init() failed."), errno) : errno)
-
-#define emutex_destroy(mutex)\
- ((errno = pthread_mutex_destroy(mutex)) ? (bitch_macro (bitch_epthreads, __FILE__, __LINE__, __func__ , errno, "pthread_mutex_destroy() failed."), errno) : errno)
-
-#define ethread_cancel(th)\
- ((errno = pthread_cancel(th)) ? (bitch_macro (bitch_epthreads, __FILE__, __LINE__, __func__ , errno, "pthread_cancel() failed."), errno) : errno)
-
-#define ethread_join(th, ret)\
- ((errno = pthread_join(th, ret)) ? (bitch_macro (bitch_epthreads, __FILE__, __LINE__, __func__ , errno, "pthread_join() failed."), errno) : errno)
-
 #define eprintf(file, format, ...)\
  ((fprintf(file, format, __VA_ARGS__) < 0) ? (bitch_macro (bitch_stdio, __FILE__, __LINE__, __func__ , 0, "fprintf() failed."), errno) : 0)
 
@@ -109,24 +91,6 @@ int bitch_macro (enum bitch_sauce sauce, const char *file, const int line, const
 #else
 
 
-#define emutex_lock(mutex)\
- pthread_mutex_lock(mutex)
-
-#define emutex_unlock(mutex)\
- pthread_mutex_unlock(mutex)
-
-#define emutex_init(mutex, mattr)\
- pthread_mutex_init(mutex, mattr)
-
-#define emutex_destroy(mutex)\
- pthread_mutex_destroy(mutex)
-
-#define ethread_cancel(th)\
- pthread_cancel(th)
-
-#define ethread_join(th, ret)\
- pthread_join(th, ret)
-
 #define eprintf(file, format, ...)\
  fprintf(file, format, __VA_ARGS__)
 
@@ -146,9 +110,6 @@ int bitch_macro (enum bitch_sauce sauce, const char *file, const int line, const
  close(fd)
 
 #endif
-
-#define ethread_create(th, tattr, function, fattr)\
- ((errno = pthread_create(th, tattr, function, fattr)) ? (bitch_macro (bitch_epthreads, __FILE__, __LINE__, __func__ , errno, "pthread_create() failed."), errno) : errno)
 
 #define eregcomp(target, pattern)\
  ((errno = eregcomp_cache(target, (pattern), REG_EXTENDED)) ? (bitch_macro (bitch_regex, __FILE__, __LINE__, __func__ , errno, "could not compile regular expression."), errno) : 0)

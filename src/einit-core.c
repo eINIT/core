@@ -46,7 +46,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <sys/stat.h>
-#include <pthread.h>
 #include <errno.h>
 #include <string.h>
 #include <time.h>
@@ -77,8 +76,6 @@ int sched_trace_target = STDOUT_FILENO;
 int main(int, char **, char **);
 int print_usage_info ();
 
-pthread_key_t einit_function_macro_key;
-
 /* some more variables that are only of relevance to main() */
 char **einit_startup_mode_switches = NULL;
 char **einit_startup_configuration_files = NULL;
@@ -107,19 +104,13 @@ int print_usage_info () {
  return -1;
 }
 
-pthread_mutex_t core_modules_update_mutex = PTHREAD_MUTEX_INITIALIZER;
-
 void core_einit_event_handler_update_modules (struct einit_event *ev) {
- emutex_lock (&core_modules_update_mutex);
-
  mod_update_source ("core");
-
- emutex_unlock (&core_modules_update_mutex);
 
 /* give the module-logic code and others a chance at processing the current list */
  struct einit_event update_event = evstaticinit(einit_core_module_list_update);
  update_event.para = mlist;
- event_emit (&update_event, einit_event_flag_broadcast);
+ event_emit (&update_event, 0);
  evstaticdestroy(update_event);
 }
 
@@ -131,7 +122,7 @@ void core_event_einit_boot_root_device_ok (struct einit_event *ev) {
   struct einit_event ee = evstaticinit(einit_core_switch_mode);
 
   ee.string = einit_startup_mode_switches[e];
-  event_emit (&ee, einit_event_flag_broadcast);
+  event_emit (&ee, 0);
   evstaticdestroy(ee);
  }
 }
@@ -176,9 +167,6 @@ void einit_process_raw_event (int fd) {
  }
 }
 
-pthread_mutex_t
-  sched_timer_data_mutex = PTHREAD_MUTEX_INITIALIZER;
-
 stack_t signalstack;
 
 void sched_signal_sigint (int, siginfo_t *, void *);
@@ -208,34 +196,20 @@ int scheduler_compare_time (time_t a, time_t b) {
 }
 
 void insert_timer_event (time_t n) {
- emutex_lock (&sched_timer_data_mutex);
-
  uintptr_t tmpinteger = n;
  sched_timer_data = (time_t *)set_noa_add ((void **)sched_timer_data, (void *)tmpinteger);
  setsort ((void **)sched_timer_data, set_sort_order_custom, (int (*)(const void *, const void *))scheduler_compare_time);
-
- emutex_unlock (&sched_timer_data_mutex);
 }
-
-time_t scheduler_prune_time = 0;
 
 time_t scheduler_get_next_tick (time_t now) {
  time_t next = 0;
 
- emutex_lock (&sched_timer_data_mutex);
-
  if (sched_timer_data) next = sched_timer_data[0];
-
- emutex_unlock (&sched_timer_data_mutex);
 
  if (next && ((next) <= (now + 60))) /* see if the event is within 60 seconds */
   return next;
- else {
-  scheduler_prune_time = now + 60;
 
-  insert_timer_event (now + 60);
-  return scheduler_get_next_tick(now);
- }
+ return 0;
 }
 
 void sched_handle_timers () {
@@ -255,16 +229,12 @@ void sched_handle_timers () {
 
   ev.integer = next_tick;
 
-  event_emit (&ev, einit_event_flag_broadcast);
+  event_emit (&ev, 0);
 
   evstaticdestroy (ev);
 
   uintptr_t tmpinteger = ev.integer;
   sched_timer_data = (time_t *)setdel ((void **)sched_timer_data, (void *)tmpinteger);
-
-  if (next_tick == scheduler_prune_time) {
-   ethread_prune_thread_pool();
-  }
 
   sched_handle_timers();
  } else {
@@ -517,7 +487,7 @@ int einit_main_loop(char early_bootup) {
   fprintf (stderr, "running early bootup code...\n");
 
   struct einit_event eml = evstaticinit(einit_boot_early);
-  event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread_multi_wait);
+  event_emit (&eml, 0);
   evstaticdestroy(eml);
  }
 
@@ -528,7 +498,7 @@ int einit_main_loop(char early_bootup) {
    struct einit_event ee = evstaticinit (einit_core_switch_mode);
    ee.string = "power-reset";
 
-   event_emit (&ee, einit_event_flag_spawn_thread | einit_event_flag_duplicate | einit_event_flag_broadcast);
+   event_emit (&ee, 0);
 
    sigint_called = 0;
    evstaticdestroy (ee);
@@ -559,7 +529,6 @@ void core_process_died (struct einit_event *ev) {
 /* t3h m41n l00ps0rzZzzz!!!11!!!1!1111oneeleven11oneone11!!11 */
 int main(int argc, char **argv, char **environ) {
  int i;
- int pthread_errno;
 // char crash_threshold = 5;
  char *einit_crash_data = NULL;
  char suppress_version = 0;
@@ -694,13 +663,6 @@ int main(int argc, char **argv, char **environ) {
    eprintf (stdout, "eINIT " EINIT_VERSION_LITERAL ": Initialising: %s\n", osinfo.sysname);
   }
 
-  if ((pthread_errno = pthread_key_create(&einit_function_macro_key, NULL))) {
-   bitch(bitch_epthreads, pthread_errno, "pthread_key_create(einit_function_macro_key) failed.");
-
-   if (einit_initial_environment) efree (einit_initial_environment);
-   return -1;
-  }
-
 /* this should be a good place to initialise internal modules */
    if (coremodules) {
     uint32_t cp = 0;
@@ -730,13 +692,13 @@ int main(int argc, char **argv, char **environ) {
   }
 
 /*  struct einit_event ev = evstaticinit(einit_core_update_modules);
-  event_emit (&ev, einit_event_flag_broadcast);
+  event_emit (&ev, 0);
   evstaticdestroy (ev);*/
 
   /* give the module-logic code and others a chance at processing the current list */
   struct einit_event update_event = evstaticinit(einit_core_module_list_update);
   update_event.para = mlist;
-  event_emit (&update_event, einit_event_flag_broadcast);
+  event_emit (&update_event, 0);
   evstaticdestroy(update_event);
 
   if (!do_wait) {
@@ -748,7 +710,7 @@ int main(int argc, char **argv, char **environ) {
 
     struct einit_event eml = evstaticinit(einit_core_crash_data);
     eml.string = einit_crash_data;
-    event_emit (&eml, einit_event_flag_broadcast);
+    event_emit (&eml, 0);
     evstaticdestroy(eml);
 
     efree (einit_crash_data);

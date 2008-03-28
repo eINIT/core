@@ -49,7 +49,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ctype.h>
 
 struct einit_exec_data **einit_exec_running = NULL;
-pthread_mutex_t einit_exec_running_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 int einit_handle_pipe_fragment(struct einit_exec_data *x) {
  char buffer[BUFFERSIZE];
@@ -80,7 +79,7 @@ int einit_handle_pipe_fragment(struct einit_exec_data *x) {
      evx.rid = x->rid;
      evx.string = sp[i];
      evx.status = x->module ? x->module->status : status_working;
-     event_emit(&evx, einit_event_flag_broadcast);
+     event_emit(&evx, 0);
      evstaticdestroy (evx);
     }
    }
@@ -364,9 +363,7 @@ pid_t einit_exec (struct einit_exec_data *x) {
 
  x->pid = p;
 
- emutex_lock (&einit_exec_running_mutex);
  einit_exec_running = (struct einit_exec_data **)set_noa_add ((void **)einit_exec_running, x);
- emutex_unlock (&einit_exec_running_mutex);
 
  einit_ping_core();
 
@@ -474,7 +471,6 @@ int einit_exec_pipe_prepare (fd_set *rfds) {
 
 // fprintf (stderr, "einit_exec_pipe_prepare()\n");
 
- emutex_lock (&einit_exec_running_mutex);
  if (einit_exec_running)
   for (; einit_exec_running[i]; i++) if (einit_exec_running[i]->readpipe) {
    FD_SET(einit_exec_running[i]->readpipe, rfds);
@@ -482,7 +478,6 @@ int einit_exec_pipe_prepare (fd_set *rfds) {
    if (einit_exec_running[i]->readpipe > rv)
     rv = einit_exec_running[i]->readpipe;
   }
- emutex_unlock (&einit_exec_running_mutex);
 
  return rv;
 }
@@ -493,10 +488,8 @@ void einit_exec_pipe_handle (fd_set *rfds) {
 // fprintf (stderr, "einit_exec_pipe_handle()\n");
 
  struct einit_exec_data **needtohandle = NULL;
- emutex_lock (&einit_exec_running_mutex);
  if (einit_exec_running)
   needtohandle = (struct einit_exec_data **)set_noa_dup (einit_exec_running);
- emutex_unlock (&einit_exec_running_mutex);
 
  if (needtohandle) {
   for (; needtohandle[i]; i++) {
@@ -551,9 +544,7 @@ void einit_exec_pipe_handle (fd_set *rfds) {
    }
 
    if (!needtohandle[i]->pid && !needtohandle[i]->readpipe) {
-    emutex_lock (&einit_exec_running_mutex);
     einit_exec_running = (struct einit_exec_data **)setdel ((void **)einit_exec_running, needtohandle[i]);
-    emutex_unlock (&einit_exec_running_mutex);
    }
   }
 

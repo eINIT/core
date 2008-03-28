@@ -46,7 +46,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/module.h>
 #include <einit/utility.h>
 #include <einit/tree.h>
-#include <pthread.h>
 #include <errno.h>
 #include <time.h>
 #include <wait.h>
@@ -55,16 +54,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 struct lmodule *mlist = NULL;
 extern char shutting_down;
 
-pthread_mutex_t mlist_mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t update_critical_phase_mutex = PTHREAD_MUTEX_INITIALIZER;
-
 struct service_usage_item {
  struct lmodule **provider;
  struct lmodule **users;
 };
 
 struct stree *service_usage = NULL;
-pthread_mutex_t service_usage_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 struct lmodule *mod_update (struct lmodule *module) {
  if (!module->module) return module;
@@ -83,15 +78,11 @@ struct lmodule *mod_update (struct lmodule *module) {
   if (module->module->si.before)
    new_data->before = set_str_dup_stable(module->module->si.before);
 
-  emutex_lock (&update_critical_phase_mutex);
   original_data = module->si;
   module->si = new_data;
-  emutex_unlock (&update_critical_phase_mutex);
  } else {
-  emutex_lock (&update_critical_phase_mutex);
   original_data = module->si;
   module->si = NULL;
-  emutex_unlock (&update_critical_phase_mutex);
  }
 
  if (original_data) {
@@ -113,24 +104,20 @@ struct lmodule *mod_update (struct lmodule *module) {
 
  struct einit_event ee = evstaticinit (einit_core_update_module);
  ee.para = (void *)module;
- event_emit (&ee, einit_event_flag_broadcast);
+ event_emit (&ee, 0);
  evstaticdestroy(ee);
 
  return module;
 }
 
 char **mod_blocked_rids = NULL;
-pthread_mutex_t mod_blocked_rids_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 struct lmodule *mod_add_or_update (void *sohandle, const struct smodule *module, enum mod_add_options options) {
  if (!module || !module->rid || !module->name) return NULL;
 
- emutex_lock (&mod_blocked_rids_mutex);
  if (inset ((const void **)mod_blocked_rids, module->rid, SET_TYPE_STRING)) {
-  emutex_unlock (&mod_blocked_rids_mutex);
   return NULL;
  }
- emutex_unlock (&mod_blocked_rids_mutex);
 
  struct lmodule *nmod = mod_lookup_rid(module->rid);
 
@@ -184,14 +171,10 @@ struct lmodule *mod_add (void *sohandle, const struct smodule *module) {
   fprintf (stderr, " * mod_add(*, %s)\n", module->rid);
  }*/
 
- emutex_lock (&mod_blocked_rids_mutex);
  if (inset ((const void **)mod_blocked_rids, module->rid, SET_TYPE_STRING)) {
-  emutex_unlock (&mod_blocked_rids_mutex);
   return NULL;
  }
- emutex_unlock (&mod_blocked_rids_mutex);
 
- emutex_lock (&mlist_mutex);
  struct lmodule *m = mlist;
 
  while (m) {
@@ -201,7 +184,6 @@ struct lmodule *mod_add (void *sohandle, const struct smodule *module) {
 
   m = m->next;
  }
- emutex_unlock (&mlist_mutex);
 
  if (m) return m;
 
@@ -209,7 +191,6 @@ struct lmodule *mod_add (void *sohandle, const struct smodule *module) {
 
  nmod->sohandle = sohandle;
  nmod->module = module;
- emutex_init (&nmod->mutex, NULL);
 
  if (module->si.provides || module->si.requires || module->si.after || module->si.before) {
   nmod->si = ecalloc (1, sizeof (struct service_information));
@@ -250,19 +231,15 @@ struct lmodule *mod_add (void *sohandle, const struct smodule *module) {
    efree (nmod);
 
    if (rv & status_block) {
-    emutex_lock (&mod_blocked_rids_mutex);
     mod_blocked_rids = set_str_add_stable (mod_blocked_rids, module->rid);
-    emutex_unlock (&mod_blocked_rids_mutex);
    }
 
    return NULL;
   }
  }
 
- emutex_lock (&mlist_mutex);
  nmod->next = mlist;
  mlist = nmod;
- emutex_unlock (&mlist_mutex);
 
  nmod = mod_update (nmod);
 
@@ -288,7 +265,7 @@ void mod_emit_pre_hook_event (struct lmodule *module, enum einit_module_task tas
    for (i = 0; module->si->provides[i]; i++) {
     struct einit_event eei = evstaticinit ((task & einit_module_enable) ? einit_core_service_enabling : einit_core_service_disabling);
     eei.string = module->si->provides[i];
-    event_emit (&eei, einit_event_flag_broadcast);
+    event_emit (&eei, 0);
     evstaticdestroy (eei);
    }
 
@@ -298,7 +275,7 @@ void mod_emit_pre_hook_event (struct lmodule *module, enum einit_module_task tas
   ees.string = (module->module && module->module->rid) ? module->module->rid : module->si->provides[0];
   ees.set = (void **)module->si->provides;
   ees.para = (void *)module;
-  event_emit (&ees, einit_event_flag_broadcast);
+  event_emit (&ees, 0);
   evstaticdestroy (ees);
  }
 }
@@ -306,7 +283,7 @@ void mod_emit_pre_hook_event (struct lmodule *module, enum einit_module_task tas
 void mod_completion_handler (struct lmodule *module, struct einit_event *fb, enum einit_module_task task) {
  fb->status = module->status;
 
- event_emit(fb, einit_event_flag_broadcast);
+ event_emit(fb, 0);
 
 /* service status update */
  char *nserv[] = { "no-service", NULL };
@@ -317,7 +294,7 @@ void mod_completion_handler (struct lmodule *module, struct einit_event *fb, enu
  ees.string = (module->module && module->module->rid) ? module->module->rid : "??";
  ees.set = (void **)((module->si && module->si->provides) ? module->si->provides : nserv);
  ees.para = (void *)module;
- event_emit (&ees, einit_event_flag_broadcast);
+ event_emit (&ees, 0);
  evstaticdestroy (ees);
 }
 
@@ -330,7 +307,7 @@ void mod_completion_handler_no_change (struct lmodule *module, enum einit_module
  ees.string = (module->module && module->module->rid) ? module->module->rid : "??";
  ees.set = (void **)((module->si && module->si->provides) ? module->si->provides : nserv);
  ees.para = (void *)module;
- event_emit (&ees, einit_event_flag_broadcast);
+ event_emit (&ees, 0);
  evstaticdestroy (ees);
 }
 
@@ -402,12 +379,8 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
 
  if (!module || !module->module) return 0;
 
- emutex_lock (&module->mutex);
-
  if (task & einit_module_custom) {
   if (!custom_command) {
-   emutex_unlock (&module->mutex);
-
    return status_failed;
   }
 
@@ -429,7 +402,6 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
 
   mod_completion_handler_no_change (module, task);
 
-  emutex_unlock (&module->mutex);
   return status_idle;
  }
 
@@ -468,7 +440,7 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
   e.rid = module->module->rid;
   e.string = (char *)str_stabilise(action);
 
-  event_emit (&e, einit_event_flag_broadcast);
+  event_emit (&e, 0);
 
   evstaticdestroy (e);
 
@@ -480,7 +452,7 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
 
 /* actual loading bit */
  fb = mod_initialise_feedback_event (module, task);
- event_emit(fb, einit_event_flag_broadcast);
+ event_emit(fb, 0);
 
  if ((task & einit_module_custom) && (strmatch (custom_command, "zap"))) {
   module->status = status_disabled | (module->status & status_failed);
@@ -676,8 +648,6 @@ void mod_update_usage_table (struct lmodule *module) {
  char **disabled = NULL;
  char **enabled = NULL;
 
- emutex_lock (&service_usage_mutex);
-
  if (module->status & status_enabled) {
   if (module->si) {
    if ((t = module->si->requires)) {
@@ -735,15 +705,12 @@ void mod_update_usage_table (struct lmodule *module) {
   ha = streenext (ha);
  }
 
- emutex_unlock (&module->mutex);
- emutex_unlock (&service_usage_mutex);
-
  if (enabled) {
   struct einit_event eei = evstaticinit (einit_core_service_enabled);
 
   for (i = 0; enabled[i]; i++) {
    eei.string = enabled[i];
-   event_emit (&eei, einit_event_flag_broadcast);
+   event_emit (&eei, 0);
   }
 
   evstaticdestroy (eei);
@@ -755,7 +722,7 @@ void mod_update_usage_table (struct lmodule *module) {
 
   for (i = 0; disabled[i]; i++) {
    eei.string = disabled[i];
-   event_emit (&eei, einit_event_flag_broadcast);
+   event_emit (&eei, 0);
   }
 
   evstaticdestroy (eei);
@@ -768,12 +735,8 @@ char mod_service_is_provided (char *service) {
  struct service_usage_item *item;
  char rv = 0;
 
- emutex_lock (&service_usage_mutex);
-
  if (service_usage && (ha = streefind (service_usage, service, tree_find_first)) && (item = (struct service_usage_item *)ha->value) && (item->provider))
   rv = 1;
-
- emutex_unlock (&service_usage_mutex);
 
  return rv;
 }
@@ -783,12 +746,8 @@ char mod_service_is_in_use (char *service) {
  struct service_usage_item *item;
  char rv = 0;
 
- emutex_lock (&service_usage_mutex);
-
  if (service_usage && (ha = streefind (service_usage, service, tree_find_first)) && (item = (struct service_usage_item *)ha->value) && (item->users))
   rv = 1;
-
- emutex_unlock (&service_usage_mutex);
 
  return rv;
 }
@@ -798,8 +757,6 @@ char mod_service_requirements_met (struct lmodule *module) {
  struct stree *ha;
  uint32_t i;
  char **t;
-
- emutex_lock (&service_usage_mutex);
 
  if (module->si && (t = module->si->requires)) {
   for (i = 0; t[i]; i++) {
@@ -811,16 +768,12 @@ char mod_service_requirements_met (struct lmodule *module) {
   }
  }
 
- emutex_unlock (&service_usage_mutex);
-
  return ret;
 }
 
 char mod_service_not_in_use(struct lmodule *module) {
  char ret = 1;
  struct stree *ha;
-
- emutex_lock (&service_usage_mutex);
 
  ha = streelinear_prepare(service_usage);
 
@@ -860,14 +813,10 @@ char mod_service_not_in_use(struct lmodule *module) {
   }
 
 
- emutex_unlock (&service_usage_mutex);
-
  return ret;
 }
 
 char **mod_list_all_provided_services () {
- emutex_lock (&service_usage_mutex);
-
  struct stree *ha = streelinear_prepare(service_usage);
  char **ret = NULL;
  struct service_usage_item *item;
@@ -880,15 +829,12 @@ char **mod_list_all_provided_services () {
   ha = streenext(ha);
  }
 
- emutex_unlock (&service_usage_mutex);
-
  return ret;
 }
 
 struct lmodule **mod_get_all_users (struct lmodule *module) {
  struct lmodule **ret = NULL;
 
- emutex_lock (&service_usage_mutex);
  struct stree *ha = streelinear_prepare(service_usage);
 
  while (ha) {
@@ -902,15 +848,12 @@ struct lmodule **mod_get_all_users (struct lmodule *module) {
   }
   ha = streenext (ha);
  }
- emutex_unlock (&service_usage_mutex);
-
  return ret;
 }
 
 struct lmodule **mod_get_all_users_of_service (char *service) {
  struct lmodule **ret = NULL;
 
- emutex_lock (&service_usage_mutex);
  struct stree *ha = streefind (service_usage, service, tree_find_first);
 
  if (ha) {
@@ -923,15 +866,12 @@ struct lmodule **mod_get_all_users_of_service (char *service) {
    }
   }
  }
- emutex_unlock (&service_usage_mutex);
-
  return ret;
 }
 
 struct lmodule **mod_get_all_providers (char *service) {
  struct lmodule **ret = NULL;
 
- emutex_lock (&service_usage_mutex);
  struct stree *ha = streefind (service_usage, service, tree_find_first);
 
  if (ha) {
@@ -944,8 +884,6 @@ struct lmodule **mod_get_all_providers (char *service) {
    }
   }
  }
- emutex_unlock (&service_usage_mutex);
-
  return ret;
 }
 
@@ -953,7 +891,6 @@ struct lmodule **mod_list_all_enabled_modules () {
  struct lmodule **ret = NULL;
  struct lmodule *m;
 
- emutex_lock (&mlist_mutex);
  m = mlist;
  while (m) {
   if (m->status & status_enabled) {
@@ -962,7 +899,5 @@ struct lmodule **mod_list_all_enabled_modules () {
 
   m = m->next;
  }
- emutex_unlock (&mlist_mutex);
-
  return ret;
 }

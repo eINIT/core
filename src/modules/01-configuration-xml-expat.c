@@ -98,8 +98,6 @@ time_t xml_configuration_files_highest_mtime = 0;
 
 char **xml_configuration_new_files = NULL;
 
-pthread_mutex_t xml_configuration_new_files_mutex = PTHREAD_MUTEX_INITIALIZER;
-
 struct einit_xml_expat_user_data {
  uint32_t options;
  char *file, *prefix;
@@ -198,11 +196,7 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
       setsort ((void **)files, set_sort_order_string_lexical, NULL);
 
       for (i = 0; files[i]; i++) {
-       emutex_lock (&xml_configuration_new_files_mutex);
-
        xml_configuration_new_files = set_str_add (xml_configuration_new_files, files[i]);
-
-       emutex_unlock (&xml_configuration_new_files_mutex);
       }
 
       efree (files);
@@ -213,11 +207,7 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
     if (atts) {
      for (i = 0; atts[i]; i+=2) {
       if (strmatch (atts[i], "s")) {
-       emutex_lock (&xml_configuration_new_files_mutex);
-
        xml_configuration_new_files = set_str_add (xml_configuration_new_files, (char *)atts[i+1]);
-
-       emutex_unlock (&xml_configuration_new_files_mutex);
       }
      }
     }
@@ -336,12 +326,9 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
 
    char *file = NULL;
 
-   emutex_lock (&xml_configuration_new_files_mutex);
    while (xml_configuration_new_files) {
     if ((file = estrdup (xml_configuration_new_files[0]))) {
      xml_configuration_new_files = strsetdel (xml_configuration_new_files, file);
-
-     emutex_unlock (&xml_configuration_new_files_mutex);
 
      struct stat st;
 
@@ -360,10 +347,8 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
      }
 
      efree (file);
-     emutex_lock (&xml_configuration_new_files_mutex);
     }
    }
-   emutex_unlock (&xml_configuration_new_files_mutex);
   }
 
   if (expatuserdata.prefix) efree (expatuserdata.prefix);
@@ -494,7 +479,7 @@ int einit_configuration_xml_expat_configure (struct lmodule *this) {
   uint32_t rx = 0;
   for (; einit_startup_configuration_files[rx]; rx++) {
    cev.string = einit_startup_configuration_files[rx];
-   event_emit (&cev, einit_event_flag_broadcast);
+   event_emit (&cev, 0);
   }
  }
 

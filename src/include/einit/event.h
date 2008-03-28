@@ -44,23 +44,14 @@ extern "C" {
 
 #include <stdio.h>
 #include <inttypes.h>
-#include <pthread.h>
 #include <einit/tree.h>
 
 #define EVENT_SUBSYSTEM_MASK           0xfffff000
 #define EVENT_CODE_MASK                0x00000fff
 
 enum einit_event_emit_flags {
- einit_event_flag_broadcast               = 0x1,
-/*!< this should always be specified, although just now it's being ignored */
- einit_event_flag_spawn_thread            = 0x2,
-/*!< use this to tell einit that you don't wish/need to wait for this to return */
- einit_event_flag_duplicate               = 0x4,
-/*!< duplicate event data block. important with *spawn_thread */
- einit_event_flag_spawn_thread_multi_wait = 0x8,
-/*!< use this to tell einit to spawn a thread for every handler */
  einit_event_flag_remote                  = 0x10
-/*!< this should always be specified, although just now it's being ignored */
+/*!< spawn the event in a remote core... only use this if you know you need it */
 };
 
 enum einit_event_subsystems {
@@ -268,8 +259,6 @@ struct event_function {
  void (*handler)(struct einit_event *);
 };
 
-extern pthread_key_t einit_function_macro_key;
-
 void *event_emit (struct einit_event *, enum einit_event_emit_flags);
 void event_listen (enum einit_event_subsystems, void (*)(struct einit_event *));
 void event_ignore (enum einit_event_subsystems, void (*)(struct einit_event *));
@@ -300,24 +289,25 @@ struct exported_function *function_look_up_one (const char *, const uint32_t, co
   (((rv (*)())(data)->function) (__VA_ARGS__))) :\
   failrv))
 
+extern struct exported_function *einit_function_macro_data;
+
 #define function_call_by_name(rv,name,version,...)\
- (pthread_setspecific(einit_function_macro_key, (void *)function_look_up_one(name, version, NULL)),\
-  function_call(rv, (struct exported_function *)pthread_getspecific(einit_function_macro_key), __VA_ARGS__))
+ ((einit_function_macro_data = (void *)function_look_up_one(name, version, NULL)),\
+  function_call(rv, einit_function_macro_data, __VA_ARGS__))
 
 #define function_call_by_name_use_data(rv,name,version,data,failrv,...)\
  (data || (data = function_look_up_one(name, version, NULL)) ? \
   function_call_wfailrv(rv, data, failrv, __VA_ARGS__) : failrv)
 
 #define function_call_by_name_multi(rv,name,version,sub,...)\
- (pthread_setspecific(einit_function_macro_key, (void *)function_look_up_one(name, version, sub)),\
-  function_call(rv, (struct exported_function *)pthread_getspecific(einit_function_macro_key), __VA_ARGS__))
+ ((einit_function_macro_data = (void *)function_look_up_one(name, version, sub)),\
+  function_call(rv, einit_function_macro_data, __VA_ARGS__))
 
 struct stree *exported_functions;
 
 char *event_code_to_string (const uint32_t);
 uint32_t event_string_to_code (const char *);
 
-time_t event_timer_register (struct tm *);
 time_t event_timer_register_timeout (time_t);
 void event_timer_cancel (time_t);
 

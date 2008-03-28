@@ -49,7 +49,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/utility.h>
 #include <errno.h>
 #include <signal.h>
-#include <pthread.h>
 #include <einit-modules/exec.h>
 #include <einit-modules/process.h>
 #include <ctype.h>
@@ -58,6 +57,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit-modules/parse-sh.h>
 
 #include <regex.h>
+#include <time.h>
 
 #ifdef __linux__
 #include <sys/syscall.h>
@@ -96,7 +96,6 @@ char *dshell[] = {"/bin/sh", "-c", NULL};
 
 extern char shutting_down;
 
-pthread_mutex_t running_mutex = PTHREAD_MUTEX_INITIALIZER;
 int spawn_timeout = 5;
 char kill_timeout_primary = 20, kill_timeout_secondary = 20;
 
@@ -109,50 +108,6 @@ int eexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
 int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status);
 int stop_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status);
 char **create_environment_f (char **environment, const char **variables);
-void einit_exec_process_event_handler (struct einit_event *);
-
-void dexec_watcher (pid_t pid);
-
-void einit_exec_update_daemons_from_pidfiles() {
- emutex_lock (&running_mutex);
- struct daemonst *cur = running;
-
- while (cur) {
-  struct dexecinfo *dx = cur->dx;
-
-  if (dx) {
-   struct stat st;
-   if (dx->pidfile && !stat (dx->pidfile, &st)) {
-    if (st.st_mtime > dx->pidfiles_last_update) {
-     char *contents = readfile (dx->pidfile);
-     if (contents) {
-      pid_t daemon_pid = parse_integer (contents);
-
-      cur->pid = daemon_pid;
-      dx->pidfiles_last_update = st.st_mtime;
-
-      efree (contents);
-
-      if (cur->daemon_rid) {
-       notice (2, "exec: modules %s updated and is now known with pid %i.", cur->daemon_rid, cur->pid);
-      } else {
-       notice (2, "exec: anonymous daemon updated and is now known with pid %i.", cur->pid);
-      }
-     }
-    }
-   }
-  }
-
-  cur = cur->next;
- }
- emutex_unlock (&running_mutex);
-}
-
-void einit_exec_process_event_handler (struct einit_event *ev) {
- einit_exec_update_daemons_from_pidfiles();
-
- dexec_watcher (ev->integer);
-}
 
 char *apply_envfile_f (char *command, const char **environment) {
  uint32_t i = 0;
@@ -801,79 +756,6 @@ int eexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
  return status_failed;
 }
 
-void dexec_watcher (pid_t pid) {
- fprintf (stderr, "this pid died (tty): %i", pid);
-
- struct daemonst *prev = NULL;
- struct dexecinfo *dx = NULL;
- struct lmodule *module = NULL;
- char stmp[BUFFERSIZE];
-
-// notice (1, "trying to find out if we know about %i.", pid);
-
- emutex_lock (&running_mutex);
- struct daemonst *cur = running;
-
- while (cur) {
-  dx = cur->dx;
-  if (cur->pid == pid) {
-/* check whether to restart, and do so if the answer is yes... */
-   module = cur->daemon_rid ? mod_lookup_rid (cur->daemon_rid) : NULL;
-   if (prev != NULL) {
-    prev->next = cur->next;
-   } else {
-    running = cur->next;
-   }
-
-   break;
-  }
-  prev = cur;
-  cur = cur->next;
- }
- emutex_unlock (&running_mutex);
-
- if (dx && cur && (cur->pid == pid)) {
-  char *rid = (module && module->module && module->module->rid ? module->module->rid : "unknown");
-/* if we're already deactivating this daemon, resume the original function */
-  if (pthread_mutex_trylock (&cur->mutex)) {
-   esprintf (stmp, BUFFERSIZE, "einit-mod-daemon: \"%s\" has died nicely, resuming.\n", rid);
-   notice (8, stmp);
-   emutex_unlock (&cur->mutex);
-  } else if (!shutting_down && (dx->restart)) {
-/* don't try to restart if the daemon died too swiftly */
-/* also make sure to NOT respawn something when shutting down */
-   emutex_unlock (&cur->mutex);
-   if (((cur->starttime + spawn_timeout) < time(NULL))) {
-    struct einit_event fb = evstaticinit(einit_feedback_module_status);
-    fb.task = einit_module_enable;
-    fb.status = status_working;
-	fb.rid = (char*)str_stabilise(rid);
-    fb.flag = 0;
-
-    fbprintf ((&fb), "einit-mod-daemon: resurrecting \"%s\".\n", rid);
-
-    dx->cb = NULL;
-    start_daemon_f (dx, &fb);
-   } else {
-    dx->cb = NULL;
-    esprintf (stmp, BUFFERSIZE, "einit-mod-daemon: \"%s\" has died too swiftly, considering defunct.\n", rid);
-    notice (5, stmp);
-    if (module)
-     mod (einit_module_disable, module, NULL);
-   }
-  } else {
-   emutex_unlock (&cur->mutex);
-   dx->cb = NULL;
-   esprintf (stmp, BUFFERSIZE, "einit-mod-daemon: \"%s\" has died, but does not wish to be restarted.\n", rid);
-   notice (5, stmp);
-   if (module)
-    mod (einit_module_disable, module, NULL);
-  }
- }
-
- return;
-}
-
 int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
  pid_t child;
  uid_t uid;
@@ -898,15 +780,11 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
     new->daemon_rid = status->rid;
    else
     new->daemon_rid = NULL;
-   emutex_init (&new->mutex, NULL);
-   emutex_lock (&running_mutex);
    new->next = running;
    running = new;
 
    shellcmd->cb = new;
    new->pid = pid;
-
-   emutex_unlock (&running_mutex);
 
    return status_ok;
   }
@@ -971,18 +849,12 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
     new->daemon_rid = status->rid;
    else
     new->daemon_rid = NULL;
-   emutex_init (&new->mutex, NULL);
-   emutex_lock (&running_mutex);
    new->next = running;
    running = new;
 
    shellcmd->cb = new;
 
    shellcmd->pidfiles_last_update = 0;
-
-   emutex_unlock (&running_mutex);
-
-//   einit_exec_update_daemons_from_pidfiles(); /* <-- that one didn't make sense? */
 
    return status_ok;
   } else
@@ -995,7 +867,6 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
    new->daemon_rid = status->rid;
   else
    new->daemon_rid = NULL;
-  emutex_init (&new->mutex, NULL);
 
   shellcmd->cb = new;
 
@@ -1110,10 +981,8 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
 
    new->pid = realpid;
 
-   emutex_lock (&running_mutex);
    new->next = running;
    running = new;
-   emutex_unlock (&running_mutex);
   }
 
   close (cpipes[0]);
@@ -1126,80 +995,8 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
  }
 }
 
-void dexec_resume_timer (struct dexecinfo *dx) {
- time_t timer = ((dx && dx->cb) ? dx->cb->timer : 1);
- while (dx && dx->cb && (timer = sleep(timer)));
-
- if (dx && dx->cb) {
-  dx->cb->timer = timer;
-  pthread_mutex_trylock (&dx->cb->mutex); // make sure the thing is locked
-
-  emutex_unlock (&dx->cb->mutex);  // unlock it
- }
-}
-
+/* TODO: port everything using startdaemon/stopdaemon to the new exec.h code */
 int stop_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
- einit_exec_update_daemons_from_pidfiles();
-
- pid_t pid = shellcmd->cb ? shellcmd->cb->pid : 0;
- if (shellcmd->cb && pidexists(pid)) {
-  pthread_t th;
-  pthread_mutex_trylock (&shellcmd->cb->mutex);
-  shellcmd->cb->timer = kill_timeout_primary;
-
-  fbprintf (status, "sending SIGTERM, daemon has %i seconds to exit...", kill_timeout_primary);
-
-  if (kill (shellcmd->cb->pid, SIGTERM)) {
-   fbprintf (status, "failed to send SIGTERM: %s", strerror (errno));
-   notice (1, "failed to send SIGTERM to a daemon: %s; assuming it's dead.", strerror (errno));
-
-   goto assume_dead;
-  }
-
-  ethread_create (&th, NULL, (void *(*)(void *))dexec_resume_timer, shellcmd);
-  emutex_lock (&shellcmd->cb->mutex);
-
-  if (pidexists(pid)) { // still up?
-   if (shellcmd->cb->timer <= 0) { // this means we came here because the timer ran out
-    fbprintf (status, "SIGTERM timer ran out, killing...");
-
-    ethread_cancel (th);
-    pthread_mutex_trylock (&shellcmd->cb->mutex);
-    shellcmd->cb->timer = kill_timeout_secondary;
-    kill (shellcmd->cb->pid, SIGKILL);
-
-    ethread_create (&th, NULL, (void *(*)(void *))dexec_resume_timer, shellcmd);
-    emutex_lock (&shellcmd->cb->mutex);
-   }
-  } else {
-   fbprintf (status, "daemon seems to have exited gracefully.");
-  }
-  ethread_cancel (th);
-
-  emutex_unlock (&shellcmd->cb->mutex); // just in case
-  emutex_destroy (&shellcmd->cb->mutex);
- } else {
-  fbprintf (status, "No control block or PID invalid, skipping the killing.");
- }
-
- assume_dead:
-
- shellcmd->cb = NULL;
-
- if (shellcmd->pidfile) {
-  unlink (shellcmd->pidfile);
-  errno = 0;
- }
-
- if (shellcmd->cleanup) {
- // if (pexec (shellcmd->cleanup, shellcmd->variables, shellcmd->uid, shellcmd->gid, shellcmd->user, shellcmd->group, shellcmd->environment, status) == status_failed) return status_ok;
-  if (pexec (shellcmd->cleanup, (const char **)shellcmd->variables, 0, 0, NULL, NULL, shellcmd->environment, status) == status_failed) return status_ok;
- }
-
- if (shellcmd->is_down) {
-  return pexec (shellcmd->is_down, (const char **)shellcmd->variables, 0, 0, NULL, NULL, shellcmd->environment, status);
- }
-
  return status_ok;
 }
 
@@ -1217,8 +1014,6 @@ int einit_exec_configure (struct lmodule *irr) {
   kill_timeout_primary = node->value;
  if ((node = cfg_findnode ("configuration-system-daemon-term-timeout-secondary", 0, NULL)))
   kill_timeout_secondary = node->value;
-
- event_listen (einit_process_died, einit_exec_process_event_handler);
 
  function_register ("einit-execute-command", 1, pexec_f);
  function_register ("einit-execute-command-in-main-loop", 1, eexec_f);

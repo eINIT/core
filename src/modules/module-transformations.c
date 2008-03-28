@@ -38,7 +38,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
-#include <pthread.h>
 
 #include <einit/module.h>
 #include <einit/config.h>
@@ -101,17 +100,12 @@ struct {
  .chunks = NULL
 };
 
-pthread_mutex_t einit_module_transformations_garbage_mutex = PTHREAD_MUTEX_INITIALIZER;
-
 void einit_module_transformations_garbage_add_chunk (void *chunk) {
  if (!chunk) return;
- emutex_lock (&einit_module_transformations_garbage_mutex);
  einit_module_transformations_garbage.chunks = set_noa_add (einit_module_transformations_garbage.chunks, chunk);
- emutex_unlock (&einit_module_transformations_garbage_mutex);
 }
 
 void einit_module_transformations_garbage_free () {
- emutex_lock (&einit_module_transformations_garbage_mutex);
  if (einit_module_transformations_garbage.chunks) {
   int i = 0;
 
@@ -122,7 +116,6 @@ void einit_module_transformations_garbage_free () {
   efree (einit_module_transformations_garbage.chunks);
   einit_module_transformations_garbage.chunks = NULL;
  }
- emutex_unlock (&einit_module_transformations_garbage_mutex);
 }
 
 void einit_module_transformations_einit_event_handler_configuration_update (struct einit_event *ev) {

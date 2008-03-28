@@ -42,7 +42,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/event.h>
 #include <einit/utility.h>
 #include <einit/bitch.h>
-#include <pthread.h>
 #include <string.h>
 
 #include <einit-modules/network.h>
@@ -80,8 +79,6 @@ module_register(linux_network_self);
 
 char **linux_network_interfaces = NULL;
 
-pthread_mutex_t linux_network_interfaces_mutex = PTHREAD_MUTEX_INITIALIZER;
-
 char **linux_network_list_interfaces_proc (int spawn_events) {
  char **interfaces = NULL;
  char **new_interfaces = NULL;
@@ -105,13 +102,11 @@ char **linux_network_list_interfaces_proc (int spawn_events) {
 
  if (spawn_events) {
   if (interfaces) {
-   emutex_lock (&linux_network_interfaces_mutex);
    int i = 0;
    for (; interfaces[i]; i++) {
     if (!linux_network_interfaces || !inset ((const void **)linux_network_interfaces, interfaces[i], SET_TYPE_STRING))
      new_interfaces = set_str_add (new_interfaces, interfaces[i]);
    }
-   emutex_unlock (&linux_network_interfaces_mutex);
   }
 
   if (new_interfaces) {

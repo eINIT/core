@@ -83,7 +83,6 @@ extern "C" {
 
 #define MAXMODULES 40
 
-#include <pthread.h>
 #include <sys/types.h>
 #include <stdint.h>
 #include <einit/config.h>
@@ -218,7 +217,6 @@ struct lmodule {
 
  enum einit_module_status status;               /*!< Current module status (enabled, disabled, ...) */
  void *param;                                   /*!< Parameter for state-changing functions */
- pthread_mutex_t mutex;	                        /*!< Module-mutex; is used by the mod()-function */
  const struct smodule *module;                  /*!< Pointer to the static module definition */
  struct lmodule *next;                          /*!< Pointer to the next module in the list */
  struct service_information *si;
@@ -296,7 +294,7 @@ void einit_add_fd_handler_function (void (*fdhandle)(fd_set *));
  char _fbprintf_buffer[BUFFERSIZE];\
  snprintf (_fbprintf_buffer, BUFFERSIZE, __VA_ARGS__);\
  statusvar->string = _fbprintf_buffer;\
- event_emit(statusvar, einit_event_flag_broadcast); \
+ event_emit(statusvar, 0); \
  statusvar->string = NULL; }
 
 extern const struct smodule **coremodules[MAXMODULES];

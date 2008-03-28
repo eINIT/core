@@ -123,7 +123,6 @@ uint32_t StrSuperFastHash (const char * data, int *len) {
 }
 
 struct itree *einit_stable_strings = NULL;
-pthread_mutex_t einit_stable_strings_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 #undef DEBUG
 
@@ -208,11 +207,9 @@ const char *str_stabilise_l (const char *s, uint32_t *h, int *l) {
  if (!nv)
   nv = estrdup (s);
 
- emutex_lock (&einit_stable_strings_mutex);
  /* we don't really care if we accidentally duplicate the string */
  i = itreeadd (einit_stable_strings, hash, nv, tree_value_noalloc);
  einit_stable_strings = i;
- emutex_unlock (&einit_stable_strings_mutex);
 
 #ifdef DEBUG
  strings++;

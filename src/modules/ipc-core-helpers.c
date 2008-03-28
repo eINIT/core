@@ -384,7 +384,7 @@ void einit_ipc_core_helpers_ipc_write (struct einit_event *ev) {
   if (strmatch (path[0], "mode")) {
    struct einit_event ee = evstaticinit(einit_core_switch_mode);
    ee.string = (char *)str_stabilise (ev->set[0]);
-   event_emit (&ee, einit_event_flag_spawn_thread | einit_event_flag_duplicate | einit_event_flag_broadcast);
+   event_emit (&ee, 0);
    evstaticdestroy(ee);
   } else if (path[1] && strmatch (path[0], "modules")) {
    if (strmatch (path[1], "register")) {

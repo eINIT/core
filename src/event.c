@@ -36,7 +36,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include <inttypes.h>
-#include <pthread.h>
 #include <string.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -50,95 +49,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/itree.h>
 
 #include <einit/einit.h>
-
-pthread_mutex_t evf_mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t pof_mutex = PTHREAD_MUTEX_INITIALIZER;
+#include <time.h>
 
 struct itree *event_handlers = NULL;
 
-struct evt_wrapper_data {
-  void (*handler) (struct einit_event *);
-  struct einit_event *event;
-};
-
-void *event_thread_wrapper (struct evt_wrapper_data *d) {
- if (d) {
-  d->handler (d->event);
-
-  evdestroy (d->event);
-  efree (d);
- }
-
- return NULL;
-}
-
-void event_subthread_a (struct einit_event *event) {
- uint32_t subsystem = event->type & EVENT_SUBSYSTEM_MASK;
- struct event_function **f = NULL;
-
- emutex_lock (&evf_mutex);
- if (event_handlers) {
-  struct itree *it = NULL;
-
-  if (event->type != subsystem) {
-   it = itreefind (event_handlers, event->type, tree_find_first);
-
-   while (it) {
-    f = (struct event_function **)set_fix_add ((void **)f, it->data, sizeof (struct event_function));
-
-    it = itreefind (it, event->type, tree_find_next);
-   }
-  }
-
-  it = itreefind (event_handlers, subsystem, tree_find_first);
-
-  while (it) {
-   f = (struct event_function **)set_fix_add ((void **)f, it->data, sizeof (struct event_function));
-
-   it = itreefind (it, subsystem, tree_find_next);
-  }
-
-  it = itreefind (event_handlers, einit_event_subsystem_any, tree_find_first);
-
-  while (it) {
-   f = (struct event_function **)set_fix_add ((void **)f, it->data, sizeof (struct event_function));
-
-   it = itreefind (it, einit_event_subsystem_any, tree_find_next);
-  }
- }
- emutex_unlock (&evf_mutex);
-
- if (f) {
-  int i = 0;
-  for (; f[i]; i++) {
-   f[i]->handler(event);
-  }
-
-  efree (f);
- }
-
- if (event->chain_type) {
-  event->type = event->chain_type;
-  event->chain_type = 0;
-
-  event_subthread_a (event);
- }
-}
-
-void *event_subthread (struct einit_event *event) {
- if (!event) return NULL;
-
- event_subthread_a (event);
-
- if (event->stringset) efree (event->stringset);
-
- evdestroy (event);
-
- return NULL;
-}
-
 void *event_emit (struct einit_event *event, enum einit_event_emit_flags flags) {
- pthread_t **threads = NULL;
  if (!event || !event->type) return NULL;
 
  if (flags & einit_event_flag_remote) {
@@ -148,19 +63,9 @@ void *event_emit (struct einit_event *event, enum einit_event_emit_flags flags) 
   return NULL;
  }
 
- if (flags & einit_event_flag_spawn_thread) {
-  struct einit_event *ev = evdup(event);
-  if (!ev) return NULL;
-
-  ethread_spawn_detached_run ((void *(*)(void *))event_subthread, (void *)ev);
-
-  return NULL;
- }
-
  struct event_function **f = NULL;
  uint32_t subsystem = event->type & EVENT_SUBSYSTEM_MASK;
 
- emutex_lock (&evf_mutex);
  if (event_handlers) {
   struct itree *it = NULL;
 
@@ -190,27 +95,11 @@ void *event_emit (struct einit_event *event, enum einit_event_emit_flags flags) 
    it = itreefind (it, einit_event_subsystem_any, tree_find_next);
   }
  }
- emutex_unlock (&evf_mutex);
 
  if (f) {
   int i = 0;
   for (; f[i]; i++) {
-   if (flags & einit_event_flag_spawn_thread_multi_wait) {
-    if (f[i+1]) {
-     pthread_t *threadid = emalloc (sizeof (pthread_t));
-     struct evt_wrapper_data *d = emalloc (sizeof (struct evt_wrapper_data));
-
-     d->event = evdup(event);
-     d->handler = f[i]->handler;
-
-     ethread_create (threadid, NULL, (void *(*)(void *))event_thread_wrapper, d);
-     threads = (pthread_t **)set_noa_add ((void **)threads, threadid);
-    } else {
-/* do a shortcut so we don't create a thread for the last thing to spawn */
-     f[i]->handler (event);
-    }
-   } else
-    f[i]->handler (event);
+   f[i]->handler (event);
   }
 
   efree (f);
@@ -222,25 +111,12 @@ void *event_emit (struct einit_event *event, enum einit_event_emit_flags flags) 
   event_emit (event, flags);
  }
 
- if (threads) {
-  int i = 0;
-
-  for (; threads[i]; i++) {
-   pthread_join (*(threads[i]), NULL);
-
-   efree (threads[i]);
-  }
-
-  efree (threads);
- }
-
  return NULL;
 }
 
 void event_listen (enum einit_event_subsystems type, void (* handler)(struct einit_event *)) {
  char doadd = 1;
 
- emutex_lock (&evf_mutex);
  struct itree *it = event_handlers ? itreefind (event_handlers, type, tree_find_first) : NULL;
  while (it) {
   struct event_function *f = (struct event_function *)it->data;
@@ -256,12 +132,10 @@ void event_listen (enum einit_event_subsystems type, void (* handler)(struct ein
   struct event_function f = { .handler = handler };
   event_handlers = itreeadd (event_handlers, type, &f, sizeof(struct event_function));
  }
- emutex_unlock (&evf_mutex);
 }
 
 void event_ignore (enum einit_event_subsystems type, void (* handler)(struct einit_event *)) {
  struct itree *it = NULL;
- emutex_lock (&evf_mutex);
  if (event_handlers) {
   it = itreefind (event_handlers, type, tree_find_first);
 
@@ -272,12 +146,9 @@ void event_ignore (enum einit_event_subsystems type, void (* handler)(struct ein
    it = itreefind (it, type, tree_find_next);
   }
  }
- emutex_unlock (&evf_mutex);
 
  if (it) {
-  emutex_lock (&evf_mutex);
   event_handlers = itreedel (it);
-  emutex_unlock (&evf_mutex);
  }
 
  return;
@@ -289,7 +160,6 @@ void function_register_type (const char *name, uint32_t version, void const *fun
  char added = 0;
 
  if (module) {
-  emutex_lock (&pof_mutex);
   struct stree *ha = exported_functions;
   ha = streefind (exported_functions, name, tree_find_first);
   while (ha) {
@@ -302,7 +172,6 @@ void function_register_type (const char *name, uint32_t version, void const *fun
 
    ha = streefind (ha, name, tree_find_next);
   }
-  emutex_unlock (&pof_mutex);
  }
 
 
@@ -314,9 +183,7 @@ void function_register_type (const char *name, uint32_t version, void const *fun
   fstruct->function = function;
   fstruct->module   = module;
 
-  emutex_lock (&pof_mutex);
    exported_functions = streeadd (exported_functions, name, (void *)fstruct, sizeof(struct exported_function), NULL);
-  emutex_unlock (&pof_mutex);
 
   efree (fstruct);
  }
@@ -326,7 +193,6 @@ void function_unregister_type (const char *name, uint32_t version, void const *f
  if (!exported_functions) return;
  struct stree *ha = exported_functions;
 
- emutex_lock (&pof_mutex);
  ha = streefind (exported_functions, name, tree_find_first);
  while (ha) {
   struct exported_function *ef = ha->value;
@@ -338,7 +204,6 @@ void function_unregister_type (const char *name, uint32_t version, void const *f
 
   ha = streefind (ha, name, tree_find_next);
  }
- emutex_unlock (&pof_mutex);
 
  return;
 }
@@ -348,7 +213,6 @@ void **function_find (const char *name, const uint32_t version, const char ** su
  void **set = NULL;
  struct stree *ha = exported_functions;
 
- emutex_lock (&pof_mutex);
  if (!sub) {
   ha = streefind (exported_functions, name, tree_find_first);
   while (ha) {
@@ -381,7 +245,6 @@ void **function_find (const char *name, const uint32_t version, const char ** su
 
   if (n) efree (n);
  }
- emutex_unlock (&pof_mutex);
 
  return set;
 }
@@ -400,7 +263,6 @@ struct exported_function **function_look_up (const char *name, const uint32_t ve
  struct exported_function **set = NULL;
  struct stree *ha = exported_functions;
 
- emutex_lock (&pof_mutex);
  if (!sub) {
   ha = streefind (exported_functions, name, tree_find_first);
   while (ha) {
@@ -438,7 +300,6 @@ struct exported_function **function_look_up (const char *name, const uint32_t ve
 
   if (n) efree (n);
  }
- emutex_unlock (&pof_mutex);
 
  return set;
 }
@@ -699,19 +560,6 @@ uint32_t event_string_to_code (const char *code) {
  }
 
  return ret;
-}
-
-time_t event_timer_register (struct tm *t) {
- struct einit_event ev = evstaticinit (einit_timer_set);
- time_t tr = timegm (t);
-
- ev.integer = tr;
-
- event_emit (&ev, 0);
-
- evstaticdestroy (ev);
-
- return tr;
 }
 
 time_t event_timer_register_timeout (time_t t) {

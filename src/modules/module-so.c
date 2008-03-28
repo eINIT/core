@@ -49,7 +49,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/utility.h>
 #include <errno.h>
 #include <signal.h>
-#include <pthread.h>
 #include <dlfcn.h>
 #include <sys/stat.h>
 #include <einit-modules/configuration.h>
@@ -85,8 +84,6 @@ module_register(einit_mod_so_self);
 
 #endif
 
-pthread_mutex_t modules_update_mutex = PTHREAD_MUTEX_INITIALIZER;
-
 char **einit_mod_so_modules = NULL;
 
 void einit_mod_so_scanmodules (struct einit_event *ev) {
@@ -111,9 +108,7 @@ void einit_mod_so_scanmodules (struct einit_event *ev) {
  }
 
 /* make sure all of our modules get updated */
- emutex_lock (&modules_update_mutex);
  mod_update_sources (einit_mod_so_modules);
- emutex_unlock (&modules_update_mutex);
 
 /* load all new modules */
  if (modules) {
@@ -122,14 +117,11 @@ void einit_mod_so_scanmodules (struct einit_event *ev) {
 
   for (; modules[z]; z++) {
 //   fprintf (stderr, "* loading: %s\n", modules[z]);
-   emutex_lock (&modules_update_mutex);
    if (inset ((const void **)einit_mod_so_modules, modules[z], SET_TYPE_STRING)) {
-    emutex_unlock (&modules_update_mutex);
     continue;
    }
 
    einit_mod_so_modules = set_str_add_stable (einit_mod_so_modules, modules[z]);
-   emutex_unlock (&modules_update_mutex);
 
    struct smodule **modinfo;
 
@@ -137,9 +129,7 @@ void einit_mod_so_scanmodules (struct einit_event *ev) {
 
    sohandle = dlopen (modules[z], RTLD_NOW);
    if (sohandle == NULL) {
-    emutex_lock (&modules_update_mutex);
     einit_mod_so_modules = strsetdel (einit_mod_so_modules, modules[z]);
-    emutex_unlock (&modules_update_mutex);
 
     puts (dlerror ());
     goto cleanup_continue;
@@ -154,27 +144,21 @@ void einit_mod_so_scanmodules (struct einit_event *ev) {
      } else {
       notice (6, "module %s: not loading: module refused to get loaded.\n", modules[z]);
 
-      emutex_lock (&modules_update_mutex);
       einit_mod_so_modules = strsetdel (einit_mod_so_modules, modules[z]);
-      emutex_unlock (&modules_update_mutex);
 
       dlclose (sohandle);
      }
     } else {
      notice (1, "module %s: not loading: different build number: %i.\n", modules[z], (*modinfo)->eibuild);
 
-     emutex_lock (&modules_update_mutex);
      einit_mod_so_modules = strsetdel (einit_mod_so_modules, modules[z]);
-     emutex_unlock (&modules_update_mutex);
 
      dlclose (sohandle);
     }
    } else {
     notice (1, "module %s: not loading: missing header.\n", modules[z]);
 
-    emutex_lock (&modules_update_mutex);
     einit_mod_so_modules = strsetdel (einit_mod_so_modules, modules[z]);
-    emutex_unlock (&modules_update_mutex);
 
     dlclose (sohandle);
    }
@@ -186,8 +170,6 @@ void einit_mod_so_scanmodules (struct einit_event *ev) {
  } else {
   perror ("opening module path");
  }
-
- emutex_unlock (&modules_update_mutex);
 
  return;
 }

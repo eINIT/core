@@ -42,7 +42,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/event.h>
 #include <einit/utility.h>
 #include <einit/bitch.h>
-#include <pthread.h>
 #include <string.h>
 
 #include <sys/types.h>

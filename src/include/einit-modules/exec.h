@@ -91,13 +91,11 @@ struct daemonst {
  char *daemon_rid;
  struct dexecinfo *dx;
  struct daemonst *next;
- pthread_mutex_t mutex;
 };
 
 #ifdef BUGGY_PTHREAD_CHILD_WAIT_HANDLING
 struct execst {
  pid_t pid;
- pthread_mutex_t mutex;
  int status;
  struct execst *next;
 };
