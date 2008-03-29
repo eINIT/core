@@ -817,6 +817,12 @@ struct smodule *einit_decode_module_from_string (const char *s) {
    sm->si.before = set_str_add_stable (sm->si.before, (data[i])+7);
   } else if (strprefix (data[i], "after=")) {
    sm->si.after = set_str_add_stable (sm->si.after, (data[i])+6);
+  } else if (strprefix (data[i], "option=")) {
+   if (strmatch (((data[i])+7), "run-once")) {
+    sm->mode |= einit_feedback_job;
+   } else if (strmatch (((data[i])+7), "deprecated")) {
+    sm->mode |= einit_module_deprecated;
+   }
   }
  }
 
@@ -825,7 +831,7 @@ struct smodule *einit_decode_module_from_string (const char *s) {
  if (!sm->rid) sm->rid = (char *)str_stabilise ("unknown");
  if (!sm->name) sm->name = (char *)str_stabilise ("Unknown Module");
 
- sm->mode |= einit_module_event_actions;
+ sm->mode |= einit_module | einit_module_event_actions;
 
  return sm;
 }
