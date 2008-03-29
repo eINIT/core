@@ -56,7 +56,7 @@ class EinitModule {
 	
 	private:
 	string rid;
-	EinitModule(string rid);
+
 	
 	int enable  (void *, struct einit_event *);
 	int disable (void *, struct einit_event *);
@@ -65,6 +65,7 @@ class EinitModule {
 	int scanmodules ();
 	
 	public:
+	EinitModule(string rid);
 	void call(const string action);
   string getAttribute (const string attribute);
   string getName ();
@@ -120,7 +121,7 @@ class Einit {
   
   bool connectSpawn(int *argc, char **argv);
   
-	char disconnect();
+	bool disconnect();
  	void switchMode (const string mode);
   
 	void eventLoop(); 
@@ -141,9 +142,9 @@ class EinitFilesystem {
 
 	
 	public:
-	int write(string *path, const string data);
-	string* ls(string *path);
-	string read(string *path);
+	static int write(string *path, const string data);
+	static vector<string> ls(string *path);
+	static string read(string *path);
 	
 };
 
