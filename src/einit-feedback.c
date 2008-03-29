@@ -320,6 +320,10 @@ void display_status(char *rid) {
     attron(COLOR_PAIR(attr_green));
     addstr ("OK");
     attroff(COLOR_PAIR(attr_green));
+   } else {
+    attron(COLOR_PAIR(attr_blue));
+    addstr ("--");
+    attroff(COLOR_PAIR(attr_blue));
    }
 
    attron(COLOR_PAIR(attr_blue));
