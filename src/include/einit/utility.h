@@ -36,6 +36,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #ifdef __cplusplus
+
 extern "C" {
 #endif
 
@@ -283,4 +284,5 @@ uint32_t StrSuperFastHash (const char * data, int *len);
 
 #ifdef __cplusplus
 }
+
 #endif
