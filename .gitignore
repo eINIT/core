@@ -26,7 +26,7 @@ src/last-rites
 
 src/einit-sysvd
 
-src/modules/bundle-*
+src/modules/*bundle*
 
 #
 # Top-level generic files

@@ -32,28 +32,17 @@ if uname == 'Darwin':
 linkflagsLibEinit = ''
 linkflagsLibEinitPP = ''
 
-if uname == 'FreeBSD':
- linkCore = ['-Wl,-export-dynamic','-pthread']
- CodeCoreMonitorObjects = [ 'freebsd/einit-monitor.c' ]
- coreLibs = ['core-modules']
- linkflagsLibEinit = '-shared -pthread'
- linkflagsLibEinitPP = '-shared -pthread'
 if uname == 'Linux':
  linkflagsLibEinit = '-shared -Wl,-soname,libeinit.so.3.0.0'
  linkflagsLibEinitPP = '-shared -Wl,-soname,libeinit++.so.3.0.0'
 
+coreLibs = ['pthread', 'core-modules']
 
-if uname != 'FreeBSD':
- coreLibs = ['pthread', 'core-modules']
- if 'module-so' in InternalModules:
-  coreLibs += [ 'dl' ]
+if 'module-so' in InternalModules:
+ coreLibs += [ 'dl' ]
 
-if uname != 'FreeBSD':
- einitCore = env.Program ('einit-core', CodeCoreObjects, LIBS=coreLibs, LIBPATH=['.', 'modules'], CCFLAGS='-DEINIT_CORE', LINKFLAGS=linkCore)
- einitMonitor = env.Program ('einit-monitor', CodeCoreMonitorObjects)
-if uname == 'FreeBSD':
- einitCore = env.Program ('einit-core', CodeCoreObjects, LIBS=coreLibs, LIBPATH=['.', 'modules'], CCFLAGS='-DEINIT_CORE', CXXFLAGS = ['-D_THREAD_SAFE'], LINKFLAGS=linkCore)
- einitMonitor = env.Program ('einit-monitor', CodeCoreMonitorObjects, LIBS=['util'])
+einitCore = env.Program ('einit-core', CodeCoreObjects + AssemblyFunctions, LIBS=coreLibs, LIBPATH=['modules'], CCFLAGS='-DEINIT_CORE', LINKFLAGS=linkCore)
+einitMonitor = env.Program ('einit-monitor', CodeCoreMonitorObjects)
 
 lastRites = env.Program ('last-rites', CodeLastRites, LIBS=['einit'], LIBPATH=['.'])
 einitHelper = env.Program ('einit-helper', CodeEinitHelper, LIBS=['einit'], LIBPATH=['.'])
@@ -63,10 +52,7 @@ einitLogD = env.Program ('einit-log', CodeEinitLogD, LIBS=['einit'], LIBPATH=['.
 
 einitSysVD = env.Program ('einit-sysvd', CodeEinitSysVD, LIBS=['einit'], LIBPATH=['.'])
 
-if uname != 'FreeBSD':
- libEinit = env.SharedLibrary ('einit', CodeLibEinit, LIBS=['ixp-local', 'pthread'], LIBPATH=['#libixp'], SHLINKFLAGS=linkflagsLibEinit)
-if uname == 'FreeBSD':
- libEinit = env.SharedLibrary ('einit', CodeLibEinit, LIBS=['ixp-local'], LIBPATH=['#libixp'], CFLAGS='-fPIC', CXXFLAGS = ['-D_THREAD_SAFE'], SHLINKFLAGS=linkflagsLibEinit)
+libEinit = env.SharedLibrary ('einit', CodeLibEinit, LIBS=['ixp-local', 'pthread'], LIBPATH=['#libixp'], SHLINKFLAGS=linkflagsLibEinit)
 libEinitPP = env.SharedLibrary ('einit++', 'libraries/libeinit++.c++', LIBS=['einit'], LIBPATH=['.'], SHLINKFLAGS=linkflagsLibEinitPP)
 
 env.Install (InstallDirLibBin, einitCore)
