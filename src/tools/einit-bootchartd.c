@@ -43,6 +43,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <signal.h>
 #include <time.h>
 
 #include <einit/einit.h>
@@ -54,6 +55,15 @@ char **bootchartd_argv = NULL;
 int bootchartd_argc = 0;
 
 char bootchartd_active = 1;
+stack_t signalstack;
+
+void signal_sigterm (int signal, siginfo_t *siginfo, void *context) {
+ /* nothing to do here... really */
+
+ bootchartd_active = 0;
+
+ return;
+}
 
 void connect_or_terminate () {
  if (!einit_connect (&bootchartd_argc, bootchartd_argv)) {
@@ -350,6 +360,21 @@ int main (int argc, char **argv) {
 
  bootchartd_argv = argv;
  bootchartd_argc = argc;
+
+ struct sigaction action;
+
+ signalstack.ss_sp = emalloc (SIGSTKSZ);
+ signalstack.ss_size = SIGSTKSZ;
+ signalstack.ss_flags = 0;
+ sigaltstack (&signalstack, NULL);
+
+ sigemptyset(&(action.sa_mask));
+
+ action.sa_sigaction = signal_sigterm;
+ action.sa_flags = SA_SIGINFO | SA_NODEFER | SA_ONSTACK;
+ if ( sigaction (SIGTERM, &action, NULL) ) {
+  perror ("could not set SIGTERM handler");
+ }
 
  if (daemon(0, 0)) {
   perror ("could not daemonise");
