@@ -201,10 +201,6 @@ void linux_udev_run() {
  mount ("sys", "/sys", "sysfs", 0, NULL);
  mount ("udev", "/dev", "tmpfs", 0, NULL);
 
- struct einit_event eml = evstaticinit(einit_boot_dev_writable);
- event_emit (&eml, 0);
- evstaticdestroy(eml);
-
  mkdir ("/dev/pts", 0777);
  mount ("devpts", "/dev/pts", "devpts", 0, NULL);
 
@@ -230,6 +226,10 @@ void linux_udev_run() {
  symlink ("fd/0", "/dev/stdin");
  symlink ("fd/1", "/dev/stdout");
  symlink ("fd/2", "/dev/stderr");
+
+ struct einit_event eml = evstaticinit(einit_boot_dev_writable);
+ event_emit (&eml, 0);
+ evstaticdestroy(eml);
 
  if (!stat ("/proc/kcore", &st)) {
   /* create kernel core symlink */

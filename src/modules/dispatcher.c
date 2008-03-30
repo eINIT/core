@@ -89,7 +89,7 @@ void dispatcher_psplash_boot_devices_ok () {
  eml.stringset = set_str_add (NULL, "einit-psplash");
  eml.task = einit_module_enable;
 
- event_emit (&eml, 0);
+ event_emit (&eml, einit_event_flag_remote);
  evstaticdestroy(eml);
 }
 
@@ -118,7 +118,7 @@ void dispatcher_usplash_boot_devices_ok () {
  eml.stringset = set_str_add (NULL, "einit-usplash");
  eml.task = einit_module_enable;
 
- event_emit (&eml, 0);
+ event_emit (&eml, einit_event_flag_remote);
  evstaticdestroy(eml);
 }
 
@@ -154,9 +154,9 @@ int dispatcher_configure (struct lmodule *pa) {
  }
 
  if (dispatcher_psplash) {
-  event_listen (einit_boot_dev_writable, dispatcher_psplash_boot_devices_ok);
+  event_listen (einit_boot_load_kernel_extensions, dispatcher_psplash_boot_devices_ok);
  } else if (dispatcher_usplash) {
-  event_listen (einit_boot_dev_writable, dispatcher_usplash_boot_devices_ok);
+  event_listen (einit_boot_load_kernel_extensions, dispatcher_usplash_boot_devices_ok);
  } else if (dispatcher_exquisite) {
   event_listen (einit_boot_root_device_ok, dispatcher_exquisite_boot_devices_ok);
  }
