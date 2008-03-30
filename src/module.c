@@ -552,7 +552,6 @@ void mod_update_pids () {
   if (module->pidfile && (buf = readfile (module->pidfile))) {
    module->pid = parse_integer (buf);
 
-   fprintf (stderr, "%s now has pid %i", module->module->rid, module->pid);
    efree (buf);
   }
 
