@@ -25,6 +25,7 @@ src/einit-log
 src/last-rites
 src/einit-feedback-evas
 src/einit-sysvd
+src/einit-bootchartd
 
 src/modules/*bundle*
 

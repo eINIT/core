@@ -891,3 +891,35 @@ void einit_register_module (struct smodule *s) {
 
  return;
 }
+
+char * einit_get_configuration_string (const char *key, const char *attribute) {
+ char *path[] = { "configuration", (char *)key, (char *)(attribute ? attribute : "s"), NULL };
+ char *res = NULL;
+
+ if ((res = einit_read (path)))
+  return (char *)str_stabilise (res);
+
+ return NULL;
+}
+
+signed int einit_get_configuration_integer (const char *key, const char *attribute) {
+ char *s = einit_get_configuration_string (key, attribute ? attribute : "i");
+
+ if (s) return parse_integer (s);
+
+ return 0;
+}
+
+char einit_get_configuration_boolean (const char *key, const char *attribute) {
+ char *s = einit_get_configuration_string (key, attribute ? attribute : "b");
+
+ if (s) return parse_boolean (s);
+
+ return 0;
+}
+
+char ** einit_get_configuration_attributes (const char *key) {
+}
+
+char *** einit_get_configuration_prefix (const char *prefix) {
+}

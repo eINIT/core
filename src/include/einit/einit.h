@@ -214,6 +214,12 @@ char ** einit_module_get_status (const char *rid);
 
 char ** einit_module_get_options (const char *rid);
 
+char * einit_get_configuration_string (const char *key, const char *attribute);
+signed int einit_get_configuration_integer (const char *key, const char *attribute);
+char einit_get_configuration_boolean (const char *key, const char *attribute);
+char ** einit_get_configuration_attributes (const char *key);
+char *** einit_get_configuration_prefix (const char *prefix);
+
 #ifdef __cplusplus
 }
 #endif
