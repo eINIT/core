@@ -102,6 +102,17 @@ void dispatcher_bootchart_boot_devices_ok () {
  evstaticdestroy(eml);
 }
 
+void dispatcher_bootchart_switch (struct einit_event *ev) {
+ if (strmatch (ev->string, "default")) {
+  struct einit_event eml = evstaticinit(einit_core_manipulate_services);
+  eml.stringset = set_str_add (NULL, "bootchartd");
+  eml.task = einit_module_disable;
+
+  event_emit (&eml, 0);
+  evstaticdestroy(eml);
+ }
+}
+
 void dispatcher_usplash_boot_devices_ok () {
  struct einit_event eml = evstaticinit(einit_core_manipulate_services);
  eml.stringset = set_str_add (NULL, "einit-usplash");
@@ -152,6 +163,7 @@ int dispatcher_configure (struct lmodule *pa) {
 
  if (dispatcher_bootchart) {
   event_listen (einit_boot_dev_writable, dispatcher_bootchart_boot_devices_ok);
+  event_listen (einit_core_mode_switch_done, dispatcher_bootchart_switch);
  }
 
  return 0;
