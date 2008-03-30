@@ -1,8 +1,9 @@
 /*
- *  linux-splash-invoker.c
+ *  dispatcher.c
  *  einit
  *
  *  Created on 28/02/2008.
+ *  Renamed from linux-splash-invoker.c on 30/03/2008
  *  Copyright 2008 Magnus Deininger. All rights reserved.
  *
  */
@@ -54,62 +55,72 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #warning "This module was developed for a different version of eINIT, you might experience problems"
 #endif
 
-int linux_splash_invoker_configure (struct lmodule *);
+int dispatcher_configure (struct lmodule *);
 
 #if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
 
-struct smodule linux_splash_invoker_self = {
+struct smodule dispatcher_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
  .mode      = einit_module,
- .name      = "Linux Boot Splash Invoker",
- .rid       = "linux-splash-invoker",
+ .name      = "eINIT Daemon Dispatcher",
+ .rid       = "dispatcher",
  .si        = {
   .provides = NULL,
   .requires = NULL,
   .after    = NULL,
   .before   = NULL
  },
- .configure = linux_splash_invoker_configure
+ .configure = dispatcher_configure
 };
 
-module_register(linux_splash_invoker_self);
+module_register(dispatcher_self);
 
 #endif
 
-char linux_splash_invoker_psplash_mode = 0;
-char linux_splash_invoker_usplash_mode = 0;
-char linux_splash_invoker_exquisite_mode = 0;
+char dispatcher_psplash = 0;
+char dispatcher_usplash = 0;
+char dispatcher_exquisite = 0;
+char dispatcher_bootchart = 0;
 
-void linux_splash_invoker_psplash_boot_devices_ok () {
+void dispatcher_psplash_boot_devices_ok () {
  struct einit_event eml = evstaticinit(einit_core_manipulate_services);
  eml.stringset = set_str_add (NULL, "einit-psplash");
  eml.task = einit_module_enable;
 
- event_emit (&eml, einit_event_flag_remote);
+ event_emit (&eml, 0);
  evstaticdestroy(eml);
 }
 
-void linux_splash_invoker_usplash_boot_devices_ok () {
+void dispatcher_bootchart_boot_devices_ok () {
+ struct einit_event eml = evstaticinit(einit_core_manipulate_services);
+ eml.stringset = set_str_add (NULL, "bootchartd");
+ eml.task = einit_module_enable;
+
+ event_emit (&eml, 0);
+ evstaticdestroy(eml);
+}
+
+void dispatcher_usplash_boot_devices_ok () {
  struct einit_event eml = evstaticinit(einit_core_manipulate_services);
  eml.stringset = set_str_add (NULL, "einit-usplash");
  eml.task = einit_module_enable;
 
- event_emit (&eml, einit_event_flag_remote);
+ event_emit (&eml, 0);
  evstaticdestroy(eml);
 }
 
-void linux_splash_invoker_exquisite_boot_devices_ok () {
+void dispatcher_exquisite_boot_devices_ok () {
  struct einit_event eml = evstaticinit(einit_core_manipulate_services);
  eml.stringset = set_str_add (NULL, "einit-exquisite");
  eml.task = einit_module_enable;
 
- event_emit (&eml, einit_event_flag_remote);
+ event_emit (&eml, 0);
  evstaticdestroy(eml);
 }
 
-int linux_splash_invoker_configure (struct lmodule *pa) {
+int dispatcher_configure (struct lmodule *pa) {
  module_init (pa);
 
  if (einit_initial_environment) {
@@ -117,22 +128,30 @@ int linux_splash_invoker_configure (struct lmodule *pa) {
   for (; einit_initial_environment[i]; i++) {
    if (strprefix (einit_initial_environment[i], "splash=") && (einit_initial_environment[i] + 7)) {
     if (strmatch ((einit_initial_environment[i] + 7), "psplash")) {
-     linux_splash_invoker_psplash_mode = 1;
+     dispatcher_psplash = 1;
     } else if (strmatch ((einit_initial_environment[i] + 7), "usplash")) {
-     linux_splash_invoker_usplash_mode = 1;
+     dispatcher_usplash = 1;
     } else if (strmatch ((einit_initial_environment[i] + 7), "exquisite")) {
-     linux_splash_invoker_usplash_mode = 1;
+     dispatcher_usplash = 1;
     }
    }
   }
+
+  struct cfgnode *node;
+
+  dispatcher_bootchart = ((node = cfg_getnode ("configuration-bootchart-active", NULL)) ? node->flag : 0);
  }
 
- if (linux_splash_invoker_psplash_mode) {
-  event_listen (einit_boot_load_kernel_extensions, linux_splash_invoker_psplash_boot_devices_ok);
- } else if (linux_splash_invoker_usplash_mode) {
-  event_listen (einit_boot_load_kernel_extensions, linux_splash_invoker_usplash_boot_devices_ok);
- } else if (linux_splash_invoker_exquisite_mode) {
-  event_listen (einit_boot_root_device_ok, linux_splash_invoker_exquisite_boot_devices_ok);
+ if (dispatcher_psplash) {
+  event_listen (einit_boot_dev_writable, dispatcher_psplash_boot_devices_ok);
+ } else if (dispatcher_usplash) {
+  event_listen (einit_boot_dev_writable, dispatcher_usplash_boot_devices_ok);
+ } else if (dispatcher_exquisite) {
+  event_listen (einit_boot_root_device_ok, dispatcher_exquisite_boot_devices_ok);
+ }
+
+ if (dispatcher_bootchart) {
+  event_listen (einit_boot_dev_writable, dispatcher_bootchart_boot_devices_ok);
  }
 
  return 0;
