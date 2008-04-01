@@ -67,7 +67,8 @@ void signal_sigterm (int signal, siginfo_t *siginfo, void *context) {
 
 void connect_or_terminate () {
  if (!einit_connect (&bootchartd_argc, bootchartd_argv)) {
-  syslog (LOG_CRIT, "could not connect to einit: %m");
+  fprintf (stderr, "could not connect to einit.\n");
+  _exit (EXIT_FAILURE);
  }
 }
 
