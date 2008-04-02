@@ -339,8 +339,8 @@ int einit_bootchart() {
  }
 
  char buffer[BUFFERSIZE];
- snprintf (buffer, BUFFERSIZE, "cd /tmp/bootchart.einit; tar czf %s *", save_to);
- syslog (LOG_NOTICE, buffer );
+ snprintf (buffer, BUFFERSIZE, "cd /tmp/bootchart.einit; tar czf %s *; cd /; rm -Rf /tmp/bootchart.einit", save_to);
+ syslog (LOG_NOTICE, buffer);
  system (buffer);
 
 // unlink_recursive ("/tmp/bootchart.einit/", 1);
