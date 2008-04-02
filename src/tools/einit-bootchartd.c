@@ -242,10 +242,12 @@ int einit_bootchart() {
   if (buffer_st) log_size += strlen (buffer_st);
 
   if (log_size > max_log_size) {
-   notice (1, "linux-bootchart: boot log exceeded maximum log size, stopping log");
+   fprintf (stderr, "boot log exceeded maximum log size, stopping log.");
    break;
   }
  }
+
+ fprintf (stderr, "generating bootchart data.");
 
  mkdir ("/tmp/bootchart.einit", 0755);
 
@@ -352,6 +354,9 @@ int einit_bootchart() {
  if (!di) di = "/var/log";
  if (!fo) fo = "png";
  snprintf (buffer, BUFFERSIZE, "bootchart -o %s -f %s %s", di, fo, save_to);
+ fputs (buffer, stderr);
+
+ system(buffer);
 
  return EXIT_SUCCESS;
 }
