@@ -67,7 +67,7 @@ void signal_sigterm (int signal, siginfo_t *siginfo, void *context) {
 
 void connect_or_terminate () {
  if (!einit_connect (&bootchartd_argc, bootchartd_argv)) {
-  fprintf (stderr, "could not connect to einit.\n");
+  syslog (LOG_ERR, "could not connect to einit: %m.\n");
   _exit (EXIT_FAILURE);
  }
 }
@@ -242,12 +242,12 @@ int einit_bootchart() {
   if (buffer_st) log_size += strlen (buffer_st);
 
   if (log_size > max_log_size) {
-   fprintf (stderr, "boot log exceeded maximum log size, stopping log.");
+   syslog (LOG_ERR, "boot log exceeded maximum log size, stopping log.");
    break;
   }
  }
 
- fprintf (stderr, "generating bootchart data.");
+ syslog (LOG_ERR, "generating bootchart data.");
 
  mkdir ("/tmp/bootchart.einit", 0755);
 
@@ -339,11 +339,8 @@ int einit_bootchart() {
  }
 
  char buffer[BUFFERSIZE];
- if (coremode & einit_mode_sandbox) {
-  snprintf (buffer, BUFFERSIZE, "export pwx=`pwd`; cd /tmp/bootchart.einit; tar czf \"${pwx}/%s\" *", save_to);
- } else {
-  snprintf (buffer, BUFFERSIZE, "cd /tmp/bootchart.einit; tar czf %s *", save_to);
- }
+ snprintf (buffer, BUFFERSIZE, "cd /tmp/bootchart.einit; tar czf %s *", save_to);
+ syslog (LOG_NOTICE, buffer );
  system (buffer);
 
  unlink_recursive ("/tmp/bootchart.einit/", 1);
@@ -354,7 +351,8 @@ int einit_bootchart() {
  if (!di) di = "/var/log";
  if (!fo) fo = "png";
  snprintf (buffer, BUFFERSIZE, "bootchart -o %s -f %s %s", di, fo, save_to);
- fputs (buffer, stderr);
+
+ syslog (LOG_NOTICE, buffer);
 
  system(buffer);
 
