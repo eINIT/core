@@ -896,8 +896,10 @@ char * einit_get_configuration_string (const char *key, const char *attribute) {
  char *path[] = { "configuration", (char *)key, (char *)(attribute ? attribute : "s"), NULL };
  char *res = NULL;
 
- if ((res = einit_read (path)))
+ if ((res = einit_read (path))) {
+  strtrim (res);
   return (char *)str_stabilise (res);
+ }
 
  return NULL;
 }
