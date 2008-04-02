@@ -343,7 +343,7 @@ int einit_bootchart() {
  syslog (LOG_NOTICE, buffer );
  system (buffer);
 
- unlink_recursive ("/tmp/bootchart.einit/", 1);
+// unlink_recursive ("/tmp/bootchart.einit/", 1);
 
  char *di = einit_get_configuration_string ("configuration-bootchart-chart-directory", NULL);
  char *fo = einit_get_configuration_string ("configuration-bootchart-chart-format", NULL);
