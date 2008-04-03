@@ -17,6 +17,8 @@
 *.os
 *.dylib
 
+a.out
+
 src/einit-core
 src/einit-monitor
 src/einit-helper
