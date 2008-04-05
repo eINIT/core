@@ -256,16 +256,12 @@ void sched_timer_event_handler_set (struct einit_event *ev) {
 #if ! defined(__UCLIBC__)
 #include <execinfo.h>
 
-#define TRACE_MESSAGE_HEADER "eINIT has crashed!\n"
-#define TRACE_MESSAGE_HEADER_LENGTH sizeof(TRACE_MESSAGE_HEADER)
-
 void sched_signal_trace (int signal, siginfo_t *siginfo, void *context) {
  void *trace[250];
  ssize_t trace_length;
 
  trace_length = backtrace (trace, 250);
 
- write (STDOUT_FILENO, TRACE_MESSAGE_HEADER, TRACE_MESSAGE_HEADER_LENGTH);
  backtrace_symbols_fd (trace, trace_length, STDOUT_FILENO);
  fsync (STDOUT_FILENO);
 
