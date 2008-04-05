@@ -63,48 +63,15 @@ char is_sandbox = 0;
 
 const char *corefile = EINIT_LIB_BASE "/bin/einit-core";
 
-char *readfd (int fd) {
- int rn = 0;
- void *buf = NULL;
- char *data = NULL;
- ssize_t blen = 0;
-
- buf = malloc (BUFFERSIZE * 10);
- if (!buf) return NULL;
-
- do {
-  buf = realloc (buf, blen + BUFFERSIZE * 10);
-  if (buf == NULL) return NULL;
-
-  rn = read (fd, (char *)(buf + blen), BUFFERSIZE * 10);
-  blen = blen + rn;
- } while (rn > 0);
-
- if (blen > -1) {
-  data = realloc (buf, blen+1);
-  if (buf == NULL) return NULL;
-
-  data[blen] = 0;
-  if (blen > 0) {
-   *(data+blen-1) = 0;
-  } else {
-   free (data);
-   data = NULL;
-  }
- }
-
- return data;
-}
-
 void einit_sigint (int signal, siginfo_t *siginfo, void *context) {
  if (send_sigint_pid)
   kill (send_sigint_pid, SIGINT);
 }
 
-int run_core (int argc, char **argv, char **env, char *einit_crash_data, int command_pipe, int crash_pipe, char need_recovery) {
+int run_core (int argc, char **argv, char **env, int command_pipe) {
  char *narg[argc + 8];
  int i = 0;
- char tmp1[BUFFERSIZE], tmp2[BUFFERSIZE];
+ char tmp1[BUFFERSIZE];
 
  for (; i < argc; i++) {
   narg[i] = argv[i];
@@ -117,22 +84,6 @@ int run_core (int argc, char **argv, char **env, char *einit_crash_data, int com
   narg[i] = tmp1; i++;
  }
 
- if (crash_pipe) {
-  narg[i] = "--crash-pipe"; i++;
-
-  snprintf (tmp2, BUFFERSIZE, "%i", crash_pipe);
-  narg[i] = tmp2; i++;
- }
-
- if (einit_crash_data) {
-  narg[i] = "--crash-data"; i++;
-  narg[i] = einit_crash_data; i++;
- }
-
- if (need_recovery) {
-  narg[i] = "--recover"; i++;
- }
-
  narg[i] = 0;
 
  execve (corefile, narg, env);
@@ -140,14 +91,9 @@ int run_core (int argc, char **argv, char **env, char *einit_crash_data, int com
  return -1;
 }
 
-int einit_monitor_loop (int argc, char **argv, char **env, char *einit_crash_data, char need_recovery) {
+int einit_monitor_loop (int argc, char **argv, char **env) {
  int commandpipe[2];
- int debugsocket[2];
  pid_t core_pid;
-
- socketpair (AF_UNIX, SOCK_STREAM, 0, debugsocket);
- fcntl (debugsocket[0], F_SETFD, FD_CLOEXEC | O_NONBLOCK);
- fcntl (debugsocket[1], F_SETFD, O_NONBLOCK);
 
  pipe (commandpipe);
 // socketpair (AF_UNIX, SOCK_STREAM, 0, commandpipe);
@@ -158,45 +104,27 @@ int einit_monitor_loop (int argc, char **argv, char **env, char *einit_crash_dat
  switch (core_pid) {
   case 0:
    close (commandpipe[1]);
-   close (debugsocket[0]);
-   run_core (argc, argv, env, einit_crash_data, commandpipe[0], debugsocket[1], need_recovery);
+   run_core (argc, argv, env, commandpipe[0]);
   case -1:
    perror ("einit-monitor: couldn't fork()");
    sleep (1);
    close (commandpipe[0]);
-   close (debugsocket[0]);
    close (commandpipe[1]);
-   close (debugsocket[1]);
 
-   return einit_monitor_loop(argc, argv, env, NULL, need_recovery);
+   return einit_monitor_loop(argc, argv, env);
   default:
    close (commandpipe[0]);
-   close (debugsocket[1]);
 
    send_sigint_pid = core_pid;
    break;
  }
 
- if (einit_crash_data) {
-  free (einit_crash_data);
-  einit_crash_data = NULL;
- }
-
-#if 0
- pid_t wpid = 0;
-#endif
-
  while (1) {
   int rstatus;
 
-//  wpid++;
-
-#if 1
   pid_t wpid = waitpid(-1, &rstatus, 0); /* this ought to wait for ANY process */
 
   if (wpid == core_pid) {
-   //    goto respawn; /* try to recover by re-booting */
-//   if (!debug) if (commandpipe_in) fclose (commandpipe_in);
    close (commandpipe[1]);
 
    if (WIFEXITED(rstatus) && (WEXITSTATUS(rstatus) != einit_exit_status_die_respawn)) {
@@ -218,9 +146,7 @@ int einit_monitor_loop (int argc, char **argv, char **env, char *einit_crash_dat
     if (WEXITSTATUS(rstatus) == einit_exit_status_exit_respawn) {
      fprintf (stderr, "Respawning secondary eINIT process.\n");
 
-     close (debugsocket[0]);
-
-     return einit_monitor_loop(argc, argv, env, einit_crash_data, 1);
+     return einit_monitor_loop(argc, argv, env);
     }
 
     exit (EXIT_SUCCESS);
@@ -228,23 +154,11 @@ int einit_monitor_loop (int argc, char **argv, char **env, char *einit_crash_dat
 
    int n = 5;
    fprintf (stderr, "The secondary eINIT process has died, waiting a while before respawning.\n");
-   if ((einit_crash_data = readfd (debugsocket[0]))) {
-    fprintf (stderr, " > neat, received crash data\n");
-   } else {
-    fprintf (stderr, " > no crash data...\n");
-   }
 
    while ((n = sleep (n)));
    fprintf (stderr, "Respawning secondary eINIT process.\n");
 
-/*   if (crash_threshold) crash_threshold--;
-   else debug = 1;*/
-//   need_recovery = 1;
-//   initoverride = 0;
-
-   close (debugsocket[0]);
-
-   return einit_monitor_loop(argc, argv, env, einit_crash_data, 1);
+   return einit_monitor_loop(argc, argv, env);
   } else {
    char buffer[BUFFERSIZE];
    size_t len;
@@ -254,30 +168,8 @@ int einit_monitor_loop (int argc, char **argv, char **env, char *einit_crash_dat
 
    if (write (commandpipe[1], buffer, len) < len) {
     perror ("couldn't write data");
-   }/* else {
-    kill (core_pid, SIGUSR1);
-   }*/
-  }
-#endif
-#if 0
-   sleep (10);
-
-   char buffer[BUFFERSIZE];
-   size_t len;
-
-   snprintf (buffer, BUFFERSIZE, PID_TERMINATED_EVENT, wpid);
-   len = strlen (buffer);
-
-   fprintf (stderr, "\nm\nthis is what i sent:\n**\n");
-   write (2, buffer, len);
-   fprintf (stderr, "\n**\n");
-
-   if (write (commandpipe[1], buffer, len) < len) {
-    perror ("couldn't write data");
-   } else {
-    kill (core_pid, SIGUSR1);
    }
-#endif
+  }
  }
 }
 
@@ -285,7 +177,6 @@ int main(int argc, char **argv, char **env) {
  char *argv_mutable[argc+1];
  int i = 0, it = 0;
  char force_init = (getpid() == 1);
- char need_recovery = 0;
 
 #if defined(__linux__) && defined(PR_SET_NAME)
  prctl (PR_SET_NAME, "einit [monitor]", 0, 0, 0);
@@ -296,7 +187,6 @@ int main(int argc, char **argv, char **env) {
    force_init = 1;
 //   continue;
   } else if (!strcmp(argv[i], "--sandbox")) {
-   need_recovery = 1;
    is_sandbox = 1;
   } else if (((i+1) < argc) && !strcmp(argv[i], "--core-file")) {
    corefile = argv[i+1];
@@ -337,7 +227,7 @@ int main(int argc, char **argv, char **env) {
 
   if ( sigaction (SIGPIPE, &action, NULL) ) perror ("calling sigaction() failed");
 
-  return einit_monitor_loop (it, argv_mutable, pimped_env, NULL, need_recovery);
+  return einit_monitor_loop (it, argv_mutable, pimped_env);
  }
 
 /* non-ipc, non-core */

@@ -71,7 +71,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 char shutting_down = 0;
-int sched_trace_target = STDOUT_FILENO;
 
 int main(int, char **, char **);
 int print_usage_info ();
@@ -257,38 +256,19 @@ void sched_timer_event_handler_set (struct einit_event *ev) {
 #if ! defined(__UCLIBC__)
 #include <execinfo.h>
 
-extern int sched_trace_target;
-
-#define TRACE_MESSAGE_HEADER "eINIT has crashed! Please submit the following to a developer:\n --- VERSION INFORMATION ---\n eINIT, version: " EINIT_VERSION_LITERAL "\n --- END OF VERSION INFORMATION ---\n --- BACKTRACE ---\n"
+#define TRACE_MESSAGE_HEADER "eINIT has crashed!\n"
 #define TRACE_MESSAGE_HEADER_LENGTH sizeof(TRACE_MESSAGE_HEADER)
-
-#define TRACE_MESSAGE_FOOTER " --- END OF BACKTRACE ---\n"
-#define TRACE_MESSAGE_FOOTER_LENGTH sizeof(TRACE_MESSAGE_FOOTER)
-
-#define TRACE_MESSAGE_FOOTER_STDOUT " --- END OF BACKTRACE ---\n\n > switching back to the default mode in 15 seconds + 5 seconds cooldown.\n"
-#define TRACE_MESSAGE_FOOTER_STDOUT_LENGTH sizeof(TRACE_MESSAGE_FOOTER_STDOUT)
 
 void sched_signal_trace (int signal, siginfo_t *siginfo, void *context) {
  void *trace[250];
  ssize_t trace_length;
- int timer = 15;
 
  trace_length = backtrace (trace, 250);
 
- if (sched_trace_target) {
-//  write (sched_trace_target, TRACE_MESSAGE_HEADER, TRACE_MESSAGE_HEADER_LENGTH);
-  backtrace_symbols_fd (trace, trace_length, sched_trace_target);
-//  write (sched_trace_target, TRACE_MESSAGE_FOOTER, TRACE_MESSAGE_FOOTER_LENGTH);
- }
-
  write (STDOUT_FILENO, TRACE_MESSAGE_HEADER, TRACE_MESSAGE_HEADER_LENGTH);
  backtrace_symbols_fd (trace, trace_length, STDOUT_FILENO);
- write (STDOUT_FILENO, TRACE_MESSAGE_FOOTER_STDOUT, TRACE_MESSAGE_FOOTER_STDOUT_LENGTH);
  fsync (STDOUT_FILENO);
 
- while ((timer = sleep (timer)));
-
-// raise(SIGKILL);
  _exit(einit_exit_status_die_respawn);
 }
 
@@ -473,14 +453,6 @@ void einit_exec_setup() {
 /* end of exec.c code */
 
 int einit_main_loop(char early_bootup) {
-/* sigset_t sigmask, osigmask;
-
- sigemptyset(&sigmask);
- sigaddset(&sigmask, SIGINT);
- sigaddset(&sigmask, SIGALRM);
- sigaddset(&sigmask, SIGCHLD);
- sigprocmask(SIG_BLOCK, &sigmask, &osigmask);*/
-
  einit_add_fd_prepare_function(einit_raw_ipc_prepare);
  einit_add_fd_handler_function(einit_raw_ipc_handle);
 
@@ -510,7 +482,6 @@ int einit_main_loop(char early_bootup) {
   fd_set rfds;
   int c = einit_prepare_fdset (&rfds);
 
-//  selectres = pselect(c, &rfds, NULL, NULL, 0, &osigmask);
   selectres = select(c, &rfds, NULL, NULL, 0);
 
   if (selectres > 0) einit_handle_fdset (&rfds);
@@ -531,7 +502,6 @@ void core_process_died (struct einit_event *ev) {
 int main(int argc, char **argv, char **environ) {
  int i;
 // char crash_threshold = 5;
- char *einit_crash_data = NULL;
  char suppress_version = 0;
  char do_wait = 0;
  int alarm_pipe[2];
@@ -591,14 +561,6 @@ int main(int argc, char **argv, char **environ) {
       einit_ipc_pipe_fd = parse_integer (argv[i+1]);
       fcntl (einit_ipc_pipe_fd, F_SETFD, FD_CLOEXEC);
 
-      i++;
-     } else if (strmatch(argv[i], "--crash-pipe")) {
-      sched_trace_target = parse_integer (argv[i+1]);
-      fcntl (sched_trace_target, F_SETFD, FD_CLOEXEC);
-
-      i++;
-     } else if (strmatch(argv[i], "--crash-data")) {
-      einit_crash_data = estrdup (argv[i+1]);
       i++;
      } else if (strmatch(argv[i], "--do-wait")) {
       do_wait = 1;
@@ -705,18 +667,6 @@ int main(int argc, char **argv, char **environ) {
   if (!do_wait) {
 /* actual init code */
    event_listen (einit_boot_root_device_ok, core_event_einit_boot_root_device_ok);
-
-   if (einit_crash_data) {
-    fprintf (stderr, "submitting crash data...\n");
-
-    struct einit_event eml = evstaticinit(einit_core_crash_data);
-    eml.string = einit_crash_data;
-    event_emit (&eml, 0);
-    evstaticdestroy(eml);
-
-    efree (einit_crash_data);
-    einit_crash_data = NULL;
-   }
   }
 
   return einit_main_loop(!do_wait);

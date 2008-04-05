@@ -341,8 +341,6 @@ char *event_code_to_string (const uint32_t code) {
   case einit_core_module_action_execute:       return "core/module-action-execute";
   case einit_core_module_action_complete:      return "core/module-action-complete";
 
-  case einit_core_crash_data:                  return "core/crash-data";
-
   case einit_mount_do_update:                  return "mount/do-update";
   case einit_mount_node_mounted:               return "mount/node-mounted";
   case einit_mount_node_unmounted:             return "mount/node-unmounted";
@@ -477,7 +475,6 @@ uint32_t event_string_to_code (const char *code) {
      else if (strmatch (tcode[1], "module-action-execute"))       ret = einit_core_module_action_execute;
      else if (strmatch (tcode[1], "module-action-complete"))      ret = einit_core_module_action_complete;
 
-     else if (strmatch (tcode[1], "crash-data"))                  ret = einit_core_crash_data;
      break;
     case einit_event_subsystem_mount:
      if (strmatch (tcode[1], "do-update"))                        ret = einit_mount_do_update;
