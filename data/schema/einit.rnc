@@ -220,6 +220,12 @@ Subsystems = element subsystem {
   attribute chmod { text }
  } ? &
 
+ element ipc {
+  attribute socket { text },
+  attribute group { text },
+  attribute chmod { text }
+ } ? &
+
  element xml-sh-compiler {
   element active { BooleanAttribute }? &
   element compile-to { StringAttribute }?

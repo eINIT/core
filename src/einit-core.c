@@ -508,6 +508,7 @@ int main(int argc, char **argv, char **environ) {
 
  uname (&osinfo);
  config_configure();
+ einit_ipc_setup();
 
  event_listen (einit_core_update_modules, core_einit_event_handler_update_modules);
  event_listen (einit_timer_set, sched_timer_event_handler_set);

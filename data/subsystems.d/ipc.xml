@@ -2,5 +2,6 @@
 <einit>
  <subsystem>
   <ipc-9p socket="unix!/dev/einit-9p" group="einit" chmod="0660" />
+  <ipc socket="/dev/einit" group="einit" chmod="0660" />
  </subsystem>
 </einit>

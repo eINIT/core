@@ -11,7 +11,7 @@ CodeSet = ['set-lowmem.c', 'set-common.c']
 CodeITree = ['itree-trinary-splay.c']
 CodeSTree = ['tree-itree.c']
 
-CodeCoreObjects = ['einit-core.c', 'module.c']
+CodeCoreObjects = ['einit-core.c', 'module.c', 'ipc.c']
 CodeCoreMonitorObjects = ['einit-monitor.c']
 
 CodeLastRites = ['last-rites.c']

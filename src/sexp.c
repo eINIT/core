@@ -49,8 +49,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define MIN_CHUNK_SIZE      1024
 #define DEFAULT_BUFFER_SIZE (MIN_CHUNK_SIZE * 4)
 
-struct einit_sexp **einit_sexp_active_readers = NULL;
-
 struct einit_sexp *einit_parse_sexp_in_buffer (char *buffer, int *index, int stop) {
  unsigned char sc_quote = 0;
 
@@ -241,9 +239,6 @@ struct einit_sexp *einit_read_sexp_from_fd_reader (struct einit_sexp_fd_reader *
 
  if (((rres == -1) && (errno != EAGAIN)) ||
      ((rres == 0) && (reader->position == 0))) {
-  if (einit_sexp_active_readers)
-   einit_sexp_active_readers = (struct einit_sexp **)setdel ((void **)einit_sexp_active_readers, reader);
-
   close (reader->fd);
 
   efree (reader->buffer);
