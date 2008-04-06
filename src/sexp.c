@@ -35,16 +35,76 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <unistd.h>
+
 #include <einit/sexp.h>
 #include <einit/einit.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <string.h>
 
-struct einit_sexp *einit_read_sexp_from_fd_reader (struct einit_sexp_fd_reader *reader) {
+#define MIN_CHUNK_SIZE      1024
+#define DEFAULT_BUFFER_SIZE (MIN_CHUNK_SIZE * 4)
+
+struct einit_sexp **einit_sexp_active_readers = NULL;
+
+struct einit_sexp *einit_parse_sexp_in_buffer (char *buffer, int *index, int stop) {
+ for (; *index < stop; *index++) {
+ }
+
+ return NULL;
 }
 
-struct einit_sexp *einit_read_sexp_from_buffer (char *buffer, int buffer_size) {
+struct einit_sexp *einit_read_sexp_from_fd_reader (struct einit_sexp_fd_reader *reader) {
+ if ((reader->position - reader->size) < MIN_CHUNK_SIZE) {
+  reader->size += MIN_CHUNK_SIZE;
+
+  reader->buffer = erealloc (reader->buffer, reader->size);
+ }
+
+ int rres = read (reader->fd, (reader->buffer + reader->position), (reader->position - reader->size));
+
+ if (((rres > 0) && (reader->position += rres)) || (((((rres == -1) && (errno == EAGAIN)) || (rres == 0))) && (reader->position))) {
+  int ppos = 0;
+
+  struct einit_sexp *rv = einit_parse_sexp_in_buffer (reader->buffer, &ppos, reader->position);
+
+  if (rv) {
+   reader->position -= ppos;
+
+   if (reader->position) {
+    memmove (reader->buffer, reader->buffer + ppos, reader->position);
+   }
+  }
+
+  return rv;
+ }
+
+ if ((rres == -1) && (errno != EAGAIN)) {
+  if (einit_sexp_active_readers)
+   einit_sexp_active_readers = (struct einit_sexp **)setdel ((void **)einit_sexp_active_readers, reader);
+
+  efree (reader->buffer);
+  efree (reader);
+
+  return BAD_SEXP;
+ }
+
+ return NULL;
+}
+
+char *einit_sexp_to_string_iterator (struct einit_sexp *sexp, char **buffer, int *len, int *pos) {
+ 
 }
 
 char *einit_sexp_to_string (struct einit_sexp *sexp) {
+ char *buffer = NULL;
+ int len = 0;
+ int pos = 0;
+
+ einit_sexp_to_string_iterator (sexp, &buffer, &len, &pos);
+
+ return buffer;
 }
 
 void einit_sexp_display (struct einit_sexp *sexp) {
@@ -73,7 +133,7 @@ struct einit_sexp * einit_sexp_create (enum einit_sexp_type type) {
 }
 
 struct einit_sexp_fd_reader *einit_create_sexp_fd_reader (int fd) {
- return einit_create_sexp_fd_reader_custom (fd, emalloc(4096), 4096);
+ return einit_create_sexp_fd_reader_custom (fd, emalloc(DEFAULT_BUFFER_SIZE), DEFAULT_BUFFER_SIZE);
 }
 
 struct einit_sexp_fd_reader *einit_create_sexp_fd_reader_custom (int fd, char *buffer, int buffer_size) {
@@ -81,6 +141,12 @@ struct einit_sexp_fd_reader *einit_create_sexp_fd_reader_custom (int fd, char *b
 
  reader->fd = fd;
  reader->buffer = buffer;
- reader->buffer_size = buffer_size;
- reader->buffer_position = 0;
+ reader->size = buffer_size;
+ reader->position = 0;
+ reader->length = 0;
+
+ fcntl (fd, F_SETFL, O_NONBLOCK);
+ fcntl (fd, F_SETFD, FD_CLOEXEC);
+
+ return reader;
 }

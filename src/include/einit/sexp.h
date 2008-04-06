@@ -68,13 +68,15 @@ struct einit_sexp {
 struct einit_sexp_fd_reader {
  int fd;
  char *buffer;
- int buffer_size;
- int buffer_position;
+ int size;
+ int position;
+ int length;
 };
 
+#define BAD_SEXP (struct einit_sexp *)0x00000001
+
 struct einit_sexp *einit_read_sexp_from_fd_reader (struct einit_sexp_fd_reader *reader);
-/* if einit_read_sexp_from_fd_reader() returns NULL, then the reader is dead and free()'d as well */
-struct einit_sexp *einit_read_sexp_from_buffer (char *buffer, int buffer_size);
+/* if einit_read_sexp_from_fd_reader() returns BAD_SEXP, then the reader is dead and free()'d as well */
 
 char *einit_sexp_to_string (struct einit_sexp *sexp);
 void einit_sexp_display (struct einit_sexp *sexp);
