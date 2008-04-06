@@ -69,9 +69,9 @@ struct einit_sexp_fd_reader {
  int fd;
  char *buffer;
  int buffer_size;
+ int buffer_position;
 };
 
-struct einit_sexp *einit_read_sexp_from_fd (int fd, char *buffer, int buffer_size);
 struct einit_sexp *einit_read_sexp_from_fd_reader (struct einit_sexp_fd_reader *reader);
 /* if einit_read_sexp_from_fd_reader() returns NULL, then the reader is dead and free()'d as well */
 struct einit_sexp *einit_read_sexp_from_buffer (char *buffer, int buffer_size);

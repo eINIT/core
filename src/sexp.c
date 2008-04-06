@@ -38,9 +38,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/sexp.h>
 #include <einit/einit.h>
 
-struct einit_sexp *einit_read_sexp_from_fd (int fd, char *buffer, int buffer_size) {
-}
-
 struct einit_sexp *einit_read_sexp_from_fd_reader (struct einit_sexp_fd_reader *reader) {
 }
 
@@ -76,7 +73,14 @@ struct einit_sexp * einit_sexp_create (enum einit_sexp_type type) {
 }
 
 struct einit_sexp_fd_reader *einit_create_sexp_fd_reader (int fd) {
+ return einit_create_sexp_fd_reader_custom (fd, emalloc(4096), 4096);
 }
 
 struct einit_sexp_fd_reader *einit_create_sexp_fd_reader_custom (int fd, char *buffer, int buffer_size) {
+ struct einit_sexp_fd_reader * reader = emalloc (sizeof (struct einit_sexp_fd_reader));
+
+ reader->fd = fd;
+ reader->buffer = buffer;
+ reader->buffer_size = buffer_size;
+ reader->buffer_position = 0;
 }
