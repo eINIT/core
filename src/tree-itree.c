@@ -54,7 +54,6 @@ struct stree *streeadd (const struct stree *stree, const char *key, const void *
 
 // fprintf (stderr, "key: %s, hash: %i\n", key, keyhash);
 
-// signed long keyhash = hashp (key);
 //uint32_t keyhash = StrSuperFastHash(key, &len);
 
  size_t nodesize;

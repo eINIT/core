@@ -246,16 +246,3 @@ char **set_str_add_stable (char **s, char *e) {
 
  return s;
 }
-
-#ifndef _have_asm_hashp
-uintptr_t hashp (const char *str) {
- uintptr_t rv = 0;
-
- while (*str) {
-  rv += *str;
-  str++;
- }
-
- return rv;
-}
-#endif

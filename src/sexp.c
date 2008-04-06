@@ -255,6 +255,52 @@ struct einit_sexp *einit_read_sexp_from_fd_reader (struct einit_sexp_fd_reader *
  return NULL;
 }
 
+void einit_sexp_display (struct einit_sexp *sexp) {
+ char *x = einit_sexp_to_string (sexp);
+ if (x) {
+  fputs (x, stdout);
+  efree (x);
+ }
+}
+
+void einit_sexp_destroy (struct einit_sexp *sexp) {
+ switch (sexp->type) {
+  case es_cons:
+   einit_sexp_destroy (sexp->primus);
+   einit_sexp_destroy (sexp->secundus);
+  default:
+   efree (sexp);
+ }
+}
+
+struct einit_sexp * einit_sexp_create (enum einit_sexp_type type) {
+ struct einit_sexp * sexp = ecalloc (1, sizeof (struct einit_sexp));
+ sexp->type = type;
+
+ return sexp;
+}
+
+struct einit_sexp_fd_reader *einit_create_sexp_fd_reader (int fd) {
+ return einit_create_sexp_fd_reader_custom (fd, emalloc(DEFAULT_BUFFER_SIZE), DEFAULT_BUFFER_SIZE);
+}
+
+struct einit_sexp_fd_reader *einit_create_sexp_fd_reader_custom (int fd, char *buffer, int buffer_size) {
+ struct einit_sexp_fd_reader * reader = emalloc (sizeof (struct einit_sexp_fd_reader));
+
+ reader->fd = fd;
+ reader->buffer = buffer;
+ reader->size = buffer_size;
+ reader->position = 0;
+ reader->length = 0;
+
+ fcntl (fd, F_SETFL, O_NONBLOCK);
+ fcntl (fd, F_SETFD, FD_CLOEXEC);
+
+ return reader;
+}
+
+/* sexp -> string conversion */
+
 void einit_sexp_to_string_iterator (struct einit_sexp *sexp, char **buffer, int *len, int *pos, char in_list) {
  int i;
  char *symbuffer = NULL;
@@ -358,7 +404,7 @@ void einit_sexp_to_string_iterator (struct einit_sexp *sexp, char **buffer, int 
 
    print_symbol:
 
-   *len += strlen(symbuffer);
+     *len += strlen(symbuffer);
    *buffer = erealloc (*buffer, *len);
 
    for (i = 0; symbuffer[i]; (*pos)++, i++) {
@@ -389,48 +435,4 @@ char *einit_sexp_to_string (struct einit_sexp *sexp) {
  buffer[pos] = 0;
 
  return buffer;
-}
-
-void einit_sexp_display (struct einit_sexp *sexp) {
- char *x = einit_sexp_to_string (sexp);
- if (x) {
-  fputs (x, stdout);
-  efree (x);
- }
-}
-
-void einit_sexp_destroy (struct einit_sexp *sexp) {
- switch (sexp->type) {
-  case es_cons:
-   einit_sexp_destroy (sexp->primus);
-   einit_sexp_destroy (sexp->secundus);
-  default:
-   efree (sexp);
- }
-}
-
-struct einit_sexp * einit_sexp_create (enum einit_sexp_type type) {
- struct einit_sexp * sexp = ecalloc (1, sizeof (struct einit_sexp));
- sexp->type = type;
-
- return sexp;
-}
-
-struct einit_sexp_fd_reader *einit_create_sexp_fd_reader (int fd) {
- return einit_create_sexp_fd_reader_custom (fd, emalloc(DEFAULT_BUFFER_SIZE), DEFAULT_BUFFER_SIZE);
-}
-
-struct einit_sexp_fd_reader *einit_create_sexp_fd_reader_custom (int fd, char *buffer, int buffer_size) {
- struct einit_sexp_fd_reader * reader = emalloc (sizeof (struct einit_sexp_fd_reader));
-
- reader->fd = fd;
- reader->buffer = buffer;
- reader->size = buffer_size;
- reader->position = 0;
- reader->length = 0;
-
- fcntl (fd, F_SETFL, O_NONBLOCK);
- fcntl (fd, F_SETFD, FD_CLOEXEC);
-
- return reader;
 }

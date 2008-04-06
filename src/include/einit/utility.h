@@ -236,8 +236,6 @@ int exopen(const char *pathname, int mode, const char *file, const int line, con
 char strmatch (const char *, const char *);
 char strprefix (const char *, const char *);
 
-uintptr_t hashp (const char *str);
-
 #ifdef DEBUG
 void enable_core_dumps();
 void disable_core_dumps();

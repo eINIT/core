@@ -104,7 +104,7 @@ InstallAliases = []
 
 ModulesBSD = ['bsd-devfs', 'bsd-network']
 
-ASMFunctions = ['strmatch', 'strlen', 'memcpy', 'memset', 'hashp']
+ASMFunctions = ['strmatch', 'strlen', 'memcpy', 'memset']
 ASMFunctionsAvailable = []
 
 def checkasm(name):
