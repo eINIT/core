@@ -57,7 +57,7 @@ struct einit_sexp *einit_parse_sexp_in_buffer (char *buffer, int *index, int sto
 
  struct einit_sexp *rv = NULL;
 
- for (; *index < stop; *index++) {
+ for (; (*index) < stop; (*index)++) {
   if (stringbuffer) {
    if (sc_quote) {
     stringbuffer [sb_pos] = buffer[*index];
@@ -75,6 +75,11 @@ struct einit_sexp *einit_parse_sexp_in_buffer (char *buffer, int *index, int sto
 
      rv = einit_sexp_create(es_string);
      rv->string = str_stabilise (stringbuffer);
+     efree (stringbuffer);
+
+     fprintf (stderr, "got string: %s\n", rv->string);
+     (*index)++;
+
      return rv;
      break;
 
@@ -101,13 +106,13 @@ struct einit_sexp *einit_parse_sexp_in_buffer (char *buffer, int *index, int sto
 }
 
 struct einit_sexp *einit_read_sexp_from_fd_reader (struct einit_sexp_fd_reader *reader) {
- if ((reader->position - reader->size) < MIN_CHUNK_SIZE) {
+ if ((reader->size - reader->position) < MIN_CHUNK_SIZE) {
   reader->size += MIN_CHUNK_SIZE;
 
   reader->buffer = erealloc (reader->buffer, reader->size);
  }
 
- int rres = read (reader->fd, (reader->buffer + reader->position), (reader->position - reader->size));
+ int rres = read (reader->fd, (reader->buffer + reader->position), (reader->size - reader->position));
 
  if (((rres > 0) && (reader->position += rres)) || (((((rres == -1) && (errno == EAGAIN)) || (rres == 0))) && (reader->position))) {
   int ppos = 0;
@@ -139,15 +144,43 @@ struct einit_sexp *einit_read_sexp_from_fd_reader (struct einit_sexp_fd_reader *
 }
 
 char *einit_sexp_to_string_iterator (struct einit_sexp *sexp, char **buffer, int *len, int *pos) {
- 
+ int i;
+
+ switch (sexp->type) {
+  case es_string:
+   *len += strlen(sexp->string) + 2;
+   *buffer = erealloc (*buffer, *len);
+
+   (*buffer)[(*pos)] = '"';
+
+   for (i = 0, (*pos)++; sexp->string[i]; (*pos)++, i++) {
+    fprintf (stderr, "%i, %i, %i, %c\n", *pos, *len, i, sexp->string[i]);
+
+    if (sexp->string[i] == '"') {
+     (*len)++;
+     *buffer = erealloc (*buffer, *len);
+
+     (*buffer)[(*pos)] = '\\';
+     (*pos)++;
+    }
+
+    (*buffer)[(*pos)] = sexp->string[i];
+   }
+   (*buffer)[(*pos)] = '"';
+   (*pos)++;
+
+   break;
+ }
 }
 
 char *einit_sexp_to_string (struct einit_sexp *sexp) {
- char *buffer = NULL;
- int len = 0;
+ char *buffer = emalloc (1);
+ int len = 1;
  int pos = 0;
 
  einit_sexp_to_string_iterator (sexp, &buffer, &len, &pos);
+
+ buffer[pos] = 0;
 
  return buffer;
 }

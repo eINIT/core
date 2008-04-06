@@ -43,13 +43,18 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <fcntl.h>
 
 int main () {
- int fd = open ("data/test.sexp", O_RDONLY);
- if (fd) {
+ int fd = open ("test.sexp", O_RDONLY);
+
+ if (fd > 0) {
   struct einit_sexp_fd_reader *rd = einit_create_sexp_fd_reader (fd);
   struct einit_sexp *sexp;
 
   while ((sexp = einit_read_sexp_from_fd_reader (rd))) {
-   fprintf (stderr, ".\n");
+   char *r = einit_sexp_to_string (sexp);
+   fprintf (stderr, "|%s|\n", r);
+
+   efree (r);
+   einit_sexp_destroy (sexp);
   }
 
   close (fd);
