@@ -36,6 +36,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #include <einit/sexp.h>
 #include <einit/einit.h>
@@ -44,7 +46,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string.h>
 #include <ctype.h>
 
-#define MIN_CHUNK_SIZE      4
+#define MIN_CHUNK_SIZE      1024
 #define DEFAULT_BUFFER_SIZE (MIN_CHUNK_SIZE * 4)
 
 struct einit_sexp **einit_sexp_active_readers = NULL;
@@ -53,6 +55,9 @@ struct einit_sexp *einit_parse_sexp_in_buffer (char *buffer, int *index, int sto
  unsigned char sc_quote = 0;
 
  char *stringbuffer = NULL;
+ char *numbuffer = NULL;
+ char *symbuffer = NULL;
+
  int sb_pos = 0;
 
  struct einit_sexp *rv = NULL;
@@ -71,13 +76,12 @@ struct einit_sexp *einit_parse_sexp_in_buffer (char *buffer, int *index, int sto
     case '\\': sc_quote ^= sc_quote; break;
     case '"':
      stringbuffer[sb_pos] = 0;
-     stringbuffer = erealloc (stringbuffer, sb_pos+1);
 
      rv = einit_sexp_create(es_string);
      rv->string = str_stabilise (stringbuffer);
      efree (stringbuffer);
 
-     fprintf (stderr, "got string: %s\n", rv->string);
+//     fprintf (stderr, "got string: %s\n", rv->string);
      (*index)++;
 
      return rv;
@@ -91,7 +95,51 @@ struct einit_sexp *einit_parse_sexp_in_buffer (char *buffer, int *index, int sto
    continue;
   }
 
+  if (numbuffer) {
+   if ((buffer[*index] == '(') || (buffer[*index] == ')') || isspace (buffer[*index])) {
+    numbuffer[sb_pos] = 0;
+
+    rv = einit_sexp_create (es_integer);
+    rv->integer = atoi (numbuffer);
+
+    efree (numbuffer);
+
+    return rv;
+   }
+
+   numbuffer[sb_pos] = buffer[*index];
+   sb_pos++;
+
+   continue;
+  }
+
+  if (symbuffer) {
+   if ((buffer[*index] == '(') || (buffer[*index] == ')') || isspace (buffer[*index])) {
+    symbuffer[sb_pos] = 0;
+
+    rv = einit_sexp_create (es_symbol);
+    rv->symbol = str_stabilise (symbuffer);
+
+    efree (symbuffer);
+    return rv;
+   }
+
+   symbuffer[sb_pos] = buffer[*index];
+   sb_pos++;
+
+   continue;
+  }
+
   if (isspace (buffer[*index])) {
+   continue;
+  }
+
+  if (isdigit (buffer[*index])) {
+   numbuffer = emalloc (stop);
+
+   numbuffer[sb_pos] = buffer[*index];
+   sb_pos++;
+
    continue;
   }
 
@@ -101,14 +149,14 @@ struct einit_sexp *einit_parse_sexp_in_buffer (char *buffer, int *index, int sto
     break;
    case ')':
     rv = einit_sexp_create(es_list_end);
-    fprintf (stderr, "got end-of-list\n");
+//    fprintf (stderr, "got end-of-list\n");
 
     (*index)++;
 
     return rv;
     break;
    case '(':
-    fprintf (stderr, "got start-of-list\n");
+//    fprintf (stderr, "got start-of-list\n");
     (*index)++;
 
     struct einit_sexp *tmp = einit_parse_sexp_in_buffer (buffer, index, stop);
@@ -139,10 +187,19 @@ struct einit_sexp *einit_parse_sexp_in_buffer (char *buffer, int *index, int sto
     return tmp;
 
     break;
+   default:
+    symbuffer = emalloc (stop);
+
+    symbuffer[sb_pos] = buffer[*index];
+    sb_pos++;
+
+    break;
   }
  }
 
  if (stringbuffer) efree (stringbuffer);
+ if (symbuffer) efree (symbuffer);
+ if (numbuffer) efree (numbuffer);
 
  return NULL;
 }
@@ -154,7 +211,7 @@ struct einit_sexp *einit_read_sexp_from_fd_reader (struct einit_sexp_fd_reader *
   reader->size += MIN_CHUNK_SIZE;
 
   reader->buffer = erealloc (reader->buffer, reader->size);
-  fprintf (stderr, "increasing buffer: %i (+%i)\n", reader->size, MIN_CHUNK_SIZE);
+//  fprintf (stderr, "increasing buffer: %i (+%i)\n", reader->size, MIN_CHUNK_SIZE);
  }
 
  int rres = read (reader->fd, (reader->buffer + reader->position), (reader->size - reader->position));
@@ -200,6 +257,8 @@ struct einit_sexp *einit_read_sexp_from_fd_reader (struct einit_sexp_fd_reader *
 
 void einit_sexp_to_string_iterator (struct einit_sexp *sexp, char **buffer, int *len, int *pos, char in_list) {
  int i;
+ char *symbuffer = NULL;
+ char numbuffer[33];
 
  switch (sexp->type) {
   case es_string:
@@ -209,7 +268,7 @@ void einit_sexp_to_string_iterator (struct einit_sexp *sexp, char **buffer, int 
    (*buffer)[(*pos)] = '"';
 
    for (i = 0, (*pos)++; sexp->string[i]; (*pos)++, i++) {
-    fprintf (stderr, "%i, %i, %i, %c\n", *pos, *len, i, sexp->string[i]);
+//    fprintf (stderr, "%i, %i, %i, %c\n", *pos, *len, i, sexp->string[i]);
 
     if (sexp->string[i] == '"') {
      (*len)++;
@@ -263,6 +322,57 @@ void einit_sexp_to_string_iterator (struct einit_sexp *sexp, char **buffer, int 
     (*pos)++;
     (*buffer)[(*pos)] = ')';
     (*pos)++;
+   }
+
+   break;
+
+  case es_boolean_true:
+   *len += 2;
+   *buffer = erealloc (*buffer, *len);
+
+   (*buffer)[(*pos)] = '#';
+   (*pos)++;
+   (*buffer)[(*pos)] = 't';
+   (*pos)++;
+
+   break;
+
+  case es_boolean_false:
+   *len += 2;
+   *buffer = erealloc (*buffer, *len);
+
+   (*buffer)[(*pos)] = '#';
+   (*pos)++;
+   (*buffer)[(*pos)] = 'f';
+   (*pos)++;
+
+   break;
+
+  case es_integer:
+   snprintf (numbuffer, 33, "%d", sexp->integer);
+   symbuffer = numbuffer;
+   goto print_symbol;
+
+  case es_symbol:
+   symbuffer = (char *)sexp->symbol;
+
+   print_symbol:
+
+   *len += strlen(symbuffer);
+   *buffer = erealloc (*buffer, *len);
+
+   for (i = 0; symbuffer[i]; (*pos)++, i++) {
+//    fprintf (stderr, "%i, %i, %i, %c\n", *pos, *len, i, symbuffer[i]);
+
+    if (symbuffer[i] == '"') {
+     (*len)++;
+     *buffer = erealloc (*buffer, *len);
+
+     (*buffer)[(*pos)] = '\\';
+     (*pos)++;
+    }
+
+    (*buffer)[(*pos)] = symbuffer[i];
    }
 
    break;
