@@ -438,6 +438,12 @@ pid_t einit_fork (void (*handle_dead_process)(struct einit_exec_data *), void *d
  pid_t p = einit_exec (x);
 
  if (p == 0) {
+  /* tell everone we're in a subprocess now */
+
+  struct einit_event ev = evstaticinit (einit_core_forked_subprocess);
+  event_emit (&ev, 0);
+  evstaticdestroy (ev);
+
   /* make sure that if we fork we're still able to emit events to the core if need be */
 
   einit_connect (NULL, NULL);

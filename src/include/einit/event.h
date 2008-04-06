@@ -114,6 +114,8 @@ enum einit_event_code {
  einit_core_module_action_execute   = einit_event_subsystem_core     | 0x601,
  einit_core_module_action_complete  = einit_event_subsystem_core     | 0x602,
 
+ einit_core_forked_subprocess       = einit_event_subsystem_core     | 0x701,
+
 /* einit_event_subsystem_mount: */
  einit_mount_do_update              = einit_event_subsystem_mount    | 0x001,
  einit_mount_node_mounted           = einit_event_subsystem_mount    | 0x011,

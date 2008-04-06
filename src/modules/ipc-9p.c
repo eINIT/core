@@ -641,6 +641,8 @@ void einit_ipc_9p_listen (int fd) {
 
 void einit_ipc_9p_generic_event_handler (struct einit_event *ev) {
  const char *event = einit_event_encode (ev);
+ if (!event) return;
+
  struct msg_event_queue *e = emalloc (sizeof (struct msg_event_queue));
 
  e->event = (char *)event;
@@ -832,8 +834,25 @@ void einit_ipc_9p_disable_ipc_event_handler (struct einit_event *ev) {
  }
 }
 
+void einit_ipc_9p_einit_core_forked_subprocess (struct einit_event *ev) {
+ event_ignore (einit_boot_dev_writable, einit_ipc_9p_boot_event_handler_root_device_ok);
+ event_ignore (einit_boot_root_device_ok, einit_ipc_9p_boot_event_handler_root_device_ok);
+
+ event_ignore (einit_power_down_imminent, einit_ipc_9p_power_event_handler);
+ event_ignore (einit_power_reset_imminent, einit_ipc_9p_power_event_handler);
+ event_ignore (einit_ipc_read, einit_ipc_9p_ipc_read);
+ event_ignore (einit_ipc_stat, einit_ipc_9p_ipc_stat);
+ event_ignore (einit_ipc_write, einit_ipc_9p_ipc_write);
+
+ event_ignore (einit_event_subsystem_any, einit_ipc_9p_generic_event_handler);
+
+ event_ignore (einit_ipc_disable, einit_ipc_9p_disable_ipc_event_handler);
+}
+
 int einit_ipc_9p_configure (struct lmodule *irr) {
  module_init(irr);
+
+ event_listen (einit_core_forked_subprocess, einit_ipc_9p_einit_core_forked_subprocess);
 
  event_listen (einit_boot_dev_writable, einit_ipc_9p_boot_event_handler_root_device_ok);
  event_listen (einit_boot_root_device_ok, einit_ipc_9p_boot_event_handler_root_device_ok);
