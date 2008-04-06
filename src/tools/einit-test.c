@@ -35,6 +35,7 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <einit/einit.h>
 #include <einit/sexp.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -49,7 +50,9 @@ int main () {
   struct einit_sexp_fd_reader *rd = einit_create_sexp_fd_reader (fd);
   struct einit_sexp *sexp;
 
-  while ((sexp = einit_read_sexp_from_fd_reader (rd))) {
+  while ((sexp = einit_read_sexp_from_fd_reader (rd)) != BAD_SEXP) {
+   if (!sexp) continue;
+
    char *r = einit_sexp_to_string (sexp);
    fprintf (stderr, "|%s|\n", r);
 

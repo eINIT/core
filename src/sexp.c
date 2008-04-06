@@ -44,7 +44,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string.h>
 #include <ctype.h>
 
-#define MIN_CHUNK_SIZE      1024
+#define MIN_CHUNK_SIZE      4
 #define DEFAULT_BUFFER_SIZE (MIN_CHUNK_SIZE * 4)
 
 struct einit_sexp **einit_sexp_active_readers = NULL;
@@ -87,6 +87,8 @@ struct einit_sexp *einit_parse_sexp_in_buffer (char *buffer, int *index, int sto
      stringbuffer [sb_pos] = buffer[*index];
      sb_pos++;
    }
+
+   continue;
   }
 
   if (isspace (buffer[*index])) {
@@ -97,6 +99,46 @@ struct einit_sexp *einit_parse_sexp_in_buffer (char *buffer, int *index, int sto
    case '"':
     stringbuffer = emalloc (stop);
     break;
+   case ')':
+    rv = einit_sexp_create(es_list_end);
+    fprintf (stderr, "got end-of-list\n");
+
+    (*index)++;
+
+    return rv;
+    break;
+   case '(':
+    fprintf (stderr, "got start-of-list\n");
+    (*index)++;
+
+    struct einit_sexp *tmp = einit_parse_sexp_in_buffer (buffer, index, stop);
+    if (!tmp) return NULL;
+
+    if (tmp->type != es_list_end) {
+     rv = einit_sexp_create(es_cons);
+     rv->primus = tmp;
+
+     struct einit_sexp *ccons = rv;
+
+     do {
+      tmp = einit_parse_sexp_in_buffer (buffer, index, stop);
+
+      if (tmp->type != es_list_end) {
+       ccons->secundus = einit_sexp_create(es_cons);
+       ccons = ccons->secundus;
+
+       ccons->primus = tmp;
+      } else {
+       ccons->secundus = tmp;
+
+       return rv;
+      }
+     } while (1);
+    }
+
+    return tmp;
+
+    break;
   }
  }
 
@@ -106,16 +148,19 @@ struct einit_sexp *einit_parse_sexp_in_buffer (char *buffer, int *index, int sto
 }
 
 struct einit_sexp *einit_read_sexp_from_fd_reader (struct einit_sexp_fd_reader *reader) {
+ int ppos = 0;
+
  if ((reader->size - reader->position) < MIN_CHUNK_SIZE) {
   reader->size += MIN_CHUNK_SIZE;
 
   reader->buffer = erealloc (reader->buffer, reader->size);
+  fprintf (stderr, "increasing buffer: %i (+%i)\n", reader->size, MIN_CHUNK_SIZE);
  }
 
  int rres = read (reader->fd, (reader->buffer + reader->position), (reader->size - reader->position));
 
  if (((rres > 0) && (reader->position += rres)) || (((((rres == -1) && (errno == EAGAIN)) || (rres == 0))) && (reader->position))) {
-  int ppos = 0;
+  ppos = 0;
 
   struct einit_sexp *rv = einit_parse_sexp_in_buffer (reader->buffer, &ppos, reader->position);
 
@@ -127,12 +172,22 @@ struct einit_sexp *einit_read_sexp_from_fd_reader (struct einit_sexp_fd_reader *
    }
   }
 
-  return rv;
+  if (rv) return rv;
  }
 
- if ((rres == -1) && (errno != EAGAIN)) {
+ for (ppos = 0; (ppos < reader->position) && isspace (reader->buffer[ppos]); ppos++);
+ if (ppos == reader->position) {
+  reader->position = 0;
+ }
+
+// fprintf (stderr, "ppos: %i, rpos: %i; b[%c, %c, %c]\n", ppos, reader->position, reader->buffer[0], reader->buffer[1], reader->buffer[2]);
+
+ if (((rres == -1) && (errno != EAGAIN)) ||
+     ((rres == 0) && (reader->position == 0))) {
   if (einit_sexp_active_readers)
    einit_sexp_active_readers = (struct einit_sexp **)setdel ((void **)einit_sexp_active_readers, reader);
+
+  close (reader->fd);
 
   efree (reader->buffer);
   efree (reader);
@@ -143,7 +198,7 @@ struct einit_sexp *einit_read_sexp_from_fd_reader (struct einit_sexp_fd_reader *
  return NULL;
 }
 
-char *einit_sexp_to_string_iterator (struct einit_sexp *sexp, char **buffer, int *len, int *pos) {
+void einit_sexp_to_string_iterator (struct einit_sexp *sexp, char **buffer, int *len, int *pos, char in_list) {
  int i;
 
  switch (sexp->type) {
@@ -170,6 +225,47 @@ char *einit_sexp_to_string_iterator (struct einit_sexp *sexp, char **buffer, int
    (*pos)++;
 
    break;
+
+  case es_cons:
+   if (!in_list) {
+    *len += 1;
+    *buffer = erealloc (*buffer, *len);
+
+    (*buffer)[(*pos)] = '(';
+    (*pos)++;
+   }
+
+   einit_sexp_to_string_iterator (sexp->primus, buffer, len, pos, 0);
+
+   if (sexp->secundus->type != es_list_end) {
+    *len += 1;
+    *buffer = erealloc (*buffer, *len);
+
+    (*buffer)[(*pos)] = ' ';
+    (*pos)++;
+   }
+
+   einit_sexp_to_string_iterator (sexp->secundus, buffer, len, pos, 1);
+
+   break;
+
+  case es_list_end:
+   if (in_list) {
+    *len += 1;
+    *buffer = erealloc (*buffer, *len);
+    (*buffer)[(*pos)] = ')';
+    (*pos)++;
+   } else {
+    *len += 2;
+    *buffer = erealloc (*buffer, *len);
+
+    (*buffer)[(*pos)] = '(';
+    (*pos)++;
+    (*buffer)[(*pos)] = ')';
+    (*pos)++;
+   }
+
+   break;
  }
 }
 
@@ -178,7 +274,7 @@ char *einit_sexp_to_string (struct einit_sexp *sexp) {
  int len = 1;
  int pos = 0;
 
- einit_sexp_to_string_iterator (sexp, &buffer, &len, &pos);
+ einit_sexp_to_string_iterator (sexp, &buffer, &len, &pos, 0);
 
  buffer[pos] = 0;
 
