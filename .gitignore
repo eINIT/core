@@ -28,6 +28,7 @@ src/last-rites
 src/einit-feedback-evas
 src/einit-sysvd
 src/einit-bootchartd
+src/einit-test
 
 src/modules/*bundle*
 

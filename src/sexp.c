@@ -42,6 +42,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <fcntl.h>
 #include <errno.h>
 #include <string.h>
+#include <ctype.h>
 
 #define MIN_CHUNK_SIZE      1024
 #define DEFAULT_BUFFER_SIZE (MIN_CHUNK_SIZE * 4)
@@ -49,8 +50,52 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 struct einit_sexp **einit_sexp_active_readers = NULL;
 
 struct einit_sexp *einit_parse_sexp_in_buffer (char *buffer, int *index, int stop) {
+ unsigned char sc_quote = 0;
+
+ char *stringbuffer = NULL;
+ int sb_pos = 0;
+
+ struct einit_sexp *rv = NULL;
+
  for (; *index < stop; *index++) {
+  if (stringbuffer) {
+   if (sc_quote) {
+    stringbuffer [sb_pos] = buffer[*index];
+    sb_pos++;
+    sc_quote ^= sc_quote;
+
+    continue;
+   }
+
+   switch (buffer[*index]) {
+    case '\\': sc_quote ^= sc_quote; break;
+    case '"':
+     stringbuffer[sb_pos] = 0;
+     stringbuffer = erealloc (stringbuffer, sb_pos+1);
+
+     rv = einit_sexp_create(es_string);
+     rv->string = str_stabilise (stringbuffer);
+     return rv;
+     break;
+
+    default:
+     stringbuffer [sb_pos] = buffer[*index];
+     sb_pos++;
+   }
+  }
+
+  if (isspace (buffer[*index])) {
+   continue;
+  }
+
+  switch (buffer[*index]) {
+   case '"':
+    stringbuffer = emalloc (stop);
+    break;
+  }
  }
+
+ if (stringbuffer) efree (stringbuffer);
 
  return NULL;
 }
