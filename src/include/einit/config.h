@@ -101,19 +101,17 @@ struct exported_function *cfg_addnode_fs;
 struct exported_function *cfg_findnode_fs;
 struct exported_function *cfg_getstring_fs;
 struct exported_function *cfg_getnode_fs;
-struct exported_function *cfg_filter_fs;
 struct exported_function *cfg_getpath_fs;
 struct exported_function *cfg_prefix_fs;
 struct exported_function *cfg_callback_prefix_fs;
 
-#define config_configure() cfg_addnode_fs = NULL; cfg_findnode_fs = NULL; cfg_getstring_fs = NULL; cfg_getnode_fs = NULL; cfg_filter_fs = NULL; cfg_getpath_fs = NULL; cfg_prefix_fs = NULL;
+#define config_configure() cfg_addnode_fs = NULL; cfg_findnode_fs = NULL; cfg_getstring_fs = NULL; cfg_getnode_fs = NULL; cfg_getpath_fs = NULL; cfg_prefix_fs = NULL;
 
 #define cfg_addnode(node) function_call_by_name_use_data (int, "einit-configuration-node-add", 1, cfg_addnode_fs, -1, node)
 #define cfg_findnode(name, mode, node) function_call_by_name_use_data (struct cfgnode *, "einit-configuration-node-get-find", 1, cfg_findnode_fs, NULL, name, mode, node)
 #define cfg_getstring(id, base) function_call_by_name_use_data (char *, "einit-configuration-node-get-string", 1, cfg_getstring_fs, NULL, id, base)
 #define cfg_getnode(id, base) function_call_by_name_use_data (struct cfgnode *, "einit-configuration-node-get", 1, cfg_getnode_fs, NULL, id, base)
 #define cfg_getpath(id) function_call_by_name_use_data (char *, "einit-configuration-node-get-path", 1, cfg_getpath_fs, NULL, id)
-#define cfg_filter(filter, i) function_call_by_name_use_data (struct stree *, "einit-configuration-node-get-filter", 1, cfg_filter_fs, NULL, filter, i)
 #define cfg_prefix(prefix) function_call_by_name_use_data (struct stree *, "einit-configuration-node-get-prefix", 1, cfg_prefix_fs, NULL, prefix)
 
 #define cfg_callback_prefix(prefix,callback) function_call_by_name_use_data (int, "einit-configuration-callback-prefix", 1, cfg_callback_prefix_fs, 0, prefix, callback)
@@ -124,7 +122,6 @@ int cfg_addnode_f (struct cfgnode *);
 struct cfgnode *cfg_findnode_f (const char *, enum einit_cfg_node_options, const struct cfgnode *);
 char *cfg_getstring_f (const char *, const struct cfgnode *);
 struct cfgnode *cfg_getnode_f (const char *, const struct cfgnode *);
-struct stree *cfg_filter_f (const char *, enum einit_cfg_node_options);
 char *cfg_getpath_f (const char *);
 char *cfg_prefix_f (const char *);
 int cfg_callback_prefix_f (char *prefix, void (*callback)(struct cfgnode *));
@@ -136,7 +133,6 @@ int cfg_callback_prefix_f (char *prefix, void (*callback)(struct cfgnode *));
 #define cfg_getstring(id, base) cfg_getstring_f(id, base)
 #define cfg_getnode(id, base) cfg_getnode_f(id, base)
 #define cfg_getpath(id) cfg_getpath_f(id)
-#define cfg_filter(filter, i) cfg_filter_f(filter, i)
 #define cfg_prefix(filter) cfg_prefix_f(filter)
 
 #define cfg_callback_prefix(prefix,callback) cfg_callback_prefix_f(prefix, callback)

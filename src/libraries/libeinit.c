@@ -75,7 +75,6 @@ struct exported_function *cfg_addnode_fs = NULL;
 struct exported_function *cfg_findnode_fs = NULL;
 struct exported_function *cfg_getstring_fs = NULL;
 struct exported_function *cfg_getnode_fs = NULL;
-struct exported_function *cfg_filter_fs = NULL;
 struct exported_function *cfg_getpath_fs = NULL;
 struct exported_function *cfg_prefix_fs = NULL;
 struct exported_function *cfg_callback_prefix_fs = NULL;

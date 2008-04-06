@@ -399,29 +399,6 @@ struct cfgnode *cfg_getnode_f (const char *id, const struct cfgnode *mode) {
  return ret;
 }
 
-// return a new stree with the filter applied
-struct stree *cfg_filter_f (const char *filter, enum einit_cfg_node_options type) {
- struct stree *retval = NULL;
-
- if (filter) {
-  struct stree *cur = streelinear_prepare(hconfiguration);
-  regex_t pattern;
-  if (!eregcomp(&pattern, filter)) {
-   while (cur) {
-    if (!regexec (&pattern, cur->key, 0, NULL, 0) &&
-        (!type || (((struct cfgnode *)(cur->value))->type & type))) {
-     retval = streeadd (retval, cur->key, cur->value, SET_NOALLOC, NULL);
-    }
-    cur = streenext (cur);
-   }
-
-   eregfree (&pattern);
-  }
- }
-
- return retval;
-}
-
 // return a new stree with a certain prefix applied
 struct stree *cfg_prefix_f (const char *prefix) {
  struct stree *retval = NULL;
@@ -605,7 +582,6 @@ int einit_configuration_stree_configure (struct lmodule *tm) {
  function_register ("einit-configuration-node-get", 1, cfg_getnode_f);
  function_register ("einit-configuration-node-get-string", 1, cfg_getstring_f);
  function_register ("einit-configuration-node-get-find", 1, cfg_findnode_f);
- function_register ("einit-configuration-node-get-filter", 1, cfg_filter_f);
  function_register ("einit-configuration-node-get-path", 1, cfg_getpath_f);
  function_register ("einit-configuration-node-get-prefix", 1, cfg_prefix_f);
 
