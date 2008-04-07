@@ -45,6 +45,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/un.h>
 #include <sys/stat.h>
 
+#include <fcntl.h>
+
 #include <einit/einit.h>
 #include <einit/sexp.h>
 #include <einit-modules/ipc.h>
@@ -116,9 +118,12 @@ char einit_ipx_sexp_handle_fd (struct einit_sexp_fd_reader *rd) {
         h->handler (sexp->secundus->secundus->primus, rd->fd);
        }
       } while ((st = streefind (einit_ipc_handlers, sexp->secundus->primus->symbol, tree_find_next)));
-     }
+     } else {
+      char buffer[BUFFERSIZE];
 
-     if (sexp->secundus->primus->type);
+      snprintf (buffer, BUFFERSIZE, "(reply %s bad-request)", sexp->secundus->primus->symbol);
+      write (rd->fd, buffer, strlen (buffer));
+     }
     }
    }
   }
@@ -210,6 +215,9 @@ char einit_ipx_sexp_prepare_fd () {
   return 0;
  }
 
+ fcntl (einit_ipc_sexp_fd, F_SETFL, O_NONBLOCK);
+ fcntl (einit_ipc_sexp_fd, F_SETFD, FD_CLOEXEC);
+
  char *group = cfg_getstring ("subsystem-ipc-9p/group", NULL);
  char *chmod_i = cfg_getstring ("subsystem-ipc-9p/chmod", NULL);
 
@@ -235,6 +243,21 @@ void einit_ipc_sexp_boot_event_handler_root_device_ok (struct einit_event *ev) {
  }
 }
 
+void einit_ipc_sexp_power_event_handler (struct einit_event *ev) {
+ if (einit_ipc_sexp_fd < 0) return;
+
+ notice (4, "disabling IPC (sexp)");
+
+ struct einit_event nev = evstaticinit(einit_ipc_disabling);
+ event_emit(&nev, 0);
+ evstaticdestroy (&nev);
+
+ int fd = einit_ipc_sexp_fd;
+ einit_ipc_sexp_fd = -1;
+
+ close (fd);
+}
+
 void einit_ipc_sexp_einit_core_forked_subprocess (struct einit_event *ev) {
  event_ignore (einit_core_forked_subprocess, einit_ipc_sexp_einit_core_forked_subprocess);
 
@@ -247,4 +270,8 @@ void einit_ipc_setup() {
 
  event_listen (einit_boot_dev_writable, einit_ipc_sexp_boot_event_handler_root_device_ok);
  event_listen (einit_boot_root_device_ok, einit_ipc_sexp_boot_event_handler_root_device_ok);
+
+ event_listen (einit_power_down_imminent, einit_ipc_sexp_power_event_handler);
+ event_listen (einit_power_reset_imminent, einit_ipc_sexp_power_event_handler);
+ event_listen (einit_ipc_disable, einit_ipc_sexp_power_event_handler);
 }
