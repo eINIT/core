@@ -49,7 +49,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <einit/einit.h>
 #include <einit/sexp.h>
-#include <einit-modules/ipc.h>
+#include <einit/ipc.h>
 
 int einit_ipc_sexp_fd = -1;
 struct einit_sexp_fd_reader **einit_ipc_sexp_fd_readers = NULL;
@@ -191,7 +191,7 @@ void einit_ipc_sexp_handle (fd_set *rfds) {
     fprintf (stderr, "readable: %i\n", einit_ipc_sexp_fd_readers[i]->fd);
 
     if (einit_ipx_sexp_handle_fd (einit_ipc_sexp_fd_readers[i])) {
-     fprintf (stderr, "disconnected: %i\n", einit_ipc_sexp_fd_readers[i]->fd);
+     fprintf (stderr, "client disconnected\n");
 
      einit_ipc_sexp_fd_readers = (struct einit_sexp_fd_reader **)setdel ((void **)einit_ipc_sexp_fd_readers, einit_ipc_sexp_fd_readers[i]);
 

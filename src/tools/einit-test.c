@@ -36,19 +36,24 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include <einit/einit.h>
+#include <einit/ipc.h>
 #include <einit/sexp.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <fcntl.h>
-#include <sys/un.h>
-#include <sys/socket.h>
+
+#include <sys/select.h>
 
 #define ADDRESS "einit"
 
 #define REQUEST "(request list-requests #nil)"
-#define REQUEST_SIZE sizeof(REQUEST)
+
+void callback (struct einit_sexp *sexp) {
+ char *r = einit_sexp_to_string (sexp);
+ fprintf (stderr, "|%s|\n", r);
+ efree (r);
+}
 
 int main () {
 #if 0
@@ -73,37 +78,30 @@ int main () {
   perror ("open(test.sexp)");
  }
 #endif
- int fd = socket(PF_UNIX, SOCK_STREAM, 0);
-
- if (fd < 0) {
-  perror ("socket()");
+ if (!einit_ipc_connect(ADDRESS)) {
   return 0;
  }
 
- struct sockaddr_un addr = { .sun_family = AF_UNIX };
- snprintf (addr.sun_path, sizeof(addr.sun_path), "%s", ADDRESS);
+ int fd = einit_ipc_get_fd();
 
- if (connect(fd, (const struct sockaddr *)&addr, sizeof(struct sockaddr_un)) < 0) {
-  perror ("bind()");
-  close (fd);
-  fd = -1;
-  return 0;
+ einit_ipc_request_callback (REQUEST, callback);
+
+ while (1) {
+  int selectres;
+
+  fd_set rfds;
+
+  FD_ZERO (&rfds);
+  FD_SET (fd, &rfds);
+
+  selectres = select((fd + 1), &rfds, NULL, NULL, 0);
+
+  if (selectres > 0) {
+   einit_ipc_loop();
+  }
  }
 
- struct einit_sexp_fd_reader *rd = einit_create_sexp_fd_reader (fd);
- struct einit_sexp *sexp;
-
- write (fd, REQUEST, REQUEST_SIZE);
-
- while ((sexp = einit_read_sexp_from_fd_reader (rd)) != BAD_SEXP) {
-  if (!sexp) continue;
-
-  char *r = einit_sexp_to_string (sexp);
-  fprintf (stderr, "|%s|\n", r);
-
-  efree (r);
-  einit_sexp_destroy (sexp);
- }
+ while(einit_ipc_loop());
 
  return 0;
 }

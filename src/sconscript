@@ -23,7 +23,7 @@ CodeEinitLogD = ['einit-log.c']
 CodeEinitSysVD = ['tools/einit-sysvd.c']
 CodeEinitBootChartD = ['tools/einit-bootchartd.c']
 
-CodeLibEinit = AssemblyFunctions + ['libraries/libeinit.c', 'bitch.c', 'event.c', 'utility.c', 'exec.c', 'strings.c', 'sexp.c'] + CodeSet + CodeSTree + CodeITree + ObjectsLibIXP
+CodeLibEinit = AssemblyFunctions + ['libraries/libeinit.c', 'bitch.c', 'event.c', 'utility.c', 'exec.c', 'strings.c', 'sexp.c', 'ipc-client.c'] + CodeSet + CodeSTree + CodeITree + ObjectsLibIXP
 
 linkCore = '-Wl,-export-dynamic'
 

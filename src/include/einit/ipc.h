@@ -49,6 +49,13 @@ void einit_ipc_setup();
 void einit_ipc_register_handler (const char *name, void (*handler)(struct einit_sexp *, int));
 void einit_ipc_unregister_handler (const char *name, void (*handler)(struct einit_sexp *, int));
 
+void einit_ipc_request_callback (const char *request, void (*handler)(struct einit_sexp *));
+
+char einit_ipc_connect (const char *address);
+char einit_ipc_loop();
+
+int einit_ipc_get_fd ();
+
 #endif
 
 #ifdef __cplusplus
