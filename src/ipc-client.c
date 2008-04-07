@@ -77,24 +77,85 @@ enum sexp_event_parsing_stage {
 
 void einit_ipc_handle_sexp_event (struct einit_sexp *sexp) {
  enum sexp_event_parsing_stage s = seps_type;
+ struct einit_event *ev = NULL;
 
  while ((s != seps_done) && (sexp->type == es_cons)) {
+  struct einit_sexp *p = sexp->primus;
+
   switch (s) {
    case seps_type:
+    if (p->type == es_symbol) {
+     enum einit_event_code c = event_string_to_code (p->symbol);
+
+     if (c == einit_event_subsystem_custom) return;
+
+     ev = ecalloc (1, sizeof (struct einit_event));
+     ev->type = c;
+    } else {
+     return;
+    }
     break;
    case seps_integer:
+    if (p->type == es_integer) {
+     ev->integer = p->integer;
+    } else {
+     efree (ev);
+     return;
+    }
     break;
    case seps_status:
+    if (p->type == es_integer) {
+     ev->status = p->integer;
+    } else {
+     efree (ev);
+     return;
+    }
     break;
    case seps_task:
+    if (p->type == es_integer) {
+     ev->task = p->integer;
+    } else {
+     efree (ev);
+     return;
+    }
     break;
    case seps_flag:
+    if (p->type == es_integer) {
+     ev->flag = p->integer;
+    } else {
+     efree (ev);
+     return;
+    }
     break;
    case seps_string:
+    if (p->type == es_string) {
+     ev->string = p->string;
+    } else {
+     efree (ev);
+     return;
+    }
     break;
    case seps_stringset:
+    while (p->type == es_cons) {
+     struct einit_sexp *pp = p->primus;
+
+     if (pp->type == es_string) {
+      ev->stringset = set_str_add_stable (ev->stringset, pp->string);
+     } else {
+      efree (ev);
+      return;
+     }
+
+     p = p->secundus;
+    }
     break;
    case seps_module:
+    if (p->type == es_symbol) {
+     ev->rid = p->symbol;
+    } else {
+     efree (ev);
+     return;
+    }
     break;
 
    default:
@@ -102,6 +163,12 @@ void einit_ipc_handle_sexp_event (struct einit_sexp *sexp) {
   }
 
   s++;
+  sexp = sexp->secundus;
+ }
+
+ if (ev) {
+  event_emit (ev, 0);
+  efree (ev);
  }
 }
 
