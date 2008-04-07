@@ -106,7 +106,7 @@ char einit_ipx_sexp_handle_fd (struct einit_sexp_fd_reader *rd) {
    return 1;
   }
 
-  fprintf (stderr, "read sexp");
+  fprintf (stderr, "read sexp: %i\n", rd->fd);
 
   if (sexp->type == es_cons) {
    if ((sexp->primus->type == es_symbol) && strmatch (sexp->primus->symbol, "request")) {
@@ -131,13 +131,15 @@ char einit_ipx_sexp_handle_fd (struct einit_sexp_fd_reader *rd) {
   }
  }
 
- fprintf (stderr, "no sexp ready");
+ fprintf (stderr, "no sexp ready\n");
 
  return 0;
 }
 
 void einit_ipx_sexp_handle_connect () {
  int fd = accept (einit_ipc_sexp_fd, NULL, 0);
+ fprintf (stderr, "connected: %i\n", fd);
+
  if (fd < 0) return;
 
  struct einit_sexp_fd_reader *rd = einit_create_sexp_fd_reader (fd);
