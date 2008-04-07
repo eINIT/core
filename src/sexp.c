@@ -209,12 +209,16 @@ struct einit_sexp *einit_read_sexp_from_fd_reader (struct einit_sexp_fd_reader *
   reader->size += MIN_CHUNK_SIZE;
 
   reader->buffer = erealloc (reader->buffer, reader->size);
-  fprintf (stderr, "increasing buffer: %i (+%i)\n", reader->size, MIN_CHUNK_SIZE);
+//  fprintf (stderr, "increasing buffer: %i (+%i)\n", reader->size, MIN_CHUNK_SIZE);
  }
+
+// fprintf (stderr, "reading from fd: %i\n", reader->fd);
 
  int rres = read (reader->fd, (reader->buffer + reader->position), (reader->size - reader->position));
 
- if (((rres > 0) && (reader->position += rres)) || (((((rres == -1) && (errno == EAGAIN)) || (rres == 0))) && (reader->position))) {
+// fprintf (stderr, "result: %i\n", rres);
+
+ if (((rres > 0) && (reader->position += rres)) || (((((rres == -1) && ((errno == EAGAIN) || (errno == EINTR))) || (rres == 0))) && (reader->position))) {
   ppos = 0;
 
   struct einit_sexp *rv = einit_parse_sexp_in_buffer (reader->buffer, &ppos, reader->position);
@@ -235,9 +239,9 @@ struct einit_sexp *einit_read_sexp_from_fd_reader (struct einit_sexp_fd_reader *
   reader->position = 0;
  }
 
- fprintf (stderr, "ppos: %i, rpos: %i; b[%c, %c, %c]\n", ppos, reader->position, reader->buffer[0], reader->buffer[1], reader->buffer[2]);
+// fprintf (stderr, "ppos: %i, rpos: %i; b[%c, %c, %c]\n", ppos, reader->position, reader->buffer[0], reader->buffer[1], reader->buffer[2]);
 
- if (((rres == -1) && (errno != EAGAIN)) ||
+ if (((rres == -1) && (errno != EAGAIN) && (errno != EINTR)) ||
      ((rres == 0) && (reader->position == 0))) {
   close (reader->fd);
 

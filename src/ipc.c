@@ -97,16 +97,22 @@ void einit_ipc_unregister_handler (const char *name, void (*handler)(struct eini
 }
 
 char einit_ipx_sexp_handle_fd (struct einit_sexp_fd_reader *rd) {
- if (!einit_ipc_handlers) return 0;
-
  struct einit_sexp *sexp;
+
+// fprintf (stderr, "reading sexp: %i\n", rd->fd);
 
  while ((sexp = einit_read_sexp_from_fd_reader (rd))) {
   if (sexp == BAD_SEXP) {
+//   fprintf (stderr, "BAD SEXP: %i\n", rd->fd);
+
    return 1;
   }
 
-  fprintf (stderr, "read sexp: %i\n", rd->fd);
+  char *s = einit_sexp_to_string(sexp);
+  if (s) {
+   fprintf (stderr, "read sexp: %s\n", s);
+   efree (s);
+  }
 
   if (sexp->type == es_cons) {
    if ((sexp->primus->type == es_symbol) && strmatch (sexp->primus->symbol, "request")) {
@@ -131,7 +137,7 @@ char einit_ipx_sexp_handle_fd (struct einit_sexp_fd_reader *rd) {
   }
  }
 
- fprintf (stderr, "no sexp ready\n");
+// fprintf (stderr, "no sexp ready\n");
 
  return 0;
 }
@@ -160,6 +166,8 @@ int einit_ipc_sexp_prepare (fd_set *rfds) {
   int i = 0;
 
   for (; einit_ipc_sexp_fd_readers[i]; i++) {
+   fprintf (stderr, "querying: %i\n", einit_ipc_sexp_fd_readers[i]->fd);
+
    FD_SET(einit_ipc_sexp_fd_readers[i]->fd, rfds);
    if (r < einit_ipc_sexp_fd_readers[i]->fd)
     r = einit_ipc_sexp_fd_readers[i]->fd;
@@ -180,7 +188,11 @@ void einit_ipc_sexp_handle (fd_set *rfds) {
 
   for (; einit_ipc_sexp_fd_readers[i]; i++) {
    if (FD_ISSET(einit_ipc_sexp_fd_readers[i]->fd, rfds)) {
+    fprintf (stderr, "readable: %i\n", einit_ipc_sexp_fd_readers[i]->fd);
+
     if (einit_ipx_sexp_handle_fd (einit_ipc_sexp_fd_readers[i])) {
+     fprintf (stderr, "disconnected: %i\n", einit_ipc_sexp_fd_readers[i]->fd);
+
      einit_ipc_sexp_fd_readers = (struct einit_sexp_fd_reader **)setdel ((void **)einit_ipc_sexp_fd_readers, einit_ipc_sexp_fd_readers[i]);
 
      if (einit_ipc_sexp_fd_readers) i--;
@@ -194,6 +206,10 @@ void einit_ipc_sexp_handle (fd_set *rfds) {
 char einit_ipx_sexp_prepare_fd () {
  char *address = cfg_getstring ("einit-subsystem-ipc/socket", NULL);
  if (!address) address = "/dev/einit";
+
+ if (coremode & einit_mode_sandbox) {
+  address = "einit";
+ }
 
  unlink (address);
 
@@ -215,7 +231,7 @@ char einit_ipx_sexp_prepare_fd () {
  }
 
  if (listen(einit_ipc_sexp_fd, 10) < 0) {
-  perror ("bind()");
+  perror ("listen()");
   close (einit_ipc_sexp_fd);
   einit_ipc_sexp_fd = -1;
   return 0;
