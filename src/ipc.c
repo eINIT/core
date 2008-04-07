@@ -106,6 +106,8 @@ char einit_ipx_sexp_handle_fd (struct einit_sexp_fd_reader *rd) {
    return 1;
   }
 
+  fprintf (stderr, "read sexp");
+
   if (sexp->type == es_cons) {
    if ((sexp->primus->type == es_symbol) && strmatch (sexp->primus->symbol, "request")) {
     if ((sexp->secundus->type == es_cons) && (sexp->secundus->primus->type == es_symbol) && (sexp->secundus->secundus->type == es_cons)) {
@@ -128,6 +130,8 @@ char einit_ipx_sexp_handle_fd (struct einit_sexp_fd_reader *rd) {
    }
   }
  }
+
+ fprintf (stderr, "no sexp ready");
 
  return 0;
 }
