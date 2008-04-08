@@ -129,7 +129,7 @@ void einit_ipc_handle_sexp_event (struct einit_sexp *sexp) {
     break;
    case seps_string:
     if (p->type == es_string) {
-     ev->string = p->string;
+     ev->string = (char *)p->string;
     } else {
      efree (ev);
      return;
@@ -140,7 +140,7 @@ void einit_ipc_handle_sexp_event (struct einit_sexp *sexp) {
      struct einit_sexp *pp = p->primus;
 
      if (pp->type == es_string) {
-      ev->stringset = set_str_add_stable (ev->stringset, pp->string);
+      ev->stringset = set_str_add_stable (ev->stringset, (char *)pp->string);
      } else {
       efree (ev);
       return;
@@ -151,7 +151,7 @@ void einit_ipc_handle_sexp_event (struct einit_sexp *sexp) {
     break;
    case seps_module:
     if (p->type == es_symbol) {
-     ev->rid = p->symbol;
+     ev->rid = (char *)p->symbol;
     } else {
      efree (ev);
      return;
@@ -194,7 +194,9 @@ char einit_ipc_loop() {
       einit_ipc_callbacks = t->next;
       efree (t);
 
-      handler(sexp);
+      if (!(sexp->secundus->secundus->primus->type == es_symbol) || !(strmatch (sexp->secundus->secundus->primus->symbol, "bad-request"))) {
+       handler(sexp);
+      }
      }
     }
    } else {

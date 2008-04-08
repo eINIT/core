@@ -84,6 +84,5 @@ void einit_sexp_destroy (struct einit_sexp *sexp);
 struct einit_sexp * einit_sexp_create (enum einit_sexp_type type);
 
 struct einit_sexp_fd_reader *einit_create_sexp_fd_reader (int fd);
-struct einit_sexp_fd_reader *einit_create_sexp_fd_reader_custom (int fd, char *buffer, int buffer_size);
 
 #endif

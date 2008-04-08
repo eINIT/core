@@ -45,6 +45,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <sys/select.h>
 
+#include <fcntl.h>
+
 #define ADDRESS "einit"
 
 #define REQUEST "(request list-requests #nil)"
@@ -56,7 +58,7 @@ void callback (struct einit_sexp *sexp) {
 }
 
 int main () {
-#if 0
+#if 1
  int fd = open ("test.sexp", O_RDONLY);
 
  if (fd > 0) {
@@ -77,7 +79,7 @@ int main () {
  } else {
   perror ("open(test.sexp)");
  }
-#endif
+#else
  if (!einit_ipc_connect(ADDRESS)) {
   return 0;
  }
@@ -102,6 +104,7 @@ int main () {
  }
 
  while(einit_ipc_loop());
+#endif
 
  return 0;
 }
