@@ -53,7 +53,7 @@ enum einit_sexp_read_type { esr_string, esr_number, esr_symbol };
 
 static struct einit_sexp *einit_parse_sexp_in_buffer_with_buffer (char *buffer, int *index, int stop, enum einit_sexp_read_type buffertype) {
  unsigned char sc_quote = 0;
- char stbuffer[stop];
+ char *stbuffer = emalloc(stop - (*index));
  int sb_pos = 0;
 
  for (; (*index) < stop; (*index)++) {
@@ -77,6 +77,7 @@ static struct einit_sexp *einit_parse_sexp_in_buffer_with_buffer (char *buffer, 
 //   fprintf (stderr, "got string: %s\n", rv->string);
      (*index)++;
 
+     efree (stbuffer);
      return rv;
      break;
 
@@ -101,6 +102,7 @@ static struct einit_sexp *einit_parse_sexp_in_buffer_with_buffer (char *buffer, 
       default: break;
     }
 
+    efree (stbuffer);
     return rv;
    }
   }
@@ -109,6 +111,7 @@ static struct einit_sexp *einit_parse_sexp_in_buffer_with_buffer (char *buffer, 
   sb_pos++;
  }
 
+ efree (stbuffer);
  return NULL;
 }
 
