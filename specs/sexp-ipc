@@ -1,0 +1,108 @@
+zeh closer specz:
+ 
+note: replies and to requests kinda work like fifos: first one read is the first one to get a reply
+ 
+signals: (work both ways, no replies)
+------------------------------------------------------------------------
+* (event type integer status task flag string stringset module)
+type -> symbol
+integer -> integer
+status -> integer
+task -> integer
+flag -> integer
+string -> string
+stringset -> list(string)
+module -> symbol
+ 
+you get to write this at any time you feel like it.
+ 
+ 
+ 
+requests: (should also work both ways, always require a reply)
+------------------------------------------------------------------------
+(request type payload)
+(reply type payload)
+ 
+--- event requests:
+ 
+* (request receive-events no-backlog) ; verbatim
+  (reply receive-events <#t/#f>)
+tell the core you want to receive events, but not have the whole log replayed
+ 
+* (request receive-events backlog) ; verbatim
+  (reply receive-events <#t/#f>)
+tell the core you want to receive events, including everything emitted before you connected.
+ 
+* (request receive-events replay-only) ; verbatim
+  (reply receive-events <#t/#f>)
+tell the core you want to receive events, but only olden ones, not new events. you get the reply to this /after/ all the events have been signaled to you.
+ 
+* (request receive-specific-events type)
+  (reply receive-specific-events <#t/#f>)
+tell the core you want to receive events of the specified type (a symbol). multiple calls to this stack and tell the core to give you events of multiple types. using this will not actually make the core send you any events, it'll just flag the appropriate events for you. to start receiving the events, use one of the three calls above. if you don't use this command, then you'll simply receive _all_ events.
+ 
+* (request mute-specific-events type)
+  (reply mute-specific-events <#t/#f>)
+analoguous to the last command, just flagging the specific event type as uninteresting to you.
+ 
+--- configuration
+ 
+* (request get-configuration (key))
+  (reply get-configuration ((attribute value) (attribute value) <etc>))
+retrieve config data (specific key, symbol)
+ 
+* (request get-configuration (key attribute))
+  (reply get-configuration value)
+retrieve config data (specific key and attribute, both are symbols)
+ 
+* (request get-configuration* prefix)
+  (reply get-configuration* ((key (attribute value) (attribute value) <etc>)) (key (attribute value) (attribute value) <etc>))))
+retrieve loads of config data by means of a common prefix. prefix is a symbol
+ 
+--- modules
+ 
+* (request register-module (rid "name" (provides) (requires) (before) (after) (uses) run-once deprecated))
+  (reply register-module <#t/#f>)
+register an event-based module handler. run-once and deprecated are booleans, the (provides), etc are lists of symbols. rid is also a symbol, while name is a string
+ 
+* (request register-module-actions (rid (actions))
+  (reply register-module-actions <#t/#f>)
+tell the core that the specified rid (symbol) can handle all the actions described in the list (actions) (a list of symbols)
+ 
+* (request list modules)
+  (reply list (rid1 rid2 rid3 rid4 rid5 <etc>))
+get a list of all modules. everything involved is a symbol.
+ 
+* (request get-module rid)
+  (reply get-module (rid "name" (provides) (requires) (before) (after) (uses) run-once deprecated (status) (actions)))
+get details on the specified rid, if possible. the specs for the list are exactly the same as for register-module; the additional (status) field is a list of symbols describing the current status of the module; the extra (actions) field lists all the actions that the module is known to be capable of.
+ 
+--- services
+ 
+* (request list services)
+  (reply list (service1 service2 service3 service4 <etc>))
+get a list of all services. everything involved is a symbol.
+ 
+* (request get-service service)
+  (reply get-service (status))
+get details on the specified service, if possible. the reply is a list of symbols describing the service's status
+ 
+--- modes
+ 
+* (request list modes)
+  (reply list (mode1 mode2 mode3 mode4 <etc>))
+get a list of all modes. everything involved is a symbol.
+ 
+--- status changes
+ 
+* (request module-do! (rid action))
+  (reply module-do! <#t/#f>)
+tell the core to make the module specified by rid do something. rid and action are both symbols. a reply to this doesn't mean the module is done working, it just serves as some kind of 'receipt'. figuring out how the module's progressing should be done by means of events. enable/disable actions are likely to be subject to dependencies, but with this request, dependencies are _not_ resolved automatically. if the deps aren't met, the command will just do nothing.
+ 
+* (request service-do! (service action))
+  (reply service-do! <#t/#f>)
+analoguous to module-do!, just with a service instead of an rid. for enable/disable actions, this will also do dependency resolution, unlike module-do!.
+ 
+* (request switch-mode mode)
+  (reply switch-mode <#t/#f>)
+tell the core to switch to the mode denoted by the symbol 'mode'.
