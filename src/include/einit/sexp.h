@@ -47,7 +47,8 @@ enum einit_sexp_type {
     es_integer,
     es_list_end,
     es_cons,
-    es_nil
+    es_nil,
+    es_empty_list
 };
 
 struct einit_sexp {

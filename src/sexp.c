@@ -181,6 +181,9 @@ static struct einit_sexp *einit_parse_sexp_in_buffer(char *buffer,
                             ccons->secundus = einit_sexp_create(es_cons);
                             ccons = ccons->secundus;
 
+                            if (tmp->type == es_empty_list)
+                                tmp->type = es_list_end;
+
                             ccons->primus = tmp;
                         } else {
                             ccons->secundus = tmp;
@@ -188,6 +191,8 @@ static struct einit_sexp *einit_parse_sexp_in_buffer(char *buffer,
                             return rv;
                         }
                     } while (1);
+                } else {
+                    tmp->type = es_empty_list;
                 }
 
                 return tmp;
@@ -262,10 +267,12 @@ struct einit_sexp *einit_read_sexp_from_fd_reader(struct
                 memmove(reader->buffer, reader->buffer + ppos,
                         reader->position);
             }
-        }
 
-        if (rv)
+            if (rv->type == es_empty_list)
+                rv->type = es_list_end;
+
             return rv;
+        }
     }
 
     for (ppos = 0;
@@ -464,6 +471,12 @@ static void einit_sexp_to_string_iterator(struct einit_sexp *sexp,
 
             (*buffer)[(*pos)] = symbuffer[i];
         }
+
+        break;
+
+    case es_nil:
+    case es_empty_list:
+        fputs ("BAD SEXPR\n", stderr);
 
         break;
     }
