@@ -58,10 +58,8 @@ env.Install (InstallDirLibBin, env.Program ('einit-test',  ['tools/einit-test.c'
 
 if uname == 'Linux':
  libEinit = env.SharedLibrary ('einit', CodeLibEinit, SHLINKFLAGS='-shared -Wl,-soname,libeinit.so.3.0.0')
- libEinitPP = env.SharedLibrary ('einit++', 'libraries/libeinit++.c++', LIBS=['einit'], LIBPATH=['.'], SHLINKFLAGS='-shared -Wl,-soname,libeinit++.so.3.0.0')
 else:
  libEinit = env.SharedLibrary ('einit', CodeLibEinit)
- libEinitPP = env.SharedLibrary ('einit++', 'libraries/libeinit++.c++', LIBS=['einit'], LIBPATH=['.'])
 
 env.Install (InstallDirLibBin, einitCore)
 env.Install (InstallDirLibBin, einitHelper)
@@ -73,7 +71,6 @@ env.Install (InstallDirLibBin, einitBootChartD)
 
 env.InstallAs (InstallDirSbin + '/einit', einitMonitor)
 env.Install (InstallDirLib, libEinit)
-env.Install (InstallDirLib, libEinitPP)
 env.Install (InstallDirSbin, einitSysVD)
 
 env.Install (InstallDirInclude + '/einit', glob.glob ('include/einit/*'))

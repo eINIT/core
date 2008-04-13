@@ -43,6 +43,7 @@
 
 #include <einit/module.h>
 #include <einit/tree.h>
+#include <einit/sexp.h>
 
 #ifndef EINIT_EINIT_H
 #define EINIT_EINIT_H
@@ -119,7 +120,7 @@ extern "C" {
 
     const char *einit_event_encode(struct einit_event *ev);
 
-    struct smodule *einit_decode_module_from_string(const char *s);
+    struct smodule *einit_decode_module_from_sexpr(struct einit_sexp *sexp);
     void einit_register_module(struct smodule *s);
 
     /*

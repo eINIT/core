@@ -308,8 +308,163 @@ const char *einit_event_encode(struct einit_event *ev)
     return rv;
 }
 
-struct smodule *einit_decode_module_from_string(const char *s)
+/*
+ * (request register-module (rid "name" (provides) (requires) (before) (after)
+ *   (uses) run-once deprecated))
+ * (reply register-module <#t/#f>)
+ */
+
+enum sexp_module_parsing_stage {
+    smps_rid,
+    smps_name,
+    smps_provides,
+    smps_requires,
+    smps_before,
+    smps_after,
+    smps_uses,
+    smps_run_once,
+    smps_deprecated,
+    smps_done
+};
+
+struct smodule *einit_decode_module_from_sexpr(struct einit_sexp *sexp)
 {
+    struct smodule *sm = NULL;
+
+    enum sexp_module_parsing_stage s = smps_rid;
+
+    while ((s != smps_done) && (sexp->type == es_cons)) {
+        struct einit_sexp *p = sexp->primus;
+
+        switch (s) {
+            case smps_rid:
+                if (p->type == es_symbol) {
+                    sm = emalloc(sizeof (struct smodule));
+                    memset (sm, 0, sizeof (struct smodule));
+
+                    sm->rid = p->symbol;
+                } else {
+                    return NULL;
+                }
+                break;
+
+            case smps_name:
+                if (p->type == es_string) {
+                    sm->name = p->string;
+                } else {
+                    efree (sm);
+                    return NULL;
+                }
+                break;
+
+            case smps_provides:
+                while (p->type == es_cons) {
+                    struct einit_sexp *pp = p->primus;
+
+                    if (pp->type == es_string) {
+                        sm->si.provides =
+                                set_str_add_stable(sm->si.provides,
+                                (char *) pp->string);
+                    } else {
+                        efree (sm);
+                        return NULL;
+                    }
+
+                    p = p->secundus;
+                }
+                break;
+
+            case smps_requires:
+                while (p->type == es_cons) {
+                    struct einit_sexp *pp = p->primus;
+
+                    if (pp->type == es_string) {
+                        sm->si.requires =
+                                set_str_add_stable(sm->si.requires,
+                                (char *) pp->string);
+                    } else {
+                        efree (sm);
+                        return NULL;
+                    }
+
+                    p = p->secundus;
+                }
+                break;
+
+            case smps_before:
+                while (p->type == es_cons) {
+                    struct einit_sexp *pp = p->primus;
+
+                    if (pp->type == es_string) {
+                        sm->si.before =
+                                set_str_add_stable(sm->si.before,
+                                (char *) pp->string);
+                    } else {
+                        efree (sm);
+                        return NULL;
+                    }
+
+                    p = p->secundus;
+                }
+                break;
+
+            case smps_after:
+                while (p->type == es_cons) {
+                    struct einit_sexp *pp = p->primus;
+
+                    if (pp->type == es_string) {
+                        sm->si.after =
+                                set_str_add_stable(sm->si.after,
+                                (char *) pp->string);
+                    } else {
+                        efree (sm);
+                        return NULL;
+                    }
+
+                    p = p->secundus;
+                }
+                break;
+
+            case smps_uses:
+                while (p->type == es_cons) {
+                    struct einit_sexp *pp = p->primus;
+
+                    if (pp->type == es_string) {
+                        sm->si.uses =
+                                set_str_add_stable(sm->si.uses,
+                                (char *) pp->string);
+                    } else {
+                        efree (sm);
+                        return NULL;
+                    }
+
+                    p = p->secundus;
+                }
+                break;
+
+            case smps_run_once:
+                if (p == sexp_true)
+                    sm->mode |= einit_feedback_job;
+                break;
+
+            case smps_deprecated:
+                if (p == sexp_true)
+                    sm->mode |= einit_module_deprecated;
+                break;
+
+            case smps_done:
+                break;
+        }
+
+        s++;
+        sexp = sexp->secundus;
+    }
+
+    if (sm) {
+        sm->mode |= einit_module | einit_module_event_actions;
+    }
+
+    return sm;
 }
 
 void einit_register_module(struct smodule *s)
