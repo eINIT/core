@@ -370,13 +370,25 @@ struct einit_sexp_fd_reader *einit_create_sexp_fd_reader(int fd)
     return reader;
 }
 
+static void *sexp_chunk_realloc(void *p, size_t s, size_t *cs)
+{
+    size_t ns = ((s / MIN_CHUNK_SIZE) + 1) * MIN_CHUNK_SIZE;
+    if (ns != (*cs)) {
+        *cs = ns;
+        return erealloc (p, ns);
+    } else {
+        return p;
+    }
+}
+
 /*
  * sexp -> string conversion 
  */
 
 static void einit_sexp_to_string_iterator(struct einit_sexp *sexp,
                                           char **buffer, int *len,
-                                          int *pos, char in_list)
+                                          int *pos, char in_list,
+                                          size_t *cs)
 {
     int i;
     char *symbuffer = NULL;
@@ -385,7 +397,7 @@ static void einit_sexp_to_string_iterator(struct einit_sexp *sexp,
     switch (sexp->type) {
     case es_string:
         *len += strlen(sexp->string) + 2;
-        *buffer = erealloc(*buffer, *len);
+        *buffer = sexp_chunk_realloc(*buffer, *len, cs);
 
         (*buffer)[(*pos)] = '"';
 
@@ -395,7 +407,7 @@ static void einit_sexp_to_string_iterator(struct einit_sexp *sexp,
 
             if ((sexp->string[i] == '"') || (sexp->string[i] == '\\')) {
                 (*len)++;
-                *buffer = erealloc(*buffer, *len);
+                *buffer = sexp_chunk_realloc(*buffer, *len, cs);
 
                 (*buffer)[(*pos)] = '\\';
                 (*pos)++;
@@ -411,35 +423,35 @@ static void einit_sexp_to_string_iterator(struct einit_sexp *sexp,
     case es_cons:
         if (!in_list) {
             *len += 1;
-            *buffer = erealloc(*buffer, *len);
+            *buffer = sexp_chunk_realloc(*buffer, *len, cs);
 
             (*buffer)[(*pos)] = '(';
             (*pos)++;
         }
 
-        einit_sexp_to_string_iterator(sexp->primus, buffer, len, pos, 0);
+        einit_sexp_to_string_iterator(sexp->primus, buffer, len, pos, 0, cs);
 
         if (sexp->secundus->type != es_list_end) {
             *len += 1;
-            *buffer = erealloc(*buffer, *len);
+            *buffer = sexp_chunk_realloc(*buffer, *len, cs);
 
             (*buffer)[(*pos)] = ' ';
             (*pos)++;
         }
 
-        einit_sexp_to_string_iterator(sexp->secundus, buffer, len, pos, 1);
+        einit_sexp_to_string_iterator(sexp->secundus, buffer, len, pos, 1, cs);
 
         break;
 
     case es_list_end:
         if (in_list) {
             *len += 1;
-            *buffer = erealloc(*buffer, *len);
+            *buffer = sexp_chunk_realloc(*buffer, *len, cs);
             (*buffer)[(*pos)] = ')';
             (*pos)++;
         } else {
             *len += 2;
-            *buffer = erealloc(*buffer, *len);
+            *buffer = sexp_chunk_realloc(*buffer, *len, cs);
 
             (*buffer)[(*pos)] = '(';
             (*pos)++;
@@ -451,7 +463,7 @@ static void einit_sexp_to_string_iterator(struct einit_sexp *sexp,
 
     case es_boolean_true:
         *len += 2;
-        *buffer = erealloc(*buffer, *len);
+        *buffer = sexp_chunk_realloc(*buffer, *len, cs);
 
         (*buffer)[(*pos)] = '#';
         (*pos)++;
@@ -462,7 +474,7 @@ static void einit_sexp_to_string_iterator(struct einit_sexp *sexp,
 
     case es_boolean_false:
         *len += 2;
-        *buffer = erealloc(*buffer, *len);
+        *buffer = sexp_chunk_realloc(*buffer, *len, cs);
 
         (*buffer)[(*pos)] = '#';
         (*pos)++;
@@ -482,7 +494,7 @@ static void einit_sexp_to_string_iterator(struct einit_sexp *sexp,
       print_symbol:
 
         *len += strlen(symbuffer);
-        *buffer = erealloc(*buffer, *len);
+        *buffer = sexp_chunk_realloc(*buffer, *len, cs);
 
         for (i = 0; symbuffer[i]; (*pos)++, i++) {
             // fprintf (stderr, "%i, %i, %i, %c\n", *pos, *len, i,
@@ -490,7 +502,7 @@ static void einit_sexp_to_string_iterator(struct einit_sexp *sexp,
 
             if (symbuffer[i] == '"') {
                 (*len)++;
-                *buffer = erealloc(*buffer, *len);
+                *buffer = sexp_chunk_realloc(*buffer, *len, cs);
 
                 (*buffer)[(*pos)] = '\\';
                 (*pos)++;
@@ -517,11 +529,12 @@ static void einit_sexp_to_string_iterator(struct einit_sexp *sexp,
 
 char *einit_sexp_to_string(struct einit_sexp *sexp)
 {
-    char *buffer = emalloc(1);
+    char *buffer = emalloc(MIN_CHUNK_SIZE);
     int len = 1;
     int pos = 0;
+    size_t cs = MIN_CHUNK_SIZE;
 
-    einit_sexp_to_string_iterator(sexp, &buffer, &len, &pos, 0);
+    einit_sexp_to_string_iterator(sexp, &buffer, &len, &pos, 0, &cs);
 
     buffer[pos] = 0;
 
