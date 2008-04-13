@@ -130,35 +130,38 @@ char einit_ipx_sexp_handle_fd(struct einit_sexp_fd_reader *rd)
         }
 
         if (sexp->type == es_cons) {
-            if ((sexp->primus->type == es_symbol)
-                && strmatch(sexp->primus->symbol, "request")) {
-                if ((sexp->secundus->type == es_cons)
-                    && (sexp->secundus->primus->type == es_symbol)
-                    && (sexp->secundus->secundus->type == es_cons)) {
-                    struct stree *st = streefind(einit_ipc_handlers,
-                                                 sexp->secundus->primus->
-                                                 symbol,
-                                                 tree_find_first);
-                    if (st) {
-                        do {
-                            struct einit_ipc_handler *h = st->value;
+            if (sexp->primus->type == es_symbol) {
+                if (strmatch(sexp->primus->symbol, "request")) {
+                    if ((sexp->secundus->type == es_cons)
+                        && (sexp->secundus->primus->type == es_symbol)
+                        && (sexp->secundus->secundus->type == es_cons)) {
+                        struct stree *st = streefind(einit_ipc_handlers,
+                                                     sexp->secundus->
+                                                     primus->symbol,
+                                                     tree_find_first);
+                        if (st) {
+                            do {
+                                struct einit_ipc_handler *h = st->value;
 
-                            if (h->handler) {
-                                h->handler(sexp->secundus->secundus->
-                                           primus, rd->fd);
-                            }
-                        } while ((st =
-                                  streefind(einit_ipc_handlers,
-                                            sexp->secundus->primus->symbol,
-                                            tree_find_next)));
-                    } else {
-                        char buffer[BUFFERSIZE];
+                                if (h->handler) {
+                                    h->handler(sexp->secundus->secundus->
+                                               primus, rd->fd);
+                                }
+                            } while ((st =
+                                      streefind(einit_ipc_handlers,
+                                                sexp->secundus->primus->
+                                                symbol, tree_find_next)));
+                        } else {
+                            char buffer[BUFFERSIZE];
 
-                        snprintf(buffer, BUFFERSIZE,
-                                 "(reply %s bad-request)",
-                                 sexp->secundus->primus->symbol);
-                        write(rd->fd, buffer, strlen(buffer));
+                            snprintf(buffer, BUFFERSIZE,
+                                     "(reply %s bad-request)",
+                                     sexp->secundus->primus->symbol);
+                            write(rd->fd, buffer, strlen(buffer));
+                        }
                     }
+                } else if (strmatch(sexp->primus->symbol, "event")) {
+                    einit_ipc_handle_sexp_event(sexp->secundus);
                 }
             }
         }

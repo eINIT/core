@@ -65,6 +65,8 @@ extern "C" {
     struct einit_sexp *einit_ipc_request(const char *request,
                                          struct einit_sexp *payload);
 
+    void einit_ipc_handle_sexp_event(struct einit_sexp *sexp);
+
 #endif
 
 #ifdef __cplusplus
