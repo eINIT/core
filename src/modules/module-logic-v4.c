@@ -43,7 +43,6 @@
 #include <einit/utility.h>
 #include <einit/bitch.h>
 
-#include <einit-modules/ipc.h>
 #include <string.h>
 
 int einit_module_logic_v4_configure(struct lmodule *);

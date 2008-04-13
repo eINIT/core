@@ -52,7 +52,6 @@
 #include <einit/utility.h>
 #include <einit/tree.h>
 #include <einit/event.h>
-#include <einit-modules/ipc.h>
 
 #include <regex.h>
 

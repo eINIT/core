@@ -53,8 +53,6 @@
 #include <ctype.h>
 #include <einit-modules/parse-sh.h>
 
-#include <einit-modules/ipc.h>
-
 #define EXPECTED_EIV 1
 
 #if EXPECTED_EIV != EINIT_VERSION

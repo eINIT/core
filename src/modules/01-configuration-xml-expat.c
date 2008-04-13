@@ -55,7 +55,6 @@
 #include <sys/wait.h>
 
 #include <einit-modules/exec.h>
-#include <einit-modules/ipc.h>
 
 #define ECXE_MASTERTAG_EINIT   0x00000001
 #define ECXE_MASTERTAG_MODULE  0x00000002
