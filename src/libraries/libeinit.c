@@ -267,18 +267,43 @@ char **einit_module_get_options(const char *rid)
 
 void einit_event_loop()
 {
+    einit_ipc_request ("(request receive-events backlog)");
 }
 
 void einit_event_loop_skip_old()
 {
+    einit_ipc_request ("(request receive-events no-backlog)");
 }
 
 void einit_replay_events()
 {
+    einit_ipc_request ("(request receive-events replay-log)");
 }
+
+/*
+ * (define-record einit:event type integer status task flag string
+ * stringset module)
+ */
 
 const char *einit_event_encode(struct einit_event *ev)
 {
+    struct einit_sexp *sp = 
+        se_cons(se_symbol ("event"),
+        se_cons(se_symbol (event_code_to_string(ev->type)),
+        se_cons(se_integer(ev->integer),
+        se_cons(se_integer(ev->status),
+        se_cons(se_integer(ev->task),
+        se_cons(se_integer(ev->flag),
+        se_cons(se_string(ev->string),
+        se_cons(se_stringset_to_list(ev->stringset),
+        se_cons(se_symbol(ev->rid),
+                (struct einit_sexp *)sexp_end_of_list)))))))));
+
+    char *r = einit_sexp_to_string(sp);
+    const char *rv = str_stabilise (r);
+    efree (r);
+
+    return rv;
 }
 
 struct smodule *einit_decode_module_from_string(const char *s)

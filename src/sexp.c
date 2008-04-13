@@ -296,7 +296,7 @@ struct einit_sexp *einit_read_sexp_from_fd_reader(struct
         efree(reader->buffer);
         efree(reader);
 
-        return sexp_bad;
+        return (struct einit_sexp *)sexp_bad;
     }
 
     return NULL;
@@ -393,7 +393,7 @@ static void einit_sexp_to_string_iterator(struct einit_sexp *sexp,
             // fprintf (stderr, "%i, %i, %i, %c\n", *pos, *len, i,
             // sexp->string[i]);
 
-            if (sexp->string[i] == '"') {
+            if ((sexp->string[i] == '"') || (sexp->string[i] == '\\')) {
                 (*len)++;
                 *buffer = erealloc(*buffer, *len);
 
@@ -526,4 +526,58 @@ char *einit_sexp_to_string(struct einit_sexp *sexp)
     buffer[pos] = 0;
 
     return buffer;
+}
+
+struct einit_sexp *se_cons (struct einit_sexp *car,
+                            struct einit_sexp *cdr)
+{
+    struct einit_sexp *r = einit_sexp_create (es_cons);
+    r->primus = car;
+    r->secundus = cdr;
+    return r;
+}
+
+struct einit_sexp *se_integer (int i)
+{
+    struct einit_sexp *r = einit_sexp_create (es_integer);
+    r->integer = i;
+    return r;
+}
+
+
+struct einit_sexp *se_string (const char *s)
+{
+    struct einit_sexp *r = einit_sexp_create (es_string);
+    if (s)
+        r->string = s;
+    else
+        r->string = "";
+    return r;
+}
+
+struct einit_sexp *se_symbol (const char *s)
+{
+    struct einit_sexp *r = einit_sexp_create (es_symbol);
+    if (s)
+        r->symbol = s;
+    else
+        r->symbol = "einit-core";
+    return r;
+}
+
+struct einit_sexp *se_stringset_to_list (char **s)
+{
+    if (!s) return (struct einit_sexp *)sexp_end_of_list;
+    int i = 1;
+    struct einit_sexp *r = se_cons (se_string(str_stabilise(s[0])),
+                                    (struct einit_sexp *)sexp_end_of_list);
+    struct einit_sexp *v = r;
+
+    for (; s[i]; i++) {
+        v->secundus = se_cons (se_string(str_stabilise(s[i])),
+                               (struct einit_sexp *)sexp_end_of_list);
+        v = v->secundus;
+    }
+
+    return r;
 }

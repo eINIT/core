@@ -46,8 +46,6 @@
 
 #include <fcntl.h>
 
-#define ADDRESS "einit"
-
 #define REQUEST "(request list requests)"
 
 void callback(struct einit_sexp *sexp)
@@ -59,7 +57,7 @@ void callback(struct einit_sexp *sexp)
     einit_sexp_destroy(sexp);
 }
 
-int main()
+int main(int argc, char **argv)
 {
 #if 0
     int fd = open("test.sexp", O_RDONLY);
@@ -84,7 +82,7 @@ int main()
         perror("open(test.sexp)");
     }
 #else
-    if (!einit_ipc_connect(ADDRESS)) {
+    if (!einit_connect(&argc, argv)) {
         return 0;
     }
 

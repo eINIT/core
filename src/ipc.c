@@ -257,7 +257,7 @@ char einit_ipx_sexp_prepare_fd()
         address = "/dev/einit";
 
     if (coremode & einit_mode_sandbox) {
-        address = "einit";
+        address = "dev/einit";
     }
 
     unlink(address);
@@ -337,6 +337,15 @@ void einit_ipc_sexp_power_event_handler(struct einit_event *ev)
     close(fd);
 }
 
+void einit_ipc_generic_event_handler(struct einit_event *ev)
+{
+    const char *s = einit_event_encode (ev);
+
+    if (coremode & einit_mode_sandbox) {
+        fprintf (stderr, "%s\n", s);
+    }
+}
+
 void einit_ipc_sexp_einit_core_forked_subprocess(struct einit_event *ev)
 {
     event_ignore(einit_core_forked_subprocess,
@@ -346,6 +355,8 @@ void einit_ipc_sexp_einit_core_forked_subprocess(struct einit_event *ev)
                  einit_ipc_sexp_boot_event_handler_root_device_ok);
     event_ignore(einit_boot_root_device_ok,
                  einit_ipc_sexp_boot_event_handler_root_device_ok);
+
+    event_ignore(einit_event_subsystem_any, einit_ipc_generic_event_handler);
 
     if (einit_ipc_sexp_fd > 0) {
         close(einit_ipc_sexp_fd);
@@ -368,4 +379,6 @@ void einit_ipc_setup()
     event_listen(einit_power_reset_imminent,
                  einit_ipc_sexp_power_event_handler);
     event_listen(einit_ipc_disable, einit_ipc_sexp_power_event_handler);
+
+    event_listen(einit_event_subsystem_any, einit_ipc_generic_event_handler);
 }
