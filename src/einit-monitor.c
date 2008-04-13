@@ -62,7 +62,7 @@
  * stringset module)
  */
 
-#define PID_TERMINATED_EVENT "(event process/died %i 0 0 0 \"nil\" (nil) einit-monitor)"
+#define PID_TERMINATED_EVENT "(event process/died %i 0 0 0 \"\" () einit-monitor)"
 
 pid_t send_sigint_pid = 0;
 char is_sandbox = 0;
