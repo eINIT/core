@@ -113,45 +113,6 @@ void einit_power_reset ();
  */
 void einit_switch_mode (const char *mode);
 
-/*!\brief Get all nodes on some path
- *
- * This will return a list of all files and directories at some path. You need 
- * to free() the return value once you're done.
- *
- * \param[in] path The path to ls
- */
-char **einit_ls (char **path);
-
-/*!\brief Read a file
- *
- * This will read a file at some location and return a string with the file's 
- * contents.
- *
- * \param[in] path The path to read
- */
-char *einit_read (char **path);
-
-/*!\brief Read a file (with a callback)
- *
- * This will read a file at some location and call the provided callback on each
- * fragment that is read.
- *
- * \param[in] path The path to read
- * \param[in] callback A pointer to a callback functions
- */
-int einit_read_callback (char **path, int (*callback)(char *, size_t, void *), void *);
-int einit_read_callback_limited (char **path, int (*callback)(char *, size_t, void *), void *, int);
-int einit_read_callback_skip (char **path, int (*callback)(char *, size_t, void *), void *, int);
-
-/*!\brief Write to a file
- *
- * This will write the provided data to the provided path.
- *
- * \param[in] path The path to write to
- * \param[in] data The data to write
- */
-int einit_write (char **path, const char *data);
-
 /*!\brief Manipulate a Service
  *
  * This will call the specified 'action' on the specified 'service'
@@ -171,7 +132,6 @@ void einit_service_call (const char *service, const char *action);
 void einit_module_call (const char *rid, const char *action);
 
 const char *einit_event_encode (struct einit_event *ev);
-int einit_event_loop_decoder (char *fragment, size_t size, void *data);
 
 struct smodule *einit_decode_module_from_string (const char *s);
 void einit_register_module (struct smodule *s);

@@ -154,7 +154,8 @@ void einit_process_raw_event (int fd) {
     epre_buffer[i-2] = 0;
 
     if (epre_buffer[0])
-     einit_event_loop_decoder (epre_buffer, i, NULL);
+/*     einit_event_loop_decoder (epre_buffer, i, NULL); */
+/*  FIXME */
 
     if (epre_offset - i + 1) {
      memmove (epre_buffer, epre_buffer + i + 1, epre_offset - i + 1);

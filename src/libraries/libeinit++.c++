@@ -40,8 +40,6 @@
 #include <string>
 #include <einit/einit++.h>
 
-#include <ixp_local.h>
-
 using std::pair;
 using std::string;
 using std::vector;
@@ -83,11 +81,7 @@ bool Einit::powerReset() {
 }
 
 void Einit::switchMode(const string mode) {
-	string* path = new string[2];
-	path[0] = mode;
-	path[1] = "";
-	
-	EinitFilesystem::write(path, mode);
+/* FIXME : NEW IPC */
 }
 
 void Einit::eventLoop() {} 
@@ -111,27 +105,11 @@ EinitModule::EinitModule(const string name) {
 }
 
 void EinitModule::call(const string action) {
-	string* path = new string[5];
-	path[0] = "modules", path[1] = "all", path [2] = rid, path[3] = "status", path[4] = "";
-	EinitFilesystem::write(path, action);
+    /* FIXME : NEW IPC */
 }
 
 string EinitModule::getAttribute (const string attribute) {
-	using namespace std;
-	string* path = new string[5];
-	
-	path[0] = "modules", path[1] = "all", path [2] = rid, path[3] = attribute, path[4] = "";
-	string tmp = EinitFilesystem::read (path);
-	if (tmp != "") {
-		const char* c = new char[tmp.size()];
-		c = tmp.c_str();
-		strtrim(((char* ) c));
-		string rv(c);
-		return rv;
-	}
-	else{
-		return ""; 
-	}
+    /* FIXME : NEW IPC */
 }
 
 string EinitModule::getName () {
@@ -210,65 +188,4 @@ int EinitModule::scanmodules() {
 
 int EinitModule::cleanup() {
 	
-}
-
-
-/*!\brief This class handles the file system of eINIT.
- *  
- * 
- */
-		
-int EinitFilesystem::readCallback (string *path, int (*callback)(string, size_t, void *), void *cdata) {}
-int EinitFilesystem::readCallbackLimited (string *path, int (*callback)(string, size_t, void *), void *cdata, int fragments) {}
-
-int EinitFilesystem::write(string *path, const string data){
-		if (data == "") return 0;
-		char **tmp = new char*[5];
-		for (int i = 0; i < 5; i++) {
-			tmp[i] = new char[path[i].size()];
-			tmp[i] = ((char*) path[i].c_str());
-		}
-		einit_write (tmp, data.c_str());
-		for (int i = 0; i < 5; i++) {
-			delete[] tmp[i];
-		}
-		delete[] tmp;
-		return 0;
-}
-
-vector<string> EinitFilesystem::ls(string *path){
-		using namespace std;
-		char** p = new char*[sizeof(path)/sizeof(path[0])];
-		for(int i = 0; i < (sizeof(path)/sizeof(path[0])); i++) {
-			p[i] = ((char*) path[i].c_str());
-		}
-		char** tmp = einit_ls(p);
-		vector<string> rv;
-		for (int i = 0; i < (sizeof(path)/sizeof(path[0])); i++) {
-			string t(tmp[i]);
-			rv.push_back(t);
-			
-			delete[] p[i];
-			delete[] tmp[i];
-		}
-		delete[] p;
-		delete[] tmp;
-		
-		return rv;
-			
-	}
-
-string EinitFilesystem::read(string *path){
-	char** tmp = new char*[5];
-	for (int i = 0; i < 5; i++) {
-			tmp[i] = new char[path[i].size()];
-			tmp[i] = ((char*) path[i].c_str());
-		}
-		string rv(einit_read (tmp));
-		for (int i = 0; i < 5; i++) {
-			delete[] tmp[i];
-		}
-		delete[] tmp;
-		return rv;
-		
 }

@@ -130,21 +130,3 @@ class Einit {
  	static EinitModule makeModule(const string name);
 
 };
-
-/*!\brief The eINIT file system.
- * 
- *
- */
-class EinitFilesystem {
-		
-	int readCallback (string *path, int (*callback)(string, size_t, void *), void *cdata);
-	int readCallbackLimited (string *path, int (*callback)(string, size_t, void *), void *cdata, int fragments);
-
-	
-	public:
-	static int write(string *path, const string data);
-	static vector<string> ls(string *path);
-	static string read(string *path);
-	
-};
-

@@ -1,4 +1,4 @@
-Import(['env', 'InstallDirSbin', 'InstallDirLib', 'InstallDirLibBin', 'InternalModules', 'InstallDirInclude', 'AssemblyDir', 'ASMFunctionsAvailable', 'uname', 'ObjectsLibIXP'])
+Import(['env', 'InstallDirSbin', 'InstallDirLib', 'InstallDirLibBin', 'InternalModules', 'InstallDirInclude', 'AssemblyDir', 'ASMFunctionsAvailable', 'uname'])
 
 import glob
 
@@ -23,7 +23,7 @@ CodeEinitLogD = ['einit-log.c']
 CodeEinitSysVD = ['tools/einit-sysvd.c']
 CodeEinitBootChartD = ['tools/einit-bootchartd.c']
 
-CodeLibEinit = AssemblyFunctions + ['libraries/libeinit.c', 'bitch.c', 'event.c', 'utility.c', 'exec.c', 'strings.c', 'sexp.c', 'ipc-client.c'] + CodeSet + CodeSTree + CodeITree + ObjectsLibIXP
+CodeLibEinit = AssemblyFunctions + ['libraries/libeinit.c', 'bitch.c', 'event.c', 'utility.c', 'exec.c', 'strings.c', 'sexp.c', 'ipc-client.c'] + CodeSet + CodeSTree + CodeITree
 
 linkCore = '-Wl,-export-dynamic'
 

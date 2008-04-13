@@ -103,10 +103,6 @@ int main(int argc, char **argv, char **env) {
 
  char o_cake = 0;
 
- char *c_ls = NULL;
- char *c_read = NULL;
- char *c_write[2] = { NULL, NULL };
-
  char *c_update = NULL;
 
  for (i = 0; i < argc; i++) {
@@ -155,16 +151,6 @@ int main(int argc, char **argv, char **env) {
    i++;
   } else if (strmatch (argv[i], "-cake")) {
    o_cake = 1;
-  } else if ((strmatch (argv[i], "-ls") || strmatch (argv[i], "ls")) && ((i+1) < argc)) {
-   c_ls = argv[i+1];
-   i++;
-  } else if ((strmatch (argv[i], "-read") || strmatch (argv[i], "read")) && ((i+1) < argc)) {
-   c_read = argv[i+1];
-   i++;
-  } else if ((strmatch (argv[i], "-write") || strmatch (argv[i], "write")) && ((i+2) < argc)) {
-   c_write[0] = argv[i+1];
-   c_write[1] = argv[i+2];
-   i+=2;
   } else if (strmatch (argv[i], "-u")) {
    if ((i+1) < argc) {
     c_update = argv[i+1];
@@ -175,14 +161,14 @@ int main(int argc, char **argv, char **env) {
   }
  }
 
- if (!c_version && !c_licence && !c_wtf && !c_service[0] && !c_module[0] && !c_mode && !c_down && !c_reset && !o_cake && !c_ls && !c_read && !c_write[0] && !c_update)
+ if (!c_version && !c_licence && !c_wtf && !c_service[0] && !c_module[0] && !c_mode && !c_down && !c_reset && !o_cake && !c_update)
   c_help = 1;
 
  if (o_cake) {
   printf ("THE CAKE IS A LIE\n");
  }
 
- if (c_mode || c_service[0] || c_module[0] || c_down || c_reset || c_ls || c_read || c_write[0] || c_update) {
+ if (c_mode || c_service[0] || c_module[0] || c_down || c_reset || c_update) {
   if (!einit_connect(&argc, argv)) {
    perror ("Could not connect to eINIT");
    exit (EXIT_FAILURE);
@@ -209,43 +195,7 @@ int main(int argc, char **argv, char **env) {
   }
 
   if (c_update) {
-   char *path[3];
-   path[0] = "configuration";
-   path[1] = "update";
-   path[2] = NULL;
-
-   einit_write (path, c_update);
-  }
-
-  char *t = NULL;
-  if ((t = c_ls) || (t = c_read) || (t = c_write[0])) {
-   char **path = NULL;
-   while (t[0] == '/') t++;
-
-   if (t[0]) {
-    path = str2set ('/', t);
-   }
-
-   if (c_ls) {
-    char **files = einit_ls (path);
-
-    if (files) {
-     for (i = 0; files[i]; i++) {
-      puts (files[i]);
-     }
-
-     efree (files);
-    }
-   } else if (c_read) {
-    char *b = einit_read (path);
-    if (b) {
-     fputs (b, stdout);
-
-     efree (b);
-    }
-   } else if (c_write[1]) {
-    einit_write (path, c_write[1]);
-   }
+/* FIXME */
   }
 
   einit_disconnect();
@@ -278,7 +228,7 @@ int main(int argc, char **argv, char **env) {
     argvx[0] = "issues";
     argvx[1] = NULL;
 
-    char **issues = einit_ls (argvx);
+    char **issues = /* FIXME */ NULL;
 
     if (issues) {
      int count = setcount ((const void **)issues);
@@ -294,7 +244,7 @@ int main(int argc, char **argv, char **env) {
 
       argvx[1] = issues[i];
 
-      char *r = einit_read(argvx);
+      char *r = /* FIXME */ NULL;
       if (r) {
        fprintf (stdout, " >> %s\n", r);
       }

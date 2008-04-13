@@ -49,7 +49,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define ADDRESS "einit"
 
-#define REQUEST "(request list-requests #nil)"
+#define REQUEST "(request list-requests nil)"
 
 void callback (struct einit_sexp *sexp) {
  char *r = einit_sexp_to_string (sexp);
@@ -58,7 +58,7 @@ void callback (struct einit_sexp *sexp) {
 }
 
 int main () {
-#if 1
+#if 0
  int fd = open ("test.sexp", O_RDONLY);
 
  if (fd > 0) {

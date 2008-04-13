@@ -43,9 +43,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdio.h>
 #include <string.h>
 
-#include <ixp_local.h>
-
 #include <einit/event.h>
+#include <einit/ipc.h>
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -53,6 +52,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/stat.h>
 
 #include <fcntl.h>
+
+#define DEFAULT_EINIT_ADDRESS "/dev/einit"
 
 #ifdef __FreeBSD__
 #include <signal.h>
@@ -101,21 +102,15 @@ void einit_power_reset () {
 }
 
 void einit_switch_mode (const char *mode) { // think "runlevel"
- char *path[2];
- path[0] = "mode";
- path[1] = NULL;
-
- einit_write (path, mode);
 }
 
 /* client */
 
-char *einit_ipc_address = "unix!/dev/einit-9p";
-IxpClient *einit_ipc_9p_client = NULL;
-pid_t einit_ipc_9p_client_pid = 0;
+char *einit_ipc_address = DEFAULT_EINIT_ADDRESS;
+pid_t einit_ipc_client_pid = 0;
 
 char einit_connect(int *argc, char **argv) {
- char *envvar = getenv ("EINIT_9P_ADDRESS");
+ char *envvar = getenv ("EINIT_ADDRESS");
  char priv = 0;
  if (envvar)
   einit_ipc_address = envvar;
@@ -137,16 +132,14 @@ char einit_connect(int *argc, char **argv) {
  }
 
  if (!einit_ipc_address || !einit_ipc_address[0])
-  einit_ipc_address = "unix!/dev/einit-9p";
+  einit_ipc_address = DEFAULT_EINIT_ADDRESS;
 
 // einit_ipc_9p_fd = ixp_dial (einit_ipc_address);
  if (priv) {
   return einit_connect_spawn(argc, argv);
  } else {
-  einit_ipc_9p_client = ixp_mount (einit_ipc_address);
+  return einit_ipc_connect (einit_ipc_address);
  }
-
- return (einit_ipc_9p_client ? 1 : 0);
 }
 
 char einit_connect_spawn(int *argc, char **argv) {
@@ -165,17 +158,15 @@ char einit_connect_spawn(int *argc, char **argv) {
  }
 
  char address[BUFFERSIZE];
- char filename[BUFFERSIZE];
  struct stat st;
 
- snprintf (address, BUFFERSIZE, "unix!/tmp/einit.9p.%i", getpid());
- snprintf (filename, BUFFERSIZE, "/tmp/einit.9p.%i", getpid());
+ snprintf (address, BUFFERSIZE, "/tmp/einit.%i", getpid());
 
 // int fd = 0;
 
- einit_ipc_9p_client_pid = fork();
+ einit_ipc_client_pid = fork();
 
- switch (einit_ipc_9p_client_pid) {
+ switch (einit_ipc_client_pid) {
   case -1:
    return 0;
    break;
@@ -193,714 +184,82 @@ char einit_connect_spawn(int *argc, char **argv) {
     close (fd);
    }*/
 
-   execl (EINIT_LIB_BASE "/bin/einit-core", "einit-core", "--ipc-socket", address, "--do-wait", (sandbox ? "--sandbox" : NULL), NULL);
+   execl (EINIT_LIB_BASE "/bin/einit-core", "einit-core", "--ipc", address, "--do-wait", (sandbox ? "--sandbox" : NULL), NULL);
 
    exit (EXIT_FAILURE);
    break;
   default:
-   while (stat (filename, &st)) usleep (100);
+   while (stat (address, &st)) usleep (100);
 
-   einit_ipc_9p_client = ixp_mount (address);
+   char rv = einit_ipc_connect (address);
 
-   unlink (filename);
-
-   return (einit_ipc_9p_client ? 1 : 0);
+   unlink (address);
+   return rv;
    break;
  }
 }
 
 char einit_disconnect() {
- if (einit_ipc_9p_client_pid > 0) {
+ if (einit_ipc_client_pid > 0) {
 /* we really gotta do this in a cleaner way... */
-  kill (einit_ipc_9p_client_pid, SIGKILL);
+  kill (einit_ipc_client_pid, SIGKILL);
 
-  waitpid (einit_ipc_9p_client_pid, NULL, 0);
+  waitpid (einit_ipc_client_pid, NULL, 0);
  }
 
- ixp_unmount (einit_ipc_9p_client);
+/* FIXME */
  return 1;
 }
 
-char *einit_render_path (char **path) {
- if (path) {
-  char *rv = NULL;
-  char *r = set2str ('/', (const char **)path);
-
-  rv = emalloc (strlen (r) + 2);
-  rv[0] = '/';
-  rv[1] = 0;
-
-  strcat (rv, r);
-
-  efree (r);
-
-  return rv;
- } else {
-  return estrdup ("/");
- }
-}
-
-char **einit_ls (char **path) {
- char **rv = NULL;
-
- IxpMsg m;
- Stat *stat;
- IxpCFid *fid;
- char *file, *buf;
- int count, nstat, mstat, i;
-
- file = einit_render_path(path);
-
- stat = ixp_stat(einit_ipc_9p_client, file);
-
- if ((stat->mode&P9_DMDIR) == 0) {
-  return NULL;
- }
- ixp_freestat(stat);
-
- fid = ixp_open(einit_ipc_9p_client, file, P9_OREAD);
-
- if (!fid) return NULL;
-
- nstat = 0;
- mstat = 16;
- stat = emalloc(sizeof(*stat) * mstat);
- buf = emalloc(fid->iounit);
- while((count = ixp_read(fid, buf, fid->iounit)) > 0) {
-  m = ixp_message((void *)buf, count, MsgUnpack);
-  while(m.pos < m.end) {
-   if(nstat == mstat) {
-    mstat <<= 1;
-    stat = erealloc(stat, sizeof(*stat) * mstat);
-   }
-   ixp_pstat(&m, &stat[nstat++]);
-  }
- }
-
- for(i = 0; i < nstat; i++) {
-  if ((stat[i].mode&P9_DMDIR) == 0) {
-   rv = set_str_add (rv, stat[i].name);
-  } else {
-   size_t len = strlen (stat[i].name) + 2;
-   char *x = emalloc (len);
-   snprintf (x, len, "%s/", stat[i].name);
-
-   rv = set_str_add (rv, x);
-   efree (x);
-  }
-  ixp_freestat(&stat[i]);
- }
-
- efree(stat);
- efree (file);
-
- if (rv) {
-  rv = strsetdel (rv, "./");
-  rv = strsetdel (rv, "../");
- }
-
- return rv;
-}
-
-char *einit_read (char **path) {
- char *buffer = einit_render_path (path);
- char *data = NULL;
-
- IxpCFid *f = ixp_open (einit_ipc_9p_client, buffer, P9_OREAD);
-
- if (f) {
-  intptr_t rn = 0;
-  void *buf = NULL;
-  intptr_t blen = 0;
-
-  buf = malloc (f->iounit);
-  if (!buf) {
-   ixp_close (f);
-   return NULL;
-  }
-
-  do {
-//   fprintf (stderr, "reading.\n");
-   buf = realloc (buf, blen + f->iounit);
-   if (buf == NULL) {
-    ixp_close (f);
-    return NULL;
-   }
-//   fprintf (stderr, ".\n");
-
-   rn = ixp_read (f, (char *)(buf + blen), f->iounit);
-   if (rn > 0) {
-//    write (1, buf + blen, rn);
-    blen = blen + rn;
-   }
-  } while (rn > 0);
-
-//  fprintf (stderr, "done.\n");
-
-  if (rn > -1) {
-   data = realloc (buf, blen+1);
-   if (buf == NULL) return NULL;
-
-   data[blen] = 0;
-   if (blen > 0) {
-    *(data+blen) = 0;
-   } else {
-    free (data);
-    data = NULL;
-   }
-
-  }
-
-  ixp_close (f);
- }
-
- efree (buffer);
-
- return data;
-}
-
-int einit_read_callback (char **path, int (*callback)(char *, size_t, void *), void *cdata) {
- char *buffer = einit_render_path (path);
-
- IxpCFid *f = ixp_open (einit_ipc_9p_client, buffer, P9_OREAD);
-
- if (f) {
-  intptr_t rn = 0;
-  void *buf = NULL;
-  intptr_t blen = 0;
-
-  buf = malloc (f->iounit);
-  if (!buf) {
-   ixp_close (f);
-   return 0;
-  }
-
-  do {
-   buf = realloc (buf, blen + f->iounit);
-   if (buf == NULL) {
-    ixp_close (f);
-    return 0;
-   }
-
-   rn = ixp_read (f, (char *)(buf + blen), f->iounit);
-   if (rn > 0) {
-    blen = blen + rn;
-   }
-
-   if ((rn < f->iounit) && blen) {
-    *(((char *)buf) + blen) = 0;
-    callback (buf, blen, cdata);
-    blen = 0;
-   }
-  } while (rn > 0);
-
-  ixp_close (f);
- }
-
- efree (buffer);
-
- return 0;
-}
-
-int einit_read_callback_limited (char **path, int (*callback)(char *, size_t, void *), void *cdata, int fragments) {
- char *buffer = einit_render_path (path);
-
- IxpCFid *f = ixp_open (einit_ipc_9p_client, buffer, P9_OREAD);
-
- if (f) {
-  intptr_t rn = 0;
-  void *buf = NULL;
-  intptr_t blen = 0;
-
-  buf = malloc (f->iounit);
-  if (!buf) {
-   ixp_close (f);
-   return 0;
-  }
-
-  do {
-   buf = realloc (buf, blen + f->iounit);
-   if (buf == NULL) {
-    ixp_close (f);
-    return 0;
-   }
-
-   rn = ixp_read (f, (char *)(buf + blen), f->iounit);
-   if (rn > 0) {
-    blen = blen + rn;
-   }
-
-   if ((rn < f->iounit) && blen) {
-    *(((char *)buf) + blen) = 0;
-    callback (buf, blen, cdata);
-    blen = 0;
-    fragments--;
-
-    if (fragments <= 0) {
-     ixp_close (f);
-     efree (buffer);
-     efree (buf);
-     return 0;
-    }
-   }
-  } while (rn > 0);
-
-  ixp_close (f);
- }
-
- efree (buffer);
-
- return 0;
-}
-
-int einit_read_callback_skip (char **path, int (*callback)(char *, size_t, void *), void *cdata, int fragments) {
- char *buffer = einit_render_path (path);
-
- IxpCFid *f = ixp_open (einit_ipc_9p_client, buffer, P9_OREAD);
-
- if (f) {
-  intptr_t rn = 0;
-  void *buf = NULL;
-  intptr_t blen = 0;
-
-  buf = malloc (f->iounit);
-  if (!buf) {
-   ixp_close (f);
-   return 0;
-  }
-
-  do {
-   buf = realloc (buf, blen + f->iounit);
-   if (buf == NULL) {
-    ixp_close (f);
-    return 0;
-   }
-
-   rn = ixp_read (f, (char *)(buf + blen), f->iounit);
-   if (rn > 0) {
-    blen = blen + rn;
-   }
-
-   if ((rn < f->iounit) && blen) {
-    *(((char *)buf) + blen) = 0;
-
-    if (fragments <= 0)
-     callback (buf, blen, cdata);
-    else
-     fragments--;
-
-    blen = 0;
-   }
-  } while (rn > 0);
-
-  ixp_close (f);
- }
-
- efree (buffer);
-
- return 0;
-}
-
-int einit_write (char **path, const char *data) {
- if (!data) return 0;
-
- char *buffer = einit_render_path (path);
-
- IxpCFid *f = ixp_open (einit_ipc_9p_client, buffer, P9_OWRITE);
-
- if (f) {
-  ixp_write(f, (char *)data, strlen(data));
-
-  ixp_close (f);
- }
-
- efree (buffer);
- return 0;
-}
-
 void einit_service_call (const char *service, const char *action) {
- const char *path[5];
- path[0] = "services";
- path[1] = "all";
- path[2] = service;
- path[3] = "status";
- path[4] = NULL;
-
- einit_write ((char **)path, action);
 }
 
 void einit_module_call (const char *rid, const char *action) {
- const char *path[5];
- path[0] = "modules";
- path[1] = "all";
- path[2] = rid;
- path[3] = "status";
- path[4] = NULL;
-
- einit_write ((char **)path, action);
 }
 
 char * einit_module_get_attribute (const char *rid, const char *attribute) {
- const char *path[5];
- path[0] = "modules";
- path[1] = "all";
- path[2] = rid;
- path[3] = attribute;
- path[4] = NULL;
-
- char *rv = einit_read ((char **)path);
- if (rv)
-  strtrim (rv);
-
- return rv;
 }
 
 char * einit_module_get_name (const char *rid) {
- char *data = einit_module_get_attribute (rid, "name");
- if (data) {
-  char *rv = (char *)str_stabilise(data);
-  efree (data);
-  return rv;
- }
-
- return NULL;
 }
 
 char ** einit_module_get_provides (const char *rid) {
- char *data = einit_module_get_attribute (rid, "provides");
- if (data) {
-  char **rv = str2set ('\n', data);
-  char **nrv = set_str_dup_stable (rv);
-  efree (rv);
-  efree (data);
-  return nrv;
- }
-
- return NULL;
 }
 
 char ** einit_module_get_requires (const char *rid) {
- char *data = einit_module_get_attribute (rid, "requires");
- if (data) {
-  char **rv = str2set ('\n', data);
-  char **nrv = set_str_dup_stable (rv);
-  efree (rv);
-  efree (data);
-  return nrv;
- }
-
- return NULL;
 }
 
 char ** einit_module_get_after (const char *rid) {
- char *data = einit_module_get_attribute (rid, "after");
- if (data) {
-  char **rv = str2set ('\n', data);
-  char **nrv = set_str_dup_stable (rv);
-  efree (rv);
-  efree (data);
-  return nrv;
- }
-
- return NULL;
 }
 
 char ** einit_module_get_before (const char *rid) {
- char *data = einit_module_get_attribute (rid, "before");
- if (data) {
-  char **rv = str2set ('\n', data);
-  char **nrv = set_str_dup_stable (rv);
-  efree (rv);
-  efree (data);
-  return nrv;
- }
-
- return NULL;
 }
 
 char ** einit_module_get_status (const char *rid) {
- char *data = einit_module_get_attribute (rid, "status");
- if (data) {
-  char **rv = str2set ('\n', data);
-  char **nrv = set_str_dup_stable (rv);
-  efree (rv);
-  efree (data);
-  return nrv;
- }
-
- return NULL;
 }
 
 char ** einit_module_get_options (const char *rid) {
- char *data = einit_module_get_attribute (rid, "options");
- if (data) {
-  char **rv = str2set ('\n', data);
-  char **nrv = set_str_dup_stable (rv);
-  efree (rv);
-  efree (data);
-  return nrv;
- }
-
- return NULL;
-}
-
-int einit_event_loop_decoder (char *fragment, size_t size, void *data) {
- char **buffer = str2set ('\n', fragment);
- int i = 0;
- struct einit_event *ev = evinit(0);
-
- for (; buffer[i]; i++) {
-  if (strprefix (buffer[i], "event-type=")) {
-   if (strcmp ((buffer[i])+11, "unknown/custom")) {
-    ev->type = event_string_to_code((buffer[i])+11);
-   } else {
-    goto cleanup_exit;
-   }
-  } else if (strprefix (buffer[i], "integer=")) {
-   ev->integer = parse_integer ((buffer[i])+8);
-  } else if (strprefix (buffer[i], "task=")) {
-   ev->task = parse_integer ((buffer[i])+5);
-  } else if (strprefix (buffer[i], "status=")) {
-   ev->status = parse_integer ((buffer[i])+7);
-  } else if (strprefix (buffer[i], "flag=")) {
-   ev->flag = parse_integer ((buffer[i])+5);
-  } else if (strprefix (buffer[i], "module=")) {
-   ev->rid = (char *)str_stabilise ((buffer[i])+7);
-  } else if (strprefix (buffer[i], "string=")) {
-   ev->string = (char *)str_stabilise ((buffer[i])+7);
-  } else if (strprefix (buffer[i], "stringset=")) {
-   ev->stringset = set_str_add_stable (ev->stringset, (buffer[i])+10);
-  }
- }
-
-// fprintf (stderr, "new fragment: %s\n", fragment);
-
- if (ev->type) {
-  event_emit (ev, 0);
- }
-
- cleanup_exit:
-
- if (ev->stringset)
-  efree(ev->stringset);
-
- evdestroy (ev);
- efree (buffer);
-
- return 0;
 }
 
 void einit_event_loop () {
- char *path[3] = { "events", "feed", NULL };
- einit_read_callback (path, einit_event_loop_decoder, NULL);
 }
 
 void einit_event_loop_skip_old () {
- char *path[3] = { "events", "count", NULL };
- char *count_s = einit_read (path);
-
- if (count_s) {
-  int count = parse_integer (count_s);
-
-  path[1] = "feed";
-  einit_read_callback_skip (path, einit_event_loop_decoder, NULL, count);
-
-  efree (count_s);
- }
 }
 
 void einit_replay_events() {
- char *path[3] = { "events", "count", NULL };
- char *count_s = einit_read (path);
-
- if (count_s) {
-  int count = parse_integer (count_s);
-
-  path[1] = "feed";
-  einit_read_callback_limited (path, einit_event_loop_decoder, NULL, count);
-
-  efree (count_s);
- }
 }
 
 const char *einit_event_encode (struct einit_event *ev) {
- char *ecode = event_code_to_string(ev->type);
-
- char **data = NULL;
- char buffer[BUFFERSIZE];
-
- esprintf (buffer, BUFFERSIZE, "event-type=%s", ecode);
- data = set_str_add (data, buffer);
-
- if (ev->integer) {
-  esprintf (buffer, BUFFERSIZE, "integer=%i", ev->integer);
-  data = set_str_add (data, buffer);
- }
-
- if (ev->task) {
-  esprintf (buffer, BUFFERSIZE, "task=%i", ev->task);
-  data = set_str_add (data, buffer);
- }
-
- if (ev->status) {
-  esprintf (buffer, BUFFERSIZE, "status=%i", ev->status);
-  data = set_str_add (data, buffer);
- }
-
-
- if (ev->flag) {
-  esprintf (buffer, BUFFERSIZE, "flag=%i", ev->flag);
-  data = set_str_add (data, buffer);
- }
-
- if (ev->rid) {
-  char *msg_string;
-  size_t i = strlen (ev->rid) + 1 + 9; /* "module=\n"*/
-  msg_string = emalloc (i);
-  esprintf (msg_string, i, "module=%s", ev->rid);
-
-  data = set_str_add (data, msg_string);
-  efree (msg_string);
- }
-
- if (ev->string) {
-  char *msg_string;
-  size_t i = strlen (ev->string) + 1 + 9; /* "string=\n"*/
-  msg_string = emalloc (i);
-  esprintf (msg_string, i, "string=%s", ev->string);
-
-  data = set_str_add (data, msg_string);
-  efree (msg_string);
- }
-
- if (ev->stringset) {
-  int y = 0;
-  for (; ev->stringset[y]; y++) {
-   char *msg_string;
-   size_t i = strlen (ev->stringset[y]) + 1 + 12; /* "stringset=\n"*/
-   msg_string = emalloc (i);
-   esprintf (msg_string, i, "stringset=%s", ev->stringset[y]);
-
-   data = set_str_add (data, msg_string);
-   efree (msg_string);
-  }
- }
-
- data = set_str_add (data, "\n");
-
- char *t = set2str ('\n', (const char **)data);
- const char *stable = str_stabilise (t);
- efree (data);
- efree (t);
-
- return stable;
 }
 
 struct smodule *einit_decode_module_from_string (const char *s) {
- struct smodule *sm = emalloc(sizeof (struct smodule));
- memset (sm, 0, sizeof (struct smodule));
-
- char **data = str2set ('\n', s);
- int i = 0;
-
- for (; data[i]; i++) {
-  if (strprefix (data[i], "rid=")) {
-   sm->rid = (char *)str_stabilise ((data[i])+4);
-  } else if (strprefix (data[i], "name=")) {
-   sm->name = (char *)str_stabilise ((data[i])+5);
-  } else if (strprefix (data[i], "provides=")) {
-   sm->si.provides = set_str_add_stable (sm->si.provides, (data[i])+9);
-  } else if (strprefix (data[i], "requires=")) {
-   sm->si.requires = set_str_add_stable (sm->si.requires, (data[i])+9);
-  } else if (strprefix (data[i], "before=")) {
-   sm->si.before = set_str_add_stable (sm->si.before, (data[i])+7);
-  } else if (strprefix (data[i], "after=")) {
-   sm->si.after = set_str_add_stable (sm->si.after, (data[i])+6);
-  } else if (strprefix (data[i], "option=")) {
-   if (strmatch (((data[i])+7), "run-once")) {
-    sm->mode |= einit_feedback_job;
-   } else if (strmatch (((data[i])+7), "deprecated")) {
-    sm->mode |= einit_module_deprecated;
-   }
-  }
- }
-
- efree (data);
-
- if (!sm->rid) sm->rid = (char *)str_stabilise ("unknown");
- if (!sm->name) sm->name = (char *)str_stabilise ("Unknown Module");
-
- sm->mode |= einit_module | einit_module_event_actions;
-
- return sm;
 }
 
 void einit_register_module (struct smodule *s) {
- char **data = NULL;
- char buffer[BUFFERSIZE];
-
- snprintf (buffer, BUFFERSIZE, "rid=%s", s->rid ? s->rid : "unknown");
- data = set_str_add (data, buffer);
- snprintf (buffer, BUFFERSIZE, "name=%s", s->name ? s->name : "Unknown Module");
- data = set_str_add (data, buffer);
-
- if (s->si.provides) {
-  int i = 0;
-
-  for (; s->si.provides[i]; i++) {
-   snprintf (buffer, BUFFERSIZE, "provides=%s", s->si.provides[i]);
-   data = set_str_add (data, buffer);
-  }
- }
-
- if (s->si.requires) {
-  int i = 0;
-
-  for (; s->si.requires[i]; i++) {
-   snprintf (buffer, BUFFERSIZE, "requires=%s", s->si.requires[i]);
-   data = set_str_add (data, buffer);
-  }
- }
-
- if (s->si.before) {
-  int i = 0;
-
-  for (; s->si.before[i]; i++) {
-   snprintf (buffer, BUFFERSIZE, "before=%s", s->si.before[i]);
-   data = set_str_add (data, buffer);
-  }
- }
-
- if (s->si.after) {
-  int i = 0;
-
-  for (; s->si.after[i]; i++) {
-   snprintf (buffer, BUFFERSIZE, "after=%s", s->si.after[i]);
-   data = set_str_add (data, buffer);
-  }
- }
-
- char *path[] = { "modules", "register", NULL };
- char *t = set2str (':', (const char **)data);
- efree (data);
-
- einit_write (path, t);
-
- efree (t);
-
- return;
 }
 
 char * einit_get_configuration_string (const char *key, const char *attribute) {
- char *path[] = { "configuration", (char *)key, (char *)(attribute ? attribute : "s"), NULL };
- char *res = NULL;
-
- if ((res = einit_read (path))) {
-  strtrim (res);
-  return (char *)str_stabilise (res);
- }
-
- return NULL;
 }
 
 signed int einit_get_configuration_integer (const char *key, const char *attribute) {
