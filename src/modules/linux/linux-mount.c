@@ -216,6 +216,9 @@ int linux_mount_do_mount_real(char *mountpoint, char *fs,
             if (strmatch(mp->options[fi], "auto") || strmatch(mp->options[fi], "noauto") || strmatch(mp->options[fi], "system") || strmatch(mp->options[fi], "critical") || strmatch(mp->options[fi], "network") || strmatch(mp->options[fi], "skip-fsck"));    // ignore 
                                                                                                                                                                                                                                                                 // 
             // 
+            // 
+            // 
+            // 
             // our 
             // own 
             // specifiers, 
@@ -264,6 +267,9 @@ int linux_mount_do_mount_ntfs_3g(char *mountpoint, char *fs,
         for (; mp->options[fi]; fi++) {
             if (strmatch(mp->options[fi], "auto") || strmatch(mp->options[fi], "noauto") || strmatch(mp->options[fi], "system") || strmatch(mp->options[fi], "critical") || strmatch(mp->options[fi], "network") || strmatch(mp->options[fi], "skip-fsck"));    // ignore 
                                                                                                                                                                                                                                                                 // 
+            // 
+            // 
+            // 
             // 
             // our 
             // own 

@@ -295,10 +295,6 @@ extern "C" {
         /*
          * einit_event_subsystem_ipc_v2: 
          */
-        einit_ipc_read = einit_event_subsystem_ipc_v2 | 0x001,
-        einit_ipc_write = einit_event_subsystem_ipc_v2 | 0x002,
-        einit_ipc_stat = einit_event_subsystem_ipc_v2 | 0x003,
-        einit_ipc_open = einit_event_subsystem_ipc_v2 | 0x004,
         einit_ipc_enabling = einit_event_subsystem_ipc_v2 | 0x010,
         einit_ipc_disabling = einit_event_subsystem_ipc_v2 | 0x011,
         einit_ipc_disable = einit_event_subsystem_ipc_v2 | 0x012,
@@ -318,7 +314,7 @@ extern "C" {
                                          * watch */
         enum einit_event_code chain_type;       /* !< the event to be
                                                  * called right after this 
-                                                 * * * one */
+                                                 * * * * * * one */
 
         void **set;             /* !< a set that should make sense in
                                  * combination with the event type */

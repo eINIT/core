@@ -915,7 +915,13 @@ void mount_update_nodes_from_mtab()
             // *device, char *fs, char **options, char *before_mount, char 
             // 
             // 
+            // 
+            // 
+            // 
             // *after_mount, char *before_umount, char *after_umount, char 
+            // 
+            // 
+            // 
             // 
             // 
             // *manager, char **variables, uint32_t mountflags) {
@@ -1734,15 +1740,17 @@ char *options_string_to_mountflags(char **options, unsigned long *mntflags,
 #ifdef MS_NOSUID
             (*mntflags) |= MS_NOSUID;
 #endif
-        }                       /* else if (strmatch (options[fi], * *
+        }                       /* else if (strmatch (options[fi], * * * * 
                                  * "nouser") || strmatch (options[fi], * * 
-                                 * "group") || strmatch (options[fi], * *
-                                 * "auto") || strmatch (options[fi], * *
-                                 * "defaults")) { notice (6, "node \"%s\": 
-                                 * * * ignored unsupported/irrelevant * *
-                                 * mount-flag \"%s\": it has no meaning *
-                                 * * for eINIT, you should remove it.\n",
-                                 * * * mountpoint, options[fi]); } else */
+                                 * * * "group") || strmatch (options[fi],
+                                 * * * * * "auto") || strmatch
+                                 * (options[fi], * * * * "defaults")) {
+                                 * notice (6, "node * \"%s\": * * *
+                                 * ignored * unsupported/irrelevant * * *
+                                 * mount-flag * \"%s\": it has no meaning 
+                                 * * * * for * eINIT, you should remove
+                                 * it.\n", * * * * mountpoint,
+                                 * options[fi]); } else */
         if (strmatch(options[fi], "_netdev")) {
             notice(6,
                    "node \"%s\": ignored unsupported/irrelevant mount-flag \"_netdev\": einit uses a table with filesystem data to find out if network access is required to mount a certain node, so you should rather modify that table than specify \"_netdev\".\n",
@@ -1853,6 +1861,9 @@ char *options_string_to_mountflags(char **options, unsigned long *mntflags,
 #endif
         if (strmatch(options[fi], "auto") || strmatch(options[fi], "noauto") || strmatch(options[fi], "system") || strmatch(options[fi], "critical") || strmatch(options[fi], "network") || strmatch(options[fi], "skip-fsck"));        // ignore 
                                                                                                                                                                                                                                         // 
+        // 
+        // 
+        // 
         // 
         // our 
         // own 

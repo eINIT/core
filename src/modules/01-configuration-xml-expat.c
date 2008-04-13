@@ -71,7 +71,6 @@ int einit_configuration_xml_expat_configure(struct lmodule *);
 void einit_config_xml_expat_event_handler_core_update_configuration(struct
                                                                     einit_event
                                                                     *);
-void einit_config_xml_expat_ipc_read(struct einit_event *);
 
 #if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
 const struct smodule einit_configuration_xml_expat_self = {
@@ -485,6 +484,9 @@ void einit_config_xml_expat_event_handler_core_update_configuration(struct
             if (st.st_mtime > xml_configuration_files_highest_mtime) {  // need 
                                                                         // 
                 // 
+                // 
+                // 
+                // 
                 // to 
                 // update 
                 // configuration
@@ -507,93 +509,6 @@ void einit_config_xml_expat_event_handler_core_update_configuration(struct
     }
 }
 
-#define RNV_INVOCATION "rnv -q -n 255"
-
-void einit_config_xml_expat_ipc_read(struct einit_event *ev)
-{
-    char **path = ev->para;
-
-    struct ipc_fs_node n;
-
-    if (path && path[0] && strmatch(path[0], "issues")) {
-        if (!path[1]) {
-            n.is_file = 1;
-
-            char **w = which("rnv");
-            if (!w) {
-                n.name = (char *) str_stabilise("configuration-xml");
-                ev->set = set_fix_add(ev->set, &n, sizeof(n));
-            } else {
-                char *xmlfiles =
-                    set2str(' ', (const char **) xml_configuration_files);
-                char *rc = NULL;
-
-                if (xmlfiles) {
-                    char **cmd =
-                        (char **) set_noa_add(NULL, RNV_INVOCATION);
-                    cmd =
-                        (char **) set_noa_add((void **) cmd,
-                                              EINIT_LIB_BASE
-                                              "/schemata/einit.rnc");
-                    cmd = (char **) set_noa_add((void **) cmd, xmlfiles);
-                    rc = set2str(' ', (const char **) cmd);
-                    efree(xmlfiles);
-                }
-
-                if (rc) {
-                    int status = system(rc);
-                    if (WEXITSTATUS(status) != EXIT_SUCCESS) {
-                        n.name =
-                            (char *) str_stabilise("configuration-xml");
-                        ev->set = set_fix_add(ev->set, &n, sizeof(n));
-                    }
-                    efree(w);
-                }
-            }
-        } else if (strmatch(path[1], "configuration-xml")) {
-            char **w = which("rnv");
-            if (!w) {
-                ev->stringset =
-                    set_str_add_stable(ev->stringset,
-                                       "[MINOR] You do not have 'rnv' installed.\n    Without this programme, eINIT can't verify your .xml files' syntactical correctness.");
-            } else {
-                char *xmlfiles =
-                    set2str(' ', (const char **) xml_configuration_files);
-                char *rc = NULL;
-
-                if (xmlfiles) {
-                    char **cmd =
-                        (char **) set_noa_add(NULL, RNV_INVOCATION);
-                    cmd =
-                        (char **) set_noa_add((void **) cmd,
-                                              EINIT_LIB_BASE
-                                              "/schemata/einit.rnc");
-                    cmd = (char **) set_noa_add((void **) cmd, xmlfiles);
-                    cmd = (char **) set_noa_add((void **) cmd, "2>&1");
-                    rc = set2str(' ', (const char **) cmd);
-                    efree(xmlfiles);
-                }
-
-                if (rc) {
-                    FILE *f = popen(rc, "r");
-                    if (f) {
-                        char buffer[BUFFERSIZE];
-
-                        while (fgets(buffer, BUFFERSIZE, f) == buffer) {
-                            strtrim(buffer);
-                            ev->stringset =
-                                set_str_add(ev->stringset, buffer);
-                        }
-
-                        pclose(f);
-                    }
-                    efree(w);
-                }
-            }
-        }
-    }
-}
-
 extern char **einit_startup_configuration_files;
 
 int einit_configuration_xml_expat_configure(struct lmodule *this)
@@ -601,7 +516,6 @@ int einit_configuration_xml_expat_configure(struct lmodule *this)
     module_init(this);
     exec_configure(this);
 
-    event_listen(einit_ipc_read, einit_config_xml_expat_ipc_read);
     event_listen(einit_core_update_configuration,
                  einit_config_xml_expat_event_handler_core_update_configuration);
 

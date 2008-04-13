@@ -69,6 +69,9 @@ struct init_command {
     char padding[368];          // padding, legacy applications expect the 
                                 // 
     // 
+    // 
+    // 
+    // 
     // struct to be 384 bytes long
 };
 
@@ -175,6 +178,9 @@ int initctl_wait(char *fifo)
                     }
                 } else if (ic.command == INITCTL_CMD_SETENV) {  // padding 
                                                                 // 
+                    // 
+                    // 
+                    // 
                     // 
                     // contains 
                     // the new 

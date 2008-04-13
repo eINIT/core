@@ -104,97 +104,99 @@ void handle(sig_t, ...);
 void delset(sigset_t *, ...);
 
 void stall(const char *, ...) __printflike(1, 2);
-void warning(const char *, ...) __printflike(1, 2);
-void emergency(const char *, ...) __printflike(1, 2);
-void disaster(int);
-void badsys(int);
-int runshutdown(void);
-static char *strk(char *);
+     void warning(const char *, ...) __printflike(1, 2);
+     void emergency(const char *, ...) __printflike(1, 2);
+     void disaster(int);
+     void badsys(int);
+     int runshutdown(void);
+     static char *strk(char *);
 
 /*
  * We really need a recursive typedef...
  * The following at least guarantees that the return type of (*state_t)()
  * is sufficiently wide to hold a function pointer.
  */
-typedef long (*state_func_t) (void);
-typedef state_func_t(*state_t) (void);
+     typedef long (*state_func_t) (void);
+     typedef state_func_t(*state_t) (void);
 
-state_func_t single_user(void);
-state_func_t runcom(void);
-state_func_t read_ttys(void);
-state_func_t multi_user(void);
-state_func_t clean_ttys(void);
-state_func_t catatonia(void);
-state_func_t death(void);
+     state_func_t single_user(void);
+     state_func_t runcom(void);
+     state_func_t read_ttys(void);
+     state_func_t multi_user(void);
+     state_func_t clean_ttys(void);
+     state_func_t catatonia(void);
+     state_func_t death(void);
 
-state_func_t run_script(const char *);
+     state_func_t run_script(const char *);
 
-enum { AUTOBOOT, FASTBOOT } runcom_mode = AUTOBOOT;
+     enum { AUTOBOOT, FASTBOOT } runcom_mode = AUTOBOOT;
 #define FALSE	0
 #define TRUE	1
 
-int Reboot = FALSE;
-int howto = RB_AUTOBOOT;
+     int Reboot = FALSE;
+     int howto = RB_AUTOBOOT;
 
-int devfs;
+     int devfs;
 
-void transition(state_t);
-state_t requested_transition;
+     void transition(state_t);
+     state_t requested_transition;
 
-void setctty(const char *);
-const char *get_shell(void);
-void write_stderr(const char *message);
+     void setctty(const char *);
+     const char *get_shell(void);
+     void write_stderr(const char *message);
 
-typedef struct init_session {
-    int se_index;               /* index of entry in ttys file */
-    pid_t se_process;           /* controlling process */
-    time_t se_started;          /* used to avoid thrashing */
-    int se_flags;               /* status of session */
+     typedef struct init_session {
+         int se_index;          /* index of entry in ttys file */
+         pid_t se_process;      /* controlling process */
+         time_t se_started;     /* used to avoid thrashing */
+         int se_flags;          /* status of session */
 #define	SE_SHUTDOWN	0x1     /* session won't be restarted */
 #define	SE_PRESENT	0x2     /* session is in /etc/ttys */
-    int se_nspace;              /* spacing count */
-    char *se_device;            /* filename of port */
-    char *se_getty;             /* what to run on that port */
-    char *se_getty_argv_space;  /* pre-parsed argument array space */
-    char **se_getty_argv;       /* pre-parsed argument array */
-    char *se_window;            /* window system (started only once) */
-    char *se_window_argv_space; /* pre-parsed argument array space */
-    char **se_window_argv;      /* pre-parsed argument array */
-    char *se_type;              /* default terminal type */
-    struct init_session *se_prev;
-    struct init_session *se_next;
-} session_t;
+         int se_nspace;         /* spacing count */
+         char *se_device;       /* filename of port */
+         char *se_getty;        /* what to run on that port */
+         char *se_getty_argv_space;     /* pre-parsed argument array space 
+                                         */
+         char **se_getty_argv;  /* pre-parsed argument array */
+         char *se_window;       /* window system (started only once) */
+         char *se_window_argv_space;    /* pre-parsed argument array space 
+                                         */
+         char **se_window_argv; /* pre-parsed argument array */
+         char *se_type;         /* default terminal type */
+         struct init_session *se_prev;
+         struct init_session *se_next;
+     } session_t;
 
-void free_session(session_t *);
-session_t *new_session(session_t *, int, struct ttyent *);
-session_t *sessions;
+     void free_session(session_t *);
+     session_t *new_session(session_t *, int, struct ttyent *);
+     session_t *sessions;
 
-char **construct_argv(char *);
-void start_window_system(session_t *);
-void collect_child(pid_t);
-pid_t start_getty(session_t *);
-void transition_handler(int);
-void alrm_handler(int);
-void setsecuritylevel(int);
-int getsecuritylevel(void);
-int setupargv(session_t *, struct ttyent *);
+     char **construct_argv(char *);
+     void start_window_system(session_t *);
+     void collect_child(pid_t);
+     pid_t start_getty(session_t *);
+     void transition_handler(int);
+     void alrm_handler(int);
+     void setsecuritylevel(int);
+     int getsecuritylevel(void);
+     int setupargv(session_t *, struct ttyent *);
 #ifdef LOGIN_CAP
-void setprocresources(const char *);
+     void setprocresources(const char *);
 #endif
-int clang;
+     int clang;
 
-void clear_session_logs(session_t *);
+     void clear_session_logs(session_t *);
 
-int start_session_db(void);
-void add_session(session_t *);
-void del_session(session_t *);
-session_t *find_session(pid_t);
-DB *session_db;
+     int start_session_db(void);
+     void add_session(session_t *);
+     void del_session(session_t *);
+     session_t *find_session(pid_t);
+     DB *session_db;
 
 /*
  * The mother of all processes.
  */
-int main(int argc, char *argv[])
+     int main(int argc, char *argv[])
 {
     state_t initial_transition = runcom;
     char kenv_value[PATH_MAX];

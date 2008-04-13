@@ -638,8 +638,8 @@ DEFINE_UTF16_TO_UTF8(little2_)
 #define LITTLE2_IS_NMSTRT_CHAR_MINBPC(enc, p) \
   UCS2_GET_NAMING(nmstrtPages, (unsigned char)p[1], (unsigned char)p[0])
 #ifdef XML_MIN_SIZE
-static int PTRFASTCALL little2_byteType(const ENCODING * enc,
-                                        const char *p)
+     static int PTRFASTCALL little2_byteType(const ENCODING * enc,
+                                             const char *p)
 {
     return LITTLE2_BYTE_TYPE(enc, p);
 }
@@ -699,20 +699,20 @@ static int PTRFASTCALL little2_isNmstrtMin(const ENCODING * enc,
 #undef IS_INVALID_CHAR
 #endif                          /* not XML_MIN_SIZE */
 #ifdef XML_NS
-static const struct normal_encoding little2_encoding_ns = {
-    {VTABLE, 2, 0,
+     static const struct normal_encoding little2_encoding_ns = {
+         {VTABLE, 2, 0,
 #if BYTEORDER == 1234
-     1
+          1
 #else
-     0
+          0
 #endif
-     },
-    {
+          },
+         {
 #include "asciitab.h"
 #include "latin1tab.h"
-     },
-    STANDARD_VTABLE(little2_)
-};
+          },
+         STANDARD_VTABLE(little2_)
+     };
 
 #endif
 

@@ -228,6 +228,9 @@ int cfg_addnode_f(struct cfgnode *node)
                 // we risk not being atomic at this point but... it really 
                 // 
                 // 
+                // 
+                // 
+                // 
                 // is unlikely to go weird.
                 ((struct cfgnode *) cur->value)->arbattrs = node->arbattrs;
                 cur->luggage = node->arbattrs;
@@ -493,10 +496,7 @@ char *cfg_getpath_f(const char *id)
     return svpath;
 }
 
-void
-einit_configuration_stree_einit_event_handler_core_configuration_update
-(struct einit_event *ev)
-{
+void einit_configuration_stree_einit_event_handler_core_configuration_update(struct einit_event *ev) {
     // update global environment here
     char **env = einit_global_environment;
     einit_global_environment = NULL;
@@ -512,111 +512,6 @@ einit_configuration_stree_einit_event_handler_core_configuration_update
         }
     }
     einit_global_environment = env;
-}
-
-void einit_configuration_stree_ipc_read(struct einit_event *ev)
-{
-    char **path = ev->para;
-
-    struct ipc_fs_node n;
-
-    if (!path) {
-        n.name = (char *) str_stabilise("configuration");
-        n.is_file = 0;
-        ev->set = set_fix_add(ev->set, &n, sizeof(n));
-    } else if (path && path[0] && strmatch(path[0], "configuration")) {
-        if (!path[1]) {
-            n.name = (char *) str_stabilise("update");
-            n.is_file = 1;
-            ev->set = set_fix_add(ev->set, &n, sizeof(n));
-
-            char **tmp = NULL;
-
-            struct stree *cur = streelinear_prepare(hconfiguration);
-            while (cur) {
-                struct cfgnode *node = cur->value;
-
-                if (node->arbattrs
-                    && (!tmp
-                        || !inset((const void **) tmp, cur->key,
-                                  SET_TYPE_STRING))) {
-                    tmp = (char **) set_noa_add((void **) tmp, cur->key);
-
-                    n.name = (char *) str_stabilise(cur->key);
-                    n.is_file = 0;
-                    ev->set = set_fix_add(ev->set, &n, sizeof(n));
-                }
-
-                cur = streenext(cur);
-            }
-        } else if (!strmatch(path[1], "update")) {
-            if (!path[2]) {
-                struct cfgnode *node = cfg_getnode(path[1], NULL);
-
-                if (node && node->arbattrs) {
-                    int i = 0;
-
-                    for (; node->arbattrs[i]; i += 2) {
-                        n.name = (char *) str_stabilise(node->arbattrs[i]);
-                        n.is_file = 1;
-                        ev->set = set_fix_add(ev->set, &n, sizeof(n));
-                    }
-                }
-            } else {
-                struct cfgnode *node = cfg_getnode(path[1], NULL);
-
-                if (node && node->arbattrs) {
-                    int i = 0;
-
-                    for (; node->arbattrs[i]; i += 2) {
-                        if (strmatch(node->arbattrs[i], path[2])) {
-                            ev->stringset =
-                                set_str_add_stable(ev->stringset,
-                                                   node->arbattrs[i + 1]);
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-void einit_configuration_stree_ipc_write(struct einit_event *ev)
-{
-    char **path = ev->para;
-
-    if (path && ev->set && ev->set[0] && path[0] && path[1]
-        && strmatch(path[0], "configuration")
-        && strmatch(path[0], "update")) {
-        struct einit_event nev =
-            evstaticinit(einit_core_update_configuration);
-
-        if (strmatch(ev->set[0], "update")) {
-            notice(4, "event-subsystem: updating configuration");
-            nev.string = NULL;
-        } else {
-            notice(4, "updating configuration with file %s",
-                   (char *) ev->set[0]);
-            nev.string = ev->set[0];
-        }
-
-        event_emit(&nev, 0);
-
-        evstaticdestroy(nev);
-    }
-}
-
-void einit_configuration_stree_ipc_stat(struct einit_event *ev)
-{
-    char **path = ev->para;
-
-    if (path && path[0]) {
-        if (strmatch(path[0], "configuration")) {
-            ev->flag = (path[1]
-                        && (path[2]
-                            || strmatch(path[1], "update")) ? 1 : 0);
-        }
-    }
 }
 
 void cfg_run_callback(char *prefix, void (*callback) (struct cfgnode *))
@@ -669,10 +564,6 @@ int einit_configuration_stree_configure(struct lmodule *tm)
 
     function_register("einit-configuration-callback-prefix", 1,
                       cfg_callback_prefix_f);
-
-    event_listen(einit_ipc_read, einit_configuration_stree_ipc_read);
-    event_listen(einit_ipc_stat, einit_configuration_stree_ipc_stat);
-    event_listen(einit_ipc_write, einit_configuration_stree_ipc_write);
 
     eregcomp(&cfg_storage_allowed_duplicates, ".*");
 
