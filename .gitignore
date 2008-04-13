@@ -60,3 +60,5 @@ modules/xml/config.sh
 *.swp
 
 config.log
+
+*~
