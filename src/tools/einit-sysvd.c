@@ -62,20 +62,12 @@
 #define INITCTL_CMD_UNSETENV     0x00000007
 
 struct init_command {
-    uint32_t signature;         // signature, must be INITCTL_MAGIC
-    uint32_t command;           // the request ID
-    uint32_t runlevel;          // the runlevel argument
-    uint32_t timeout;           // time between TERM and KILL
-    char padding[368];          // padding, legacy applications expect the 
-                                // 
-    // 
-    // 
-    // 
-    // 
-    // 
-    // 
-    // 
-    // struct to be 384 bytes long
+    uint32_t signature;         /* signature, must be INITCTL_MAGIC */
+    uint32_t command;           /* the request ID */
+    uint32_t runlevel;          /* the runlevel argument */
+    uint32_t timeout;           /* time between TERM and KILL */
+    char padding[368];          /* padding, legacy applications expect the 
+                                 * struct to be 384 bytes long */
 };
 
 #define PIDFILE "/var/run/einit-sysvd.pid"
@@ -114,22 +106,16 @@ int initctl_wait(char *fifo)
             return EXIT_FAILURE;
         }
 
-        memset(&ic, 0, sizeof(struct init_command));    // clear this
-        // struct, just in 
-        // case
+        memset(&ic, 0, sizeof(struct init_command));
+        /*
+         * clear the struct, just in case 
+         */
 
-        if (read(nfd, &ic, sizeof(struct init_command)) > 12) { // enough
-            // bytes
-            // to
-            // process 
-            // were
-            // read,
-            // we dont 
-            // care
-            // about
-            // the
-            // rest
-            // anyway
+        if (read(nfd, &ic, sizeof(struct init_command)) > 12) {
+            /*
+             * enough bytes to process were read, we dont care about the
+             * rest anyway 
+             */
             if (ic.signature == INITCTL_MAGIC) {
                 // INITCTL_CMD_START: what's that do?
                 // INITCTL_CMD_UNSETENV is deliberately ignored
@@ -179,19 +165,10 @@ int initctl_wait(char *fifo)
                         einit_switch_mode(nmode);
                         einit_disconnect();
                     }
-                } else if (ic.command == INITCTL_CMD_SETENV) {  // padding 
-                                                                // 
-                    // 
-                    // 
-                    // 
-                    // 
-                    // 
-                    // 
-                    // 
-                    // contains 
-                    // the new 
-                    // environment 
-                    // string
+                } else if (ic.command == INITCTL_CMD_SETENV) {
+                    /*
+                     * padding contains the new environment string 
+                     */
                     char **cx = str2set(':', ic.padding);
                     if (cx) {
                         if (cx[0] && cx[1]) {

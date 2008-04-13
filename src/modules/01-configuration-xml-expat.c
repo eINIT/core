@@ -477,21 +477,14 @@ void einit_config_xml_expat_event_handler_core_update_configuration(struct
         uint32_t i = 0;
 
         for (; xml_configuration_files && xml_configuration_files[i]; i++) {
-            stat(xml_configuration_files[i], &st);      // see if any
-            // files were
-            // modified
-            if (st.st_mtime > xml_configuration_files_highest_mtime) {  // need 
-                                                                        // 
-                // 
-                // 
-                // 
-                // 
-                // 
-                // 
-                // 
-                // to 
-                // update 
-                // configuration
+            stat(xml_configuration_files[i], &st);
+            /*
+             * see if any files were modified 
+             */
+            if (st.st_mtime > xml_configuration_files_highest_mtime) {
+                /*
+                 * need to update configuration 
+                 */
                 for (i = 0;
                      xml_configuration_files && xml_configuration_files[i];
                      i++) {

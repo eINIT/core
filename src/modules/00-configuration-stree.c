@@ -221,19 +221,11 @@ int cfg_addnode_f(struct cfgnode *node)
             if (cur->value
                 && !(((struct cfgnode *) cur->value)->
                      type ^ einit_node_mode)) {
-                // this means we found something that looks like it
+                /*
+                 * this means we found something that looks like it 
+                 */
                 void *bsl = cur->luggage;
 
-                // we risk not being atomic at this point but... it really 
-                // 
-                // 
-                // 
-                // 
-                // 
-                // 
-                // 
-                // 
-                // is unlikely to go weird.
                 ((struct cfgnode *) cur->value)->arbattrs = node->arbattrs;
                 cur->luggage = node->arbattrs;
 
@@ -498,10 +490,7 @@ char *cfg_getpath_f(const char *id)
     return svpath;
 }
 
-void
-einit_configuration_stree_einit_event_handler_core_configuration_update
-(struct einit_event *ev)
-{
+void einit_configuration_stree_einit_event_handler_core_configuration_update(struct einit_event *ev) {
     // update global environment here
     char **env = einit_global_environment;
     einit_global_environment = NULL;

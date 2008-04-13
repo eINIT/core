@@ -312,9 +312,10 @@ extern "C" {
     struct einit_event {
         enum einit_event_code type;     /* !< the event or subsystem to
                                          * watch */
-        enum einit_event_code chain_type;       /* !< the event to be
-                                                 * called right after this 
-                                                 * * * * * * * * * one */
+        enum einit_event_code chain_type;
+        /*
+         * !< the event to be called right after this one 
+         */
 
         void **set;             /* !< a set that should make sense in
                                  * combination with the event type */

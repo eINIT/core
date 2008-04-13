@@ -921,7 +921,13 @@ void mount_update_nodes_from_mtab()
             // 
             // 
             // 
+            // 
+            // 
+            // 
             // *after_mount, char *before_umount, char *after_umount, char 
+            // 
+            // 
+            // 
             // 
             // 
             // 
@@ -1867,6 +1873,9 @@ char *options_string_to_mountflags(char **options, unsigned long *mntflags,
 #endif
         if (strmatch(options[fi], "auto") || strmatch(options[fi], "noauto") || strmatch(options[fi], "system") || strmatch(options[fi], "critical") || strmatch(options[fi], "network") || strmatch(options[fi], "skip-fsck"));        // ignore 
                                                                                                                                                                                                                                         // 
+        // 
+        // 
+        // 
         // 
         // 
         // 

@@ -56,8 +56,8 @@ static const struct einit_sexp sexp_nil_v = {.type = es_nil };
 static const struct einit_sexp sexp_true_v = {.type = es_boolean_true };
 static const struct einit_sexp sexp_false_v = {.type = es_boolean_false };
 static const struct einit_sexp sexp_end_of_list_v = {.type = es_list_end };
-static const struct einit_sexp sexp_empty_list_v = {.type =
-        es_empty_list };
+static const struct einit_sexp sexp_empty_list_v = {.type = es_empty_list
+};
 static const struct einit_sexp sexp_bad_v = {.type = es_bad };
 
 const struct einit_sexp *const sexp_nil = &sexp_nil_v;
@@ -232,16 +232,6 @@ static int einit_read_sexp_from_fd_reader_fill_buffer(struct
         reader->size += MIN_CHUNK_SIZE;
 
         reader->buffer = erealloc(reader->buffer, reader->size);
-        // fprintf (stderr, "increasing buffer: %i (+%i)\n", reader->size, 
-        // 
-        // 
-        // 
-        // 
-        // 
-        // 
-        // 
-        // 
-        // MIN_CHUNK_SIZE);
     }
     // fprintf (stderr, "reading from fd: %i\n", reader->fd);
 
