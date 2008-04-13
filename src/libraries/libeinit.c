@@ -303,6 +303,8 @@ const char *einit_event_encode(struct einit_event *ev)
     const char *rv = str_stabilise (r);
     efree (r);
 
+    einit_sexp_destroy(sp);
+
     return rv;
 }
 
