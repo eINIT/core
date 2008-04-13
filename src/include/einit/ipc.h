@@ -66,6 +66,7 @@ extern "C" {
                                          struct einit_sexp *payload);
 
     void einit_ipc_handle_sexp_event(struct einit_sexp *sexp);
+    char einit_ipx_sexp_handle_fd(struct einit_sexp_fd_reader *rd);
 
 #endif
 

@@ -60,6 +60,9 @@
 #include <einit/event.h>
 #include <signal.h>
 
+#include <einit/sexp.h>
+#include <einit/ipc.h>
+
 #include <fcntl.h>
 
 #ifdef __linux__
@@ -82,79 +85,10 @@ int print_usage_info();
 char **einit_startup_mode_switches = NULL;
 char **einit_startup_configuration_files = NULL;
 
-char *einit_default_startup_mode_switches[] = { "default", NULL };      // the 
-                                                                        // 
-                                                                        // 
-                                                                        // 
-                                                                        // 
-                                                                        // 
-                                                                        // 
-                                                                        // 
-                                                                        // 
-                                                                        // 
-                                                                        // list 
-                                                                        // 
-                                                                        // 
-                                                                        // 
-                                                                        // 
-                                                                        // 
-                                                                        // 
-                                                                        // 
-                                                                        // 
-                                                                        // 
-                                                                        // of 
-                                                                        // 
-                                                                        // 
-                                                                        // 
-                                                                        // 
-                                                                        // 
-                                                                        // 
-                                                                        // 
-                                                                        // 
-                                                                        // 
-                                                                        // modes 
-                                                                        // 
-                                                                        // 
-                                                                        // 
-                                                                        // 
-                                                                        // 
-                                                                        // 
-                                                                        // 
-                                                                        // 
-                                                                        // 
-                                                                        // to 
-                                                                        // 
-                                                                        // 
-                                                                        // 
-                                                                        // 
-                                                                        // 
-                                                                        // 
-                                                                        // 
-                                                                        // 
-                                                                        // 
-                                                                        // activate 
-                                                                        // 
-                                                                        // 
-                                                                        // 
-                                                                        // 
-                                                                        // 
-                                                                        // 
-                                                                        // 
-                                                                        // 
-                                                                        // 
-                                                                        // by 
-                                                                        // 
-                                                                        // 
-                                                                        // 
-                                                                        // 
-                                                                        // 
-                                                                        // 
-                                                                        // 
-                                                                        // 
-                                                                        // 
-                                                                        // default
+/* the list of modes to switch to by default */
+char *einit_default_startup_mode_switches[] = { "default", NULL };
 
-// the list of files to parse by default
+/* the list of files to parse by default */
 char *einit_default_startup_configuration_files[] =
     { EINIT_LIB_BASE "/einit.xml", NULL };
 
@@ -267,7 +201,6 @@ void sched_run_sigchild();
 
 char sigint_called = 0;
 
-int einit_ipc_pipe_fd = -1;
 int einit_alarm_pipe_write;
 int einit_alarm_pipe_read = -1;
 
@@ -522,15 +455,17 @@ void einit_add_fd_handler_function(void (*fdhandle) (fd_set *))
     einit_fd_handler_functions = c;
 }
 
+struct einit_sexp_fd_reader *einit_raw_ipc_reader = NULL;
+
 int einit_raw_ipc_prepare(fd_set * rfds)
 {
     int rv = 0;
 
-    if (einit_ipc_pipe_fd != -1) {
-        FD_SET(einit_ipc_pipe_fd, rfds);
+    if (einit_raw_ipc_reader) {
+        FD_SET(einit_raw_ipc_reader->fd, rfds);
 
-        if (einit_ipc_pipe_fd > rv)
-            rv = einit_ipc_pipe_fd;
+        if (einit_raw_ipc_reader->fd > rv)
+            rv = einit_raw_ipc_reader->fd;
     }
 
     if (einit_alarm_pipe_read != -1) {
@@ -545,8 +480,10 @@ int einit_raw_ipc_prepare(fd_set * rfds)
 
 void einit_raw_ipc_handle(fd_set * rfds)
 {
-    if ((einit_ipc_pipe_fd != -1) && FD_ISSET(einit_ipc_pipe_fd, rfds)) {
-        einit_process_raw_event(einit_ipc_pipe_fd);
+    if (einit_raw_ipc_reader && FD_ISSET(einit_raw_ipc_reader->fd, rfds)) {
+        if (einit_ipx_sexp_handle_fd(einit_raw_ipc_reader)) {
+            einit_raw_ipc_reader = NULL;
+        }
     }
 
     if ((einit_alarm_pipe_read != -1)
@@ -721,8 +658,9 @@ int main(int argc, char **argv, char **environ)
 
                     coremode |= einit_mode_sandbox;
                 } else if (strmatch(argv[i], "--command-pipe")) {
-                    einit_ipc_pipe_fd = parse_integer(argv[i + 1]);
-                    fcntl(einit_ipc_pipe_fd, F_SETFD, FD_CLOEXEC);
+                    einit_raw_ipc_reader =
+                            einit_create_sexp_fd_reader (
+                            parse_integer(argv[i + 1]));
 
                     i++;
                 } else if (strmatch(argv[i], "--do-wait")) {

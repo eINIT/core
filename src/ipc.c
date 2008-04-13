@@ -346,6 +346,11 @@ void einit_ipc_sexp_einit_core_forked_subprocess(struct einit_event *ev)
                  einit_ipc_sexp_boot_event_handler_root_device_ok);
     event_ignore(einit_boot_root_device_ok,
                  einit_ipc_sexp_boot_event_handler_root_device_ok);
+
+    if (einit_ipc_sexp_fd > 0) {
+        close (einit_ipc_sexp_fd);
+        einit_ipc_sexp_fd = -1;
+    }
 }
 
 void einit_ipc_setup()
