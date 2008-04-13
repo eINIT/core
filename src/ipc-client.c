@@ -270,3 +270,7 @@ int einit_ipc_get_fd () {
 
     return einit_ipc_client_rd->fd;
 }
+
+struct einit_sexp *einit_ipc_request (const char *request, struct einit_sexp *payload) {
+    
+}

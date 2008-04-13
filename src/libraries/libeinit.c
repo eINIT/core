@@ -106,7 +106,7 @@ void einit_switch_mode (const char *mode) { // think "runlevel"
 
 /* client */
 
-char *einit_ipc_address = DEFAULT_EINIT_ADDRESS;
+const char *einit_ipc_address = DEFAULT_EINIT_ADDRESS;
 pid_t einit_ipc_client_pid = 0;
 
 char einit_connect(int *argc, char **argv) {

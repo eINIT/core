@@ -56,6 +56,8 @@ char einit_ipc_loop();
 
 int einit_ipc_get_fd ();
 
+struct einit_sexp *einit_ipc_request (const char *request, struct einit_sexp *payload);
+
 #endif
 
 #ifdef __cplusplus
