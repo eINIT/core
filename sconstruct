@@ -43,8 +43,7 @@ SConscript(ScriptsBundle)
 
 ScriptsEinit = ['src/sconscript',
                 'src/modules/sconscript',
-                'data/sconscript',
-                'scripts/sconscript']
+                'data/sconscript']
 
 destdir = ARGUMENTS.get('destdir', '')
 prefix = ARGUMENTS.get('prefix', '/')
@@ -304,7 +303,7 @@ InstallConfig = Alias ('install-config', [ InstallDirLibEinit + '/defaults', Ins
 env.Install (InstallDirInclude + '/einit', '#build/headers/einit/configuration.h')
 env.Install (InstallDirInclude + '/einit-modules', '#build/headers/einit-modules/configuration.h')
 
-InstallAliases += [InstallDirSbin, InstallDirLib, InstallDirLibBin, InstallDirModules, InstallConfig, InstallDirLibEinit, InstallDirInclude, InstallDirInclude + '/einit', InstallDirInclude + '/einit-modules', InstallDirLibEinit + '/scripts']
+InstallAliases += [InstallDirSbin, InstallDirLib, InstallDirLibBin, InstallDirModules, InstallConfig, InstallDirLibEinit, InstallDirInclude, InstallDirInclude + '/einit', InstallDirInclude + '/einit-modules']
 
 env.Alias('install', InstallAliases)
 
