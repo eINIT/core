@@ -57,7 +57,12 @@
 #include <libutil.h>
 #endif
 
-#define PID_TERMINATED_EVENT "event-type=process/died\ninteger=%i\nmodule=einit-monitor\n.\n\n"
+/*
+ * (define-record einit:event type integer status task flag string
+ * stringset module)
+ */
+
+#define PID_TERMINATED_EVENT "(event process/died %i 0 0 0 \"nil\" (nil) einit-monitor)"
 
 pid_t send_sigint_pid = 0;
 char is_sandbox = 0;
