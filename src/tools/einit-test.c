@@ -50,7 +50,7 @@
 
 #define ADDRESS "einit"
 
-#define REQUEST "(request list-requests nil)"
+#define REQUEST "(request list requests)"
 
 void callback(struct einit_sexp *sexp)
 {

@@ -90,7 +90,9 @@ char *einit_default_startup_mode_switches[] = { "default", NULL };      // the
                                                                         // 
                                                                         // 
                                                                         // 
+                                                                        // 
                                                                         // list 
+                                                                        // 
                                                                         // 
                                                                         // 
                                                                         // 
@@ -106,7 +108,9 @@ char *einit_default_startup_mode_switches[] = { "default", NULL };      // the
                                                                         // 
                                                                         // 
                                                                         // 
+                                                                        // 
                                                                         // modes 
+                                                                        // 
                                                                         // 
                                                                         // 
                                                                         // 
@@ -122,6 +126,7 @@ char *einit_default_startup_mode_switches[] = { "default", NULL };      // the
                                                                         // 
                                                                         // 
                                                                         // 
+                                                                        // 
                                                                         // activate 
                                                                         // 
                                                                         // 
@@ -130,7 +135,9 @@ char *einit_default_startup_mode_switches[] = { "default", NULL };      // the
                                                                         // 
                                                                         // 
                                                                         // 
+                                                                        // 
                                                                         // by 
+                                                                        // 
                                                                         // 
                                                                         // 
                                                                         // 

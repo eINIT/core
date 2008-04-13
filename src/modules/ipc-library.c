@@ -79,37 +79,112 @@ module_register(einit_ipc_library_self);
 #define BAD_REQUEST "(reply unknown bad-request)"
 #define BAD_REQUEST_SIZE sizeof(BAD_REQUEST)
 
-void einit_ipc_library_stub (struct einit_sexp *sexp, int fd)
+void einit_ipc_library_stub(struct einit_sexp *sexp, int fd)
 {
     char *r = einit_sexp_to_string(sexp);
     fprintf(stderr, "IPC STUB: %s\n", r);
 
     efree(r);
 
-    write (fd, BAD_REQUEST, BAD_REQUEST_SIZE);
+    write(fd, BAD_REQUEST, BAD_REQUEST_SIZE);
+}
+
+void einit_ipc_library_receive_events(struct einit_sexp *sexp, int fd)
+{
+    einit_ipc_library_stub(sexp, fd);
+}
+
+void einit_ipc_library_receive_specific_events(struct einit_sexp *sexp,
+                                               int fd)
+{
+    einit_ipc_library_stub(sexp, fd);
+}
+
+void einit_ipc_library_mute_specific_events(struct einit_sexp *sexp,
+                                            int fd)
+{
+    einit_ipc_library_stub(sexp, fd);
+}
+
+void einit_ipc_library_get_configuration(struct einit_sexp *sexp, int fd)
+{
+    einit_ipc_library_stub(sexp, fd);
+}
+
+void einit_ipc_library_get_configuration_a(struct einit_sexp *sexp, int fd)
+{
+    einit_ipc_library_stub(sexp, fd);
+}
+
+void einit_ipc_library_register_module(struct einit_sexp *sexp, int fd)
+{
+    einit_ipc_library_stub(sexp, fd);
+}
+
+void einit_ipc_library_register_module_actions(struct einit_sexp *sexp,
+                                               int fd)
+{
+    einit_ipc_library_stub(sexp, fd);
+}
+
+void einit_ipc_library_list(struct einit_sexp *sexp, int fd)
+{
+    einit_ipc_library_stub(sexp, fd);
+}
+
+void einit_ipc_library_get_module(struct einit_sexp *sexp, int fd)
+{
+    einit_ipc_library_stub(sexp, fd);
+}
+
+void einit_ipc_library_get_service(struct einit_sexp *sexp, int fd)
+{
+    einit_ipc_library_stub(sexp, fd);
+}
+
+void einit_ipc_library_module_do_bang(struct einit_sexp *sexp, int fd)
+{
+    einit_ipc_library_stub(sexp, fd);
+}
+
+void einit_ipc_library_service_do_bang(struct einit_sexp *sexp, int fd)
+{
+    einit_ipc_library_stub(sexp, fd);
+}
+
+void einit_ipc_library_service_switch_mode(struct einit_sexp *sexp, int fd)
+{
+    einit_ipc_library_stub(sexp, fd);
 }
 
 int einit_ipc_library_configure(struct lmodule *irr)
 {
     module_init(irr);
 
-    einit_ipc_register_handler ("receive-events", einit_ipc_library_stub);
-    einit_ipc_register_handler ("receive-specific events",
-                                einit_ipc_library_stub);
-    einit_ipc_register_handler ("mute-specific-events",
-                                einit_ipc_library_stub);
-    einit_ipc_register_handler ("get-configuration", einit_ipc_library_stub);
-    einit_ipc_register_handler ("get-configuration*", einit_ipc_library_stub);
-    einit_ipc_register_handler ("register-module", einit_ipc_library_stub);
-    einit_ipc_register_handler ("register-module-actions",
-                                einit_ipc_library_stub);
-    einit_ipc_register_handler ("list", einit_ipc_library_stub);
-    einit_ipc_register_handler ("get-module", einit_ipc_library_stub);
-    einit_ipc_register_handler ("get-service", einit_ipc_library_stub);
-    einit_ipc_register_handler ("module-do!", einit_ipc_library_stub);
-    einit_ipc_register_handler ("service-do!", einit_ipc_library_stub);
-    einit_ipc_register_handler ("switch-mode", einit_ipc_library_stub);
-    einit_ipc_register_handler ("list-requests", einit_ipc_library_stub);
+    einit_ipc_register_handler("receive-events",
+                               einit_ipc_library_receive_events);
+    einit_ipc_register_handler("receive-specific-events",
+                               einit_ipc_library_receive_specific_events);
+    einit_ipc_register_handler("mute-specific-events",
+                               einit_ipc_library_mute_specific_events);
+    einit_ipc_register_handler("get-configuration",
+                               einit_ipc_library_get_configuration);
+    einit_ipc_register_handler("get-configuration*",
+                               einit_ipc_library_get_configuration_a);
+    einit_ipc_register_handler("register-module",
+                               einit_ipc_library_register_module);
+    einit_ipc_register_handler("register-module-actions",
+                               einit_ipc_library_register_module_actions);
+    einit_ipc_register_handler("list", einit_ipc_library_list);
+    einit_ipc_register_handler("get-module", einit_ipc_library_get_module);
+    einit_ipc_register_handler("get-service",
+                               einit_ipc_library_get_service);
+    einit_ipc_register_handler("module-do!",
+                               einit_ipc_library_module_do_bang);
+    einit_ipc_register_handler("service-do!",
+                               einit_ipc_library_service_do_bang);
+    einit_ipc_register_handler("switch-mode",
+                               einit_ipc_library_service_switch_mode);
 
     return 0;
 }

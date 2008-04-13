@@ -314,7 +314,7 @@ extern "C" {
                                          * watch */
         enum einit_event_code chain_type;       /* !< the event to be
                                                  * called right after this 
-                                                 * * * * * * one */
+                                                 * * * * * * * one */
 
         void **set;             /* !< a set that should make sense in
                                  * combination with the event type */

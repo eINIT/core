@@ -72,6 +72,7 @@ struct init_command {
     // 
     // 
     // 
+    // 
     // struct to be 384 bytes long
 };
 
@@ -178,6 +179,7 @@ int initctl_wait(char *fifo)
                     }
                 } else if (ic.command == INITCTL_CMD_SETENV) {  // padding 
                                                                 // 
+                    // 
                     // 
                     // 
                     // 
