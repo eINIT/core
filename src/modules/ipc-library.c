@@ -76,9 +76,40 @@ module_register(einit_ipc_library_self);
 
 #endif
 
+#define BAD_REQUEST "(reply unknown bad-request)"
+#define BAD_REQUEST_SIZE sizeof(BAD_REQUEST)
+
+void einit_ipc_library_stub (struct einit_sexp *sexp, int fd)
+{
+    char *r = einit_sexp_to_string(sexp);
+    fprintf(stderr, "IPC STUB: %s\n", r);
+
+    efree(r);
+
+    write (fd, BAD_REQUEST, BAD_REQUEST_SIZE);
+}
+
 int einit_ipc_library_configure(struct lmodule *irr)
 {
     module_init(irr);
+
+    einit_ipc_register_handler ("receive-events", einit_ipc_library_stub);
+    einit_ipc_register_handler ("receive-specific events",
+                                einit_ipc_library_stub);
+    einit_ipc_register_handler ("mute-specific-events",
+                                einit_ipc_library_stub);
+    einit_ipc_register_handler ("get-configuration", einit_ipc_library_stub);
+    einit_ipc_register_handler ("get-configuration*", einit_ipc_library_stub);
+    einit_ipc_register_handler ("register-module", einit_ipc_library_stub);
+    einit_ipc_register_handler ("register-module-actions",
+                                einit_ipc_library_stub);
+    einit_ipc_register_handler ("list", einit_ipc_library_stub);
+    einit_ipc_register_handler ("get-module", einit_ipc_library_stub);
+    einit_ipc_register_handler ("get-service", einit_ipc_library_stub);
+    einit_ipc_register_handler ("module-do!", einit_ipc_library_stub);
+    einit_ipc_register_handler ("service-do!", einit_ipc_library_stub);
+    einit_ipc_register_handler ("switch-mode", einit_ipc_library_stub);
+    einit_ipc_register_handler ("list-requests", einit_ipc_library_stub);
 
     return 0;
 }

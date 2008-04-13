@@ -204,7 +204,7 @@ char einit_ipc_loop()
                  * 3-tuple: must be a reply, or a request 
                  */
                 char *r = einit_sexp_to_string(sexp);
-                fprintf(stderr, "REQUEST: %s\n", r);
+                fprintf(stderr, "REPLY OR REQUEST: %s\n", r);
 
                 efree(r);
 

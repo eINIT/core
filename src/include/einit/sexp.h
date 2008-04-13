@@ -46,7 +46,8 @@ enum einit_sexp_type {
     es_string,
     es_integer,
     es_list_end,
-    es_cons
+    es_cons,
+    es_nil
 };
 
 struct einit_sexp {
@@ -77,6 +78,7 @@ struct einit_sexp_fd_reader {
 };
 
 #define BAD_SEXP (struct einit_sexp *)0x00000001
+#define S_NIL struct einit_sexp {.type = es_nil}
 
 struct einit_sexp *einit_read_sexp_from_fd_reader(struct
                                                   einit_sexp_fd_reader
@@ -92,5 +94,7 @@ void einit_sexp_destroy(struct einit_sexp *sexp);
 struct einit_sexp *einit_sexp_create(enum einit_sexp_type type);
 
 struct einit_sexp_fd_reader *einit_create_sexp_fd_reader(int fd);
+
+#define se_car(sexp) (sexp->type == es_cons) ? sexp->primus : S_NIL
 
 #endif
