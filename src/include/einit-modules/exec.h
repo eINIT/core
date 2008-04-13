@@ -8,32 +8,33 @@
  */
 
 /*
-Copyright (c) 2006-2008, Magnus Deininger
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without modification,
-are permitted provided that the following conditions are met:
-
-    * Redistributions of source code must retain the above copyright notice,
-	  this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright notice,
-	  this list of conditions and the following disclaimer in the documentation
-	  and/or other materials provided with the distribution.
-    * Neither the name of the project nor the names of its contributors may be
-	  used to endorse or promote products derived from this software without
-	  specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
+ * Copyright (c) 2006-2008, Magnus Deininger All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are
+ * met:
+ * 
+ * * Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer. *
+ * Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution. *
+ * Neither the name of the project nor the names of its contributors may
+ * be used to endorse or promote products derived from this software
+ * without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS 
+ * IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+ * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+ * PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
+ */
 
 #ifdef __cplusplus
 extern "C" {
@@ -49,73 +50,83 @@ extern "C" {
 #include <stdio.h>
 #include <stdlib.h>
 
-enum pexec_options {
- pexec_option_nopipe = 0x1,
- pexec_option_dont_close_stdin = 0x4
-};
+    enum pexec_options {
+        pexec_option_nopipe = 0x1,
+        pexec_option_dont_close_stdin = 0x4
+    };
 
-enum daemon_options {
- daemon_model_forking = 0x0001,
- daemon_did_recovery  = 0x0002
-};
+    enum daemon_options {
+        daemon_model_forking = 0x0001,
+        daemon_did_recovery = 0x0002
+    };
 
-/* structures */
-struct dexecinfo {
- char *id;
- char *command;
- char *prepare;
- char *cleanup;
- char *is_up;
- char *is_down;
- char **variables;
- uid_t uid;
- gid_t gid;
- char *user, *group;
- int restart;
- struct daemonst *cb;
- char **environment;
- char *pidfile;
- char **need_files;
- char **oattrs;
+    /*
+     * structures 
+     */
+    struct dexecinfo {
+        char *id;
+        char *command;
+        char *prepare;
+        char *cleanup;
+        char *is_up;
+        char *is_down;
+        char **variables;
+        uid_t uid;
+        gid_t gid;
+        char *user, *group;
+        int restart;
+        struct daemonst *cb;
+        char **environment;
+        char *pidfile;
+        char **need_files;
+        char **oattrs;
 
- enum daemon_options options;
+        enum daemon_options options;
 
- time_t pidfiles_last_update;
-};
+        time_t pidfiles_last_update;
+    };
 
-struct daemonst {
- pid_t pid;
- int status;
- time_t starttime;
- time_t timer;
- char *daemon_rid;
- struct dexecinfo *dx;
- struct daemonst *next;
-};
+    struct daemonst {
+        pid_t pid;
+        int status;
+        time_t starttime;
+        time_t timer;
+        char *daemon_rid;
+        struct dexecinfo *dx;
+        struct daemonst *next;
+    };
 
 #ifdef BUGGY_PTHREAD_CHILD_WAIT_HANDLING
-struct execst {
- pid_t pid;
- int status;
- struct execst *next;
-};
+    struct execst {
+        pid_t pid;
+        int status;
+        struct execst *next;
+    };
 #endif
 
 #if (! defined(einit_modules_exec)) || (einit_modules_exec == 'm') || (einit_modules_exec == 'n')
 
-/* function types */
-typedef int (*pexec_function)(const char *, const char **, uid_t, gid_t, const char *, const char *, char **, struct einit_event *);
-typedef int (*daemon_function)(struct dexecinfo *, struct einit_event *);
-typedef char **(*environment_function)(char **, const char **);
+    /*
+     * function types 
+     */
+    typedef int (*pexec_function) (const char *, const char **, uid_t,
+                                   gid_t, const char *, const char *,
+                                   char **, struct einit_event *);
+    typedef int (*daemon_function) (struct dexecinfo *,
+                                    struct einit_event *);
+    typedef char **(*environment_function) (char **, const char **);
 
-typedef void (*variable_checkup_function)(const char *, const char **, FILE *);
+    typedef void (*variable_checkup_function) (const char *, const char **,
+                                               FILE *);
 
-/* functions */
-pexec_function f_pxe;
-pexec_function f_exe;
-daemon_function f_start_daemon, f_stop_daemon;
-environment_function f_create_environment;
-variable_checkup_function f_check_variables;
+    /*
+     * functions 
+     */
+    pexec_function f_pxe;
+    pexec_function f_exe;
+    daemon_function f_start_daemon, f_stop_daemon;
+    environment_function f_create_environment;
+    variable_checkup_function f_check_variables;
 
 #define exec_configure(mod) f_pxe = NULL; f_start_daemon = NULL; f_stop_daemon = NULL; f_create_environment = NULL; f_check_variables = NULL;
 
@@ -135,14 +146,21 @@ variable_checkup_function f_check_variables;
 
 #else
 
-char **check_variables_f (const char *, const char **, FILE *);
-int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, const char *user, const char *group, char **local_environment, struct einit_event *status);
+    char **check_variables_f(const char *, const char **, FILE *);
+    int pexec_f(const char *command, const char **variables, uid_t uid,
+                gid_t gid, const char *user, const char *group,
+                char **local_environment, struct einit_event *status);
 
-int eexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, const char *user, const char *group, char **local_environment, struct einit_event *status);
+    int eexec_f(const char *command, const char **variables, uid_t uid,
+                gid_t gid, const char *user, const char *group,
+                char **local_environment, struct einit_event *status);
 
-int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status);
-int stop_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status);
-char **create_environment_f (char **environment, const char **variables);
+    int start_daemon_f(struct dexecinfo *shellcmd,
+                       struct einit_event *status);
+    int stop_daemon_f(struct dexecinfo *shellcmd,
+                      struct einit_event *status);
+    char **create_environment_f(char **environment,
+                                const char **variables);
 
 #define exec_configure(mod) ;
 

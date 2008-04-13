@@ -8,53 +8,67 @@
  */
 
 /*
-Copyright (c) 2006-2008, Magnus Deininger
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
-
-    * Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
-    * Neither the name of the project nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
+ * Copyright (c) 2006-2008, Magnus Deininger All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are
+ * met:
+ * 
+ * * Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer. *
+ * Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution. *
+ * Neither the name of the project nor the names of its contributors may
+ * be used to endorse or promote products derived from this software
+ * without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS 
+ * IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+ * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+ * PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
+ */
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/*!\file einit/bitch.h
- * \brief Error-reporting functions
- * \author Magnus Deininger
- *
- * Error reporting (a.k.a. "bitching") is fairly important...
-*/
+    /*
+     * !\file einit/bitch.h \brief Error-reporting functions \author
+     * Magnus Deininger Error reporting (a.k.a. "bitching") is fairly
+     * important... 
+     */
 
 #ifndef EINIT_BITCH_H
 #define EINIT_BITCH_H
 
 #include <errno.h>
 
-enum bitch_sauce {
- bitch_bad_sauce = 0x00,
- bitch_emalloc   = 0x01,
- bitch_stdio     = 0x02,
- bitch_regex     = 0x03,
- bitch_expat     = 0x04,
- bitch_dl        = 0x05,
- bitch_lookup    = 0x06,
- bitch_epthreads = 0x07
-};
+    enum bitch_sauce {
+        bitch_bad_sauce = 0x00,
+        bitch_emalloc = 0x01,
+        bitch_stdio = 0x02,
+        bitch_regex = 0x03,
+        bitch_expat = 0x04,
+        bitch_dl = 0x05,
+        bitch_lookup = 0x06,
+        bitch_epthreads = 0x07
+    };
 
 #define BITCH_SAUCES 0x08
 
-/*!\brief Bitch about whatever happened just now
- * \param[in] opt bitwise OR of BTCH_ERRNO and BTCH_DL
- * \return (int)-1. Don't ask.
- *
- * Bitch about whatever happened just now, i.e. report the last error.
-*/
+    /*
+     * !\brief Bitch about whatever happened just now \param[in] opt
+     * bitwise OR of BTCH_ERRNO and BTCH_DL \return (int)-1. Don't ask.
+     * Bitch about whatever happened just now, i.e. report the last error. 
+     */
 #ifdef DEBUG
 #define bitch(sauce, code, reason)\
  bitch_macro (sauce, __FILE__, __LINE__, __func__ , code, reason)
@@ -66,7 +80,9 @@ enum bitch_sauce {
 
 #endif
 
-int bitch_macro (enum bitch_sauce sauce, const char *file, const int line, const char *function, int error, const char *reason);
+    int bitch_macro(enum bitch_sauce sauce, const char *file,
+                    const int line, const char *function, int error,
+                    const char *reason);
 
 #ifdef DEBUG
 
@@ -118,7 +134,7 @@ int bitch_macro (enum bitch_sauce sauce, const char *file, const int line, const
 
 #else
 
-#endif /* _BITCH_H */
+#endif                          /* _BITCH_H */
 
 #ifdef __cplusplus
 }

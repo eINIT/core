@@ -1,0 +1,4 @@
+okay, i suppose it's time to just spec this:
+we'll be using regular k&r style with 4-space indents (no tabs!) i hope everyone's cool with that :P
+
+use ./fix-indent for automated code style adjustment using 'indent'
