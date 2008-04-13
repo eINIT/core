@@ -76,7 +76,7 @@ module_register(einit_ipc_library_self);
 
 #endif
 
-#define BAD_REQUEST "(reply unknown bad-request)"
+#define BAD_REQUEST "(reply unknown stub)"
 #define BAD_REQUEST_SIZE sizeof(BAD_REQUEST)
 
 void einit_ipc_library_stub(struct einit_sexp *sexp, int fd)

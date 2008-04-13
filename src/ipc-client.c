@@ -52,6 +52,9 @@
 #include <einit/sexp.h>
 #include <einit/ipc.h>
 
+#include <sys/select.h>
+#include <setjmp.h>
+
 struct einit_ipc_callback {
     void (*handler) (struct einit_sexp *);
     struct einit_ipc_callback *next;
@@ -188,7 +191,7 @@ char einit_ipc_loop()
 
     while ((sexp =
             einit_read_sexp_from_fd_reader(einit_ipc_client_rd)) !=
-           BAD_SEXP) {
+           sexp_bad) {
         if (!sexp) {
             return 1;
 
@@ -208,28 +211,27 @@ char einit_ipc_loop()
 
                 efree(r);
 
-                if ((sexp->primus->type == es_symbol)
+                if (einit_ipc_callbacks
+                    && (sexp->primus->type == es_symbol)
                     && (strmatch(sexp->primus->symbol, "reply"))) {
-                    if (einit_ipc_callbacks) {
-                        void (*handler) (struct einit_sexp *) =
-                            einit_ipc_callbacks->handler;
-                        struct einit_ipc_callback *t = einit_ipc_callbacks;
+                    void (*handler) (struct einit_sexp *) =
+                        einit_ipc_callbacks->handler;
+                    struct einit_ipc_callback *t = einit_ipc_callbacks;
 
-                        einit_ipc_callbacks = t->next;
-                        efree(t);
+                    einit_ipc_callbacks = t->next;
+                    efree(t);
 
-                        if (sexp->secundus->secundus->primus->type ==
-                            es_symbol) {
-                            if (strmatch
-                                (sexp->secundus->secundus->primus->symbol,
-                                 "bad-request")) {
-                                char *r = einit_sexp_to_string(sexp);
-                                fprintf(stderr, "BAD REQUEST: %s\n", r);
+                    if (sexp->secundus->secundus->primus->type ==
+                        es_symbol) {
+                        if (strmatch
+                            (sexp->secundus->secundus->primus->symbol,
+                             "bad-request")) {
+                            char *r = einit_sexp_to_string(sexp);
+                            fprintf(stderr, "BAD REQUEST: %s\n", r);
 
-                                efree(r);
-                            } else {
-                                handler(sexp);
-                            }
+                            efree(r);
+                        } else {
+                            handler(sexp);
                         }
                     }
                 }
@@ -250,6 +252,26 @@ char einit_ipc_loop()
     }
 
     return 0;
+}
+
+void einit_ipc_loop_infinite()
+{
+    int fd = einit_ipc_get_fd();
+
+    while (1) {
+        int selectres;
+
+        fd_set rfds;
+
+        FD_ZERO(&rfds);
+        FD_SET(fd, &rfds);
+
+        selectres = select((fd + 1), &rfds, NULL, NULL, 0);
+
+        if (selectres > 0) {
+            einit_ipc_loop();
+        }
+    }
 }
 
 void einit_ipc_request_callback(const char *request,
@@ -302,8 +324,32 @@ int einit_ipc_get_fd()
     return einit_ipc_client_rd->fd;
 }
 
-struct einit_sexp *einit_ipc_request(const char *request,
-                                     struct einit_sexp *payload)
-{
+/*
+ * the following utilises a wee bit of maegick...
+ * not enough to be concerned tho
+ */
 
+jmp_buf einit_ipc_request_jump_marker;
+struct einit_sexp *einit_ipc_request_result;
+
+void einit_ipc_request_handler(struct einit_sexp *sexp)
+{
+    einit_ipc_request_result = se_car(se_cdr(se_cdr(sexp)));
+
+    sexp->secundus->secundus->primus = (struct einit_sexp *) sexp_nil;
+    einit_sexp_destroy(sexp);
+
+    longjmp(einit_ipc_request_jump_marker, 1);
+}
+
+struct einit_sexp *einit_ipc_request(const char *request)
+{
+    einit_ipc_request_callback(request, einit_ipc_request_handler);
+
+    if (setjmp(einit_ipc_request_jump_marker))
+        return einit_ipc_request_result;
+
+    einit_ipc_loop_infinite();
+
+    return (struct einit_sexp *) sexp_bad;
 }

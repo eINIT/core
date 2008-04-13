@@ -232,6 +232,7 @@ int cfg_addnode_f(struct cfgnode *node)
                 // 
                 // 
                 // 
+                // 
                 // is unlikely to go weird.
                 ((struct cfgnode *) cur->value)->arbattrs = node->arbattrs;
                 cur->luggage = node->arbattrs;
@@ -497,7 +498,10 @@ char *cfg_getpath_f(const char *id)
     return svpath;
 }
 
-void einit_configuration_stree_einit_event_handler_core_configuration_update(struct einit_event *ev) {
+void
+einit_configuration_stree_einit_event_handler_core_configuration_update
+(struct einit_event *ev)
+{
     // update global environment here
     char **env = einit_global_environment;
     einit_global_environment = NULL;

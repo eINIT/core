@@ -60,13 +60,14 @@ extern "C" {
     char einit_ipc_connect(const char *address);
     char einit_ipc_loop();
 
-    int einit_ipc_get_fd();
+    void einit_ipc_loop_infinite();
 
-    struct einit_sexp *einit_ipc_request(const char *request,
-                                         struct einit_sexp *payload);
+    int einit_ipc_get_fd();
 
     void einit_ipc_handle_sexp_event(struct einit_sexp *sexp);
     char einit_ipx_sexp_handle_fd(struct einit_sexp_fd_reader *rd);
+
+    struct einit_sexp *einit_ipc_request(const char *request);
 
 #endif
 

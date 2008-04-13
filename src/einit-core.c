@@ -85,10 +85,14 @@ int print_usage_info();
 char **einit_startup_mode_switches = NULL;
 char **einit_startup_configuration_files = NULL;
 
-/* the list of modes to switch to by default */
+/*
+ * the list of modes to switch to by default 
+ */
 char *einit_default_startup_mode_switches[] = { "default", NULL };
 
-/* the list of files to parse by default */
+/*
+ * the list of files to parse by default 
+ */
 char *einit_default_startup_configuration_files[] =
     { EINIT_LIB_BASE "/einit.xml", NULL };
 
@@ -659,8 +663,8 @@ int main(int argc, char **argv, char **environ)
                     coremode |= einit_mode_sandbox;
                 } else if (strmatch(argv[i], "--command-pipe")) {
                     einit_raw_ipc_reader =
-                            einit_create_sexp_fd_reader (
-                            parse_integer(argv[i + 1]));
+                        einit_create_sexp_fd_reader(parse_integer
+                                                    (argv[i + 1]));
 
                     i++;
                 } else if (strmatch(argv[i], "--do-wait")) {

@@ -48,6 +48,7 @@ enum einit_sexp_type {
     es_list_end,
     es_cons,
     es_nil,
+    es_bad,
     es_empty_list
 };
 
@@ -78,14 +79,11 @@ struct einit_sexp_fd_reader {
     int length;
 };
 
-#define BAD_SEXP (struct einit_sexp *)0x00000001
-#define S_NIL struct einit_sexp {.type = es_nil}
-
 struct einit_sexp *einit_read_sexp_from_fd_reader(struct
                                                   einit_sexp_fd_reader
                                                   *reader);
 /*
- * if einit_read_sexp_from_fd_reader() returns BAD_SEXP, then the reader
+ * if einit_read_sexp_from_fd_reader() returns sexp_bad, then the reader
  * is dead and free()'d as well 
  */
 
@@ -96,6 +94,16 @@ struct einit_sexp *einit_sexp_create(enum einit_sexp_type type);
 
 struct einit_sexp_fd_reader *einit_create_sexp_fd_reader(int fd);
 
-#define se_car(sexp) (sexp->type == es_cons) ? sexp->primus : S_NIL
+const struct einit_sexp *const sexp_nil;
+const struct einit_sexp *const sexp_true;
+const struct einit_sexp *const sexp_false;
+const struct einit_sexp *const sexp_end_of_list;
+const struct einit_sexp *const sexp_empty_list;
+const struct einit_sexp *const sexp_bad;
+
+#define se_car(sexp)\
+ (struct einit_sexp *)(((sexp)->type == es_cons) ? (sexp)->primus : sexp_nil)
+#define se_cdr(sexp)\
+ (struct einit_sexp *)(((sexp)->type == es_cons) ? (sexp)->secundus : sexp_nil)
 
 #endif

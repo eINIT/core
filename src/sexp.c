@@ -52,6 +52,21 @@
 
 enum einit_sexp_read_type { esr_string, esr_number, esr_symbol };
 
+static const struct einit_sexp sexp_nil_v = {.type = es_nil };
+static const struct einit_sexp sexp_true_v = {.type = es_boolean_true };
+static const struct einit_sexp sexp_false_v = {.type = es_boolean_false };
+static const struct einit_sexp sexp_end_of_list_v = {.type = es_list_end };
+static const struct einit_sexp sexp_empty_list_v = {.type =
+        es_empty_list };
+static const struct einit_sexp sexp_bad_v = {.type = es_bad };
+
+const struct einit_sexp *const sexp_nil = &sexp_nil_v;
+const struct einit_sexp *const sexp_true = &sexp_true_v;
+const struct einit_sexp *const sexp_false = &sexp_false_v;
+const struct einit_sexp *const sexp_end_of_list = &sexp_end_of_list_v;
+const struct einit_sexp *const sexp_empty_list = &sexp_empty_list_v;
+const struct einit_sexp *const sexp_bad = &sexp_bad_v;
+
 static struct einit_sexp *einit_parse_sexp_in_buffer_with_buffer(char
                                                                  *buffer, int
                                                                  *index,
@@ -149,12 +164,9 @@ static struct einit_sexp *einit_parse_sexp_in_buffer(char *buffer,
                                                               esr_string);
 
             case ')':
-                rv = einit_sexp_create(es_list_end);
-                // fprintf (stderr, "got end-of-list\n");
-
                 (*index)++;
 
-                return rv;
+                return (struct einit_sexp *) sexp_end_of_list;
                 break;
 
             case '(':
@@ -166,7 +178,7 @@ static struct einit_sexp *einit_parse_sexp_in_buffer(char *buffer,
                 if (!tmp)
                     return NULL;
 
-                if (tmp->type != es_list_end) {
+                if (tmp != sexp_end_of_list) {
                     rv = einit_sexp_create(es_cons);
                     rv->primus = tmp;
 
@@ -177,12 +189,13 @@ static struct einit_sexp *einit_parse_sexp_in_buffer(char *buffer,
                             einit_parse_sexp_in_buffer(buffer, index,
                                                        stop);
 
-                        if (tmp->type != es_list_end) {
+                        if (tmp != sexp_end_of_list) {
                             ccons->secundus = einit_sexp_create(es_cons);
                             ccons = ccons->secundus;
 
-                            if (tmp->type == es_empty_list)
-                                tmp->type = es_list_end;
+                            if (tmp == sexp_empty_list)
+                                tmp =
+                                    (struct einit_sexp *) sexp_end_of_list;
 
                             ccons->primus = tmp;
                         } else {
@@ -192,7 +205,7 @@ static struct einit_sexp *einit_parse_sexp_in_buffer(char *buffer,
                         }
                     } while (1);
                 } else {
-                    tmp->type = es_empty_list;
+                    tmp = (struct einit_sexp *) sexp_empty_list;
                 }
 
                 return tmp;
@@ -220,6 +233,7 @@ static int einit_read_sexp_from_fd_reader_fill_buffer(struct
 
         reader->buffer = erealloc(reader->buffer, reader->size);
         // fprintf (stderr, "increasing buffer: %i (+%i)\n", reader->size, 
+        // 
         // 
         // 
         // 
@@ -268,8 +282,8 @@ struct einit_sexp *einit_read_sexp_from_fd_reader(struct
                         reader->position);
             }
 
-            if (rv->type == es_empty_list)
-                rv->type = es_list_end;
+            if (rv == sexp_empty_list)
+                rv = (struct einit_sexp *) sexp_end_of_list;
 
             return rv;
         }
@@ -292,7 +306,7 @@ struct einit_sexp *einit_read_sexp_from_fd_reader(struct
         efree(reader->buffer);
         efree(reader);
 
-        return BAD_SEXP;
+        return sexp_bad;
     }
 
     return NULL;
@@ -309,21 +323,44 @@ void einit_sexp_display(struct einit_sexp *sexp)
 
 void einit_sexp_destroy(struct einit_sexp *sexp)
 {
-    switch (sexp->type) {
-    case es_cons:
-        einit_sexp_destroy(sexp->primus);
-        einit_sexp_destroy(sexp->secundus);
-    default:
-        efree(sexp);
+    if ((sexp != sexp_nil)
+        && (sexp != sexp_true)
+        && (sexp != sexp_false)
+        && (sexp != sexp_end_of_list)
+        && (sexp != sexp_empty_list)
+        && (sexp != sexp_bad)) {
+        switch (sexp->type) {
+        case es_cons:
+            einit_sexp_destroy(sexp->primus);
+            einit_sexp_destroy(sexp->secundus);
+        default:
+            efree(sexp);
+        }
     }
 }
 
 struct einit_sexp *einit_sexp_create(enum einit_sexp_type type)
 {
-    struct einit_sexp *sexp = ecalloc(1, sizeof(struct einit_sexp));
-    sexp->type = type;
+    switch (type) {
+    case es_nil:
+        return (struct einit_sexp *) sexp_nil;
+    case es_boolean_true:
+        return (struct einit_sexp *) sexp_true;
+    case es_boolean_false:
+        return (struct einit_sexp *) sexp_false;
+    case es_list_end:
+        return (struct einit_sexp *) sexp_end_of_list;
+    case es_empty_list:
+        return (struct einit_sexp *) sexp_empty_list;
+    default:
+        {
+            struct einit_sexp *sexp =
+                ecalloc(1, sizeof(struct einit_sexp));
+            sexp->type = type;
 
-    return sexp;
+            return sexp;
+        }
+    }
 }
 
 struct einit_sexp_fd_reader *einit_create_sexp_fd_reader(int fd)
@@ -475,9 +512,15 @@ static void einit_sexp_to_string_iterator(struct einit_sexp *sexp,
         break;
 
     case es_nil:
-    case es_empty_list:
-        fputs ("BAD SEXPR\n", stderr);
+        fputs("BAD SEXPR (es_nil)\n", stderr);
+        break;
 
+    case es_empty_list:
+        fputs("BAD SEXPR (es_empty_list)\n", stderr);
+        break;
+
+    case es_bad:
+        fputs("BAD SEXPR!\n", stderr);
         break;
     }
 }

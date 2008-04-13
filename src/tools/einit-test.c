@@ -44,8 +44,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#include <sys/select.h>
-
 #include <fcntl.h>
 
 #define ADDRESS "einit"
@@ -57,6 +55,8 @@ void callback(struct einit_sexp *sexp)
     char *r = einit_sexp_to_string(sexp);
     fprintf(stderr, "|%s|\n", r);
     efree(r);
+
+    einit_sexp_destroy(sexp);
 }
 
 int main()
@@ -68,7 +68,7 @@ int main()
         struct einit_sexp_fd_reader *rd = einit_create_sexp_fd_reader(fd);
         struct einit_sexp *sexp;
 
-        while ((sexp = einit_read_sexp_from_fd_reader(rd)) != BAD_SEXP) {
+        while ((sexp = einit_read_sexp_from_fd_reader(rd)) != sexp_bad) {
             if (!sexp)
                 continue;
 
@@ -88,26 +88,14 @@ int main()
         return 0;
     }
 
-    int fd = einit_ipc_get_fd();
+    struct einit_sexp *sexp = einit_ipc_request(REQUEST);
+    callback(sexp);
 
-    einit_ipc_request_callback(REQUEST, callback);
-
-    while (1) {
-        int selectres;
-
-        fd_set rfds;
-
-        FD_ZERO(&rfds);
-        FD_SET(fd, &rfds);
-
-        selectres = select((fd + 1), &rfds, NULL, NULL, 0);
-
-        if (selectres > 0) {
-            einit_ipc_loop();
-        }
-    }
-
-    while (einit_ipc_loop());
+    /*
+     * einit_ipc_request_callback(REQUEST, callback);
+     * 
+     * einit_ipc_loop_infinite();
+     */
 #endif
 
     return 0;

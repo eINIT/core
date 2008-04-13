@@ -117,7 +117,7 @@ char einit_ipx_sexp_handle_fd(struct einit_sexp_fd_reader *rd)
     // fprintf (stderr, "reading sexp: %i\n", rd->fd);
 
     while ((sexp = einit_read_sexp_from_fd_reader(rd))) {
-        if (sexp == BAD_SEXP) {
+        if (sexp == sexp_bad) {
             // fprintf (stderr, "BAD SEXP: %i\n", rd->fd);
 
             return 1;
@@ -348,7 +348,7 @@ void einit_ipc_sexp_einit_core_forked_subprocess(struct einit_event *ev)
                  einit_ipc_sexp_boot_event_handler_root_device_ok);
 
     if (einit_ipc_sexp_fd > 0) {
-        close (einit_ipc_sexp_fd);
+        close(einit_ipc_sexp_fd);
         einit_ipc_sexp_fd = -1;
     }
 }
