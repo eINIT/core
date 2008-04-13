@@ -121,10 +121,8 @@ void einit_module_transformations_garbage_free()
     }
 }
 
-void
-einit_module_transformations_einit_event_handler_configuration_update
-(struct einit_event *ev)
-{
+void einit_module_transformations_einit_event_handler_configuration_update
+    (struct einit_event *ev) {
     struct stree *new_aliases = NULL, *ca = NULL;
     struct cfgnode *node = NULL;
     struct stree *new_transformations = NULL;
@@ -297,9 +295,9 @@ void einit_module_transformations_einit_event_handler_update_module(struct
 
             for (i = 0; module->si->provides[i]; i++) {
                 char hit = 0;
-                struct stree *x =
-                    streefind(service_transformations,
-                              module->si->provides[i], tree_find_first);
+                struct stree *x = streefind(service_transformations,
+                                            module->si->provides[i],
+                                            tree_find_first);
 
                 while (x) {
                     struct service_transformation *trans =
@@ -336,9 +334,9 @@ void einit_module_transformations_einit_event_handler_update_module(struct
 
             for (i = 0; module->si->requires[i]; i++) {
                 char hit = 0;
-                struct stree *x =
-                    streefind(service_transformations,
-                              module->si->requires[i], tree_find_first);
+                struct stree *x = streefind(service_transformations,
+                                            module->si->requires[i],
+                                            tree_find_first);
 
                 while (x) {
                     struct service_transformation *trans =
@@ -375,9 +373,9 @@ void einit_module_transformations_einit_event_handler_update_module(struct
 
             for (i = 0; module->si->after[i]; i++) {
                 char hit = 0;
-                struct stree *x =
-                    streefind(service_transformations,
-                              module->si->after[i], tree_find_first);
+                struct stree *x = streefind(service_transformations,
+                                            module->si->after[i],
+                                            tree_find_first);
 
                 while (x) {
                     struct service_transformation *trans =
@@ -414,9 +412,9 @@ void einit_module_transformations_einit_event_handler_update_module(struct
 
             for (i = 0; module->si->before[i]; i++) {
                 char hit = 0;
-                struct stree *x =
-                    streefind(service_transformations,
-                              module->si->before[i], tree_find_first);
+                struct stree *x = streefind(service_transformations,
+                                            module->si->before[i],
+                                            tree_find_first);
 
                 while (x) {
                     struct service_transformation *trans =

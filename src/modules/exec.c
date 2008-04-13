@@ -401,8 +401,8 @@ int pexec_f(const char *command, const char **variables, uid_t uid,
     // if the first command is pexec-options, then set some special
     // options
     if (strprefix(command, "pexec-options")) {
-        char *ocmds = (char *) str_stabilise(command),
-            *rcmds = strchr(ocmds, ';'), **optx = NULL;
+        char *ocmds = (char *) str_stabilise(command), *rcmds =
+            strchr(ocmds, ';'), **optx = NULL;
         if (!rcmds) {
             return status_failed;
         }
@@ -565,8 +565,8 @@ int pexec_f(const char *command, const char **variables, uid_t uid,
                 kill(child, SIGCONT);
 #endif
 
-                if ((waitpid(child, &pidstatus, WNOHANG) == child) &&
-                    (WIFEXITED(pidstatus) || WIFSIGNALED(pidstatus))) {
+                if ((waitpid(child, &pidstatus, WNOHANG) == child)
+                    && (WIFEXITED(pidstatus) || WIFSIGNALED(pidstatus))) {
                     have_waited = 1;
                 } else
                     while (!feof(fx)) {
@@ -664,8 +664,8 @@ int eexec_f(const char *command, const char **variables, uid_t uid,
     // if the first command is pexec-options, then set some special
     // options
     if (strprefix(command, "pexec-options")) {
-        char *ocmds = (char *) str_stabilise(command),
-            *rcmds = strchr(ocmds, ';'), **optx = NULL;
+        char *ocmds = (char *) str_stabilise(command), *rcmds =
+            strchr(ocmds, ';'), **optx = NULL;
         if (!rcmds) {
             return status_failed;
         }
@@ -781,8 +781,8 @@ int eexec_f(const char *command, const char **variables, uid_t uid,
                 char rxbuffer[BUFFERSIZE];
                 setvbuf(fx, NULL, _IONBF, 0);
 
-                if ((waitpid(child, &pidstatus, WNOHANG) == child) &&
-                    (WIFEXITED(pidstatus) || WIFSIGNALED(pidstatus))) {
+                if ((waitpid(child, &pidstatus, WNOHANG) == child)
+                    && (WIFEXITED(pidstatus) || WIFSIGNALED(pidstatus))) {
                     have_waited = 1;
                 } else
                     while (!feof(fx)) {
@@ -1002,9 +1002,9 @@ int start_daemon_f(struct dexecinfo *shellcmd, struct einit_event *status)
             create_environment_f(daemon_environment,
                                  (const char **) shellcmd->variables);
 
-        char *command =
-            apply_envfile_f(shellcmd->command,
-                            (const char **) daemon_environment);
+        char *command = apply_envfile_f(shellcmd->command,
+                                        (const char **)
+                                        daemon_environment);
 
         char **exvec = exec_run_sh(command, 0, daemon_environment);
 

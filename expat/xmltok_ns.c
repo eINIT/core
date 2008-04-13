@@ -19,9 +19,8 @@ const ENCODING *NS(XmlGetUtf16InternalEncoding) (void) {
     return &ns(internal_big2_encoding).enc;
 #else
     const short n = 1;
-    return (*(const char *) &n
-            ? &ns(internal_little2_encoding).enc
-            : &ns(internal_big2_encoding).enc);
+    return (*(const char *) &n ? &ns(internal_little2_encoding).
+            enc : &ns(internal_big2_encoding).enc);
 #endif
 }
 
@@ -31,23 +30,22 @@ static const ENCODING *const NS(encodings)[] =
                                                                                                                                                                                          */
 };
 
-static int PTRCALL
-NS(initScanProlog) (const ENCODING * enc, const char *ptr, const char *end,
-                    const char **nextTokPtr) {
+static int PTRCALL NS(initScanProlog) (const ENCODING * enc,
+                                       const char *ptr, const char *end,
+                                       const char **nextTokPtr) {
     return initScan(NS(encodings), (const INIT_ENCODING *) enc,
                     XML_PROLOG_STATE, ptr, end, nextTokPtr);
 }
 
-static int PTRCALL
-NS(initScanContent) (const ENCODING * enc, const char *ptr,
-                     const char *end, const char **nextTokPtr) {
+static int PTRCALL NS(initScanContent) (const ENCODING * enc,
+                                        const char *ptr, const char *end,
+                                        const char **nextTokPtr) {
     return initScan(NS(encodings), (const INIT_ENCODING *) enc,
                     XML_CONTENT_STATE, ptr, end, nextTokPtr);
 }
 
-int
-NS(XmlInitEncoding) (INIT_ENCODING * p, const ENCODING ** encPtr,
-                     const char *name) {
+int NS(XmlInitEncoding) (INIT_ENCODING * p, const ENCODING ** encPtr,
+                         const char *name) {
     int i = getEncodingIndex(name);
     if (i == UNKNOWN_ENC)
         return 0;
@@ -79,24 +77,14 @@ static const ENCODING *NS(findEncoding) (const ENCODING * enc,
     return NS(encodings)[i];
 }
 
-int
-NS(XmlParseXmlDecl) (int isGeneralTextEntity,
-                     const ENCODING * enc,
-                     const char *ptr,
-                     const char *end,
-                     const char **badPtr,
-                     const char **versionPtr,
-                     const char **versionEndPtr,
-                     const char **encodingName,
-                     const ENCODING ** encoding, int *standalone) {
-    return doParseXmlDecl(NS(findEncoding),
-                          isGeneralTextEntity,
-                          enc,
-                          ptr,
-                          end,
-                          badPtr,
-                          versionPtr,
-                          versionEndPtr,
+int NS(XmlParseXmlDecl) (int isGeneralTextEntity, const ENCODING * enc,
+                         const char *ptr, const char *end,
+                         const char **badPtr, const char **versionPtr,
+                         const char **versionEndPtr,
+                         const char **encodingName,
+                         const ENCODING ** encoding, int *standalone) {
+    return doParseXmlDecl(NS(findEncoding), isGeneralTextEntity, enc, ptr,
+                          end, badPtr, versionPtr, versionEndPtr,
                           encodingName, encoding, standalone);
 }
 

@@ -99,13 +99,13 @@ struct process_status **update_processes_proc_linux(struct process_status
         for (; pstat[i]; i++) {
             esprintf(buffer, BUFFERSIZE, "%s%i", path, pstat[i]->pid);
             if (!stat(buffer, &st)) {
-                npstat =
-                    (struct process_status **) set_fix_add((void **)
-                                                           npstat,
-                                                           (void *)
-                                                           pstat[i],
-                                                           sizeof(struct
-                                                                  process_status));
+                npstat = (struct process_status **) set_fix_add((void **)
+                                                                npstat,
+                                                                (void *)
+                                                                pstat[i],
+                                                                sizeof
+                                                                (struct
+                                                                 process_status));
             }
         }
     }
@@ -131,7 +131,8 @@ struct process_status **update_processes_proc_linux(struct process_status
                 if (cont) {
                     struct process_status tmppse = {.update =
                             starttime,.pid = atoi(entry->d_name),.cwd =
-                            NULL,.cmd = NULL };
+                            NULL,.cmd = NULL
+                    };
                     char linkbuffer[BUFFERSIZE];
                     size_t linklen;
                     txf =
@@ -167,8 +168,7 @@ struct process_status **update_processes_proc_linux(struct process_status
                     }
 
                     if (!recycled) {
-                        npstat =
-                            (struct process_status **)
+                        npstat = (struct process_status **)
                             set_fix_add((void **) npstat, (void *) &tmppse,
                                         sizeof(struct process_status));
                     }

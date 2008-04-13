@@ -494,9 +494,8 @@ void mount_add_update_fstab_data(struct device_data *dd, char *mountpoint,
                                  char *after, char *before)
 {
     struct stree *st =
-        (dd->
-         mountpoints ? streefind(dd->mountpoints, mountpoint,
-                                 tree_find_first) : NULL);
+        (dd->mountpoints ? streefind(dd->mountpoints, mountpoint,
+                                     tree_find_first) : NULL);
     struct mountpoint_data *mp =
         st ? st->value : ecalloc(1, sizeof(struct mountpoint_data));
     // char *device = dd->device;
@@ -608,10 +607,10 @@ void mount_add_update_fstab(char *mountpoint, char *device, char *fs,
         d->device_status =
             device_status_has_medium | device_status_error_notint;
 
-        mounter_device_data =
-            (struct device_data **) set_noa_add((void **)
-                                                mounter_device_data,
-                                                (void *) d);
+        mounter_device_data = (struct device_data **) set_noa_add((void **)
+                                                                  mounter_device_data,
+                                                                  (void *)
+                                                                  d);
 
         for (y = 0; mounter_device_data[y]; y++);
         if (y > 0)
@@ -849,9 +848,10 @@ void mount_update_fstab_nodes_from_fstab()
                     }
 #endif
 
-                    char **options =
-                        val->fs_mntops ? str2set(',',
-                                                 val->fs_mntops) : NULL;
+                    char **options = val->fs_mntops ? str2set(',',
+                                                              val->
+                                                              fs_mntops) :
+                        NULL;
                     char *fs_spec = NULL;
 
                     if (strprefix(val->fs_spec, "UUID=")) {
@@ -913,7 +913,11 @@ void mount_update_nodes_from_mtab()
 
             // void mount_add_update_fstab (char *mountpoint, char
             // *device, char *fs, char **options, char *before_mount, char 
+            // 
+            // 
             // *after_mount, char *before_umount, char *after_umount, char 
+            // 
+            // 
             // *manager, char **variables, uint32_t mountflags) {
 
             if (val->fs_file) {
@@ -1103,9 +1107,9 @@ int einit_mountpoint_configure(struct lmodule *tm)
 
     if (tm->module && tm->module->si.provides
         && tm->module->si.provides[0]) {
-        struct stree *st =
-            streefind(mount_critical_filesystems,
-                      tm->module->si.provides[0], tree_find_first);
+        struct stree *st = streefind(mount_critical_filesystems,
+                                     tm->module->si.provides[0],
+                                     tree_find_first);
 
         if (st) {
             st->value = tm;
@@ -1228,10 +1232,9 @@ void einit_mount_scanmodules_mountpoints()
                 enum filesystem_capability capa =
                     mount_get_filesystem_options(((struct device_data
                                                    *) (s->value))->fs);
-                if (!
-                    ((capa & filesystem_capability_network)
-                     || inset((const void **) mp->options, "network",
-                              SET_TYPE_STRING))) {
+                if (!((capa & filesystem_capability_network)
+                      || inset((const void **) mp->options, "network",
+                               SET_TYPE_STRING))) {
                     if (tmpdd->device) {
                         tmp_split =
                             (tmpdd->device[0] == '/') ? str2set('/',
@@ -1617,9 +1620,8 @@ void einit_mount_scanmodules(struct einit_event *ev)
         /*
          * if (filesystems)
          */  {
-            char *fs =
-                filesystems ? set2str(':',
-                                      (const char **) filesystems) :
+            char *fs = filesystems ? set2str(':',
+                                             (const char **) filesystems) :
                 estrdup("none");
             char doadd = 1;
 
@@ -1642,8 +1644,7 @@ void einit_mount_scanmodules(struct einit_event *ev)
                     struct cfgnode newnode;
                     memset(&newnode, 0, sizeof(struct cfgnode));
 
-                    newnode.id =
-                        (char *)
+                    newnode.id = (char *)
                         str_stabilise("services-alias-mount-critical");
                     newnode.arbattrs =
                         set_str_add_stable(newnode.arbattrs, "group");
@@ -1733,15 +1734,15 @@ char *options_string_to_mountflags(char **options, unsigned long *mntflags,
 #ifdef MS_NOSUID
             (*mntflags) |= MS_NOSUID;
 #endif
-        }                       /* else if (strmatch (options[fi],
-                                 * "nouser") || strmatch (options[fi],
-                                 * "group") || strmatch (options[fi],
-                                 * "auto") || strmatch (options[fi],
+        }                       /* else if (strmatch (options[fi], * *
+                                 * "nouser") || strmatch (options[fi], * * 
+                                 * "group") || strmatch (options[fi], * *
+                                 * "auto") || strmatch (options[fi], * *
                                  * "defaults")) { notice (6, "node \"%s\": 
-                                 * ignored unsupported/irrelevant
-                                 * mount-flag \"%s\": it has no meaning
-                                 * for eINIT, you should remove it.\n",
-                                 * mountpoint, options[fi]); } else */
+                                 * * * ignored unsupported/irrelevant * *
+                                 * mount-flag \"%s\": it has no meaning *
+                                 * * for eINIT, you should remove it.\n",
+                                 * * * mountpoint, options[fi]); } else */
         if (strmatch(options[fi], "_netdev")) {
             notice(6,
                    "node \"%s\": ignored unsupported/irrelevant mount-flag \"_netdev\": einit uses a table with filesystem data to find out if network access is required to mount a certain node, so you should rather modify that table than specify \"_netdev\".\n",
@@ -1851,15 +1852,16 @@ char *options_string_to_mountflags(char **options, unsigned long *mntflags,
         else
 #endif
         if (strmatch(options[fi], "auto") || strmatch(options[fi], "noauto") || strmatch(options[fi], "system") || strmatch(options[fi], "critical") || strmatch(options[fi], "network") || strmatch(options[fi], "skip-fsck"));        // ignore 
-                                                                                                                                                                                                                                        // our 
-                                                                                                                                                                                                                                        // own 
-                                                                                                                                                                                                                                        // specifiers, 
-                                                                                                                                                                                                                                        // as 
-                                                                                                                                                                                                                                        // well 
-                                                                                                                                                                                                                                        // as 
-                                                                                                                                                                                                                                        // auto/noauto
-        else
-         if (!ret) {
+                                                                                                                                                                                                                                        // 
+        // 
+        // our 
+        // own 
+        // specifiers, 
+        // as 
+        // well 
+        // as 
+        // auto/noauto
+        else if (!ret) {
             uint32_t slen = strlen(options[fi]) + 1;
             ret = ecalloc(1, slen);
             memcpy(ret, options[fi], slen);
@@ -2090,9 +2092,9 @@ int mount_umount(char *mountpoint, struct device_data *dd,
         step++;
 
         if (!(retval & status_ok)) {
-            struct pc_conditional
-                pcc = {.match = "cwd-below",.para =
-  mountpoint,.match_options = einit_pmo_additive }, pcf = {
+            struct pc_conditional pcc = {.match = "cwd-below",.para =
+                    mountpoint,.match_options = einit_pmo_additive
+            }, pcf = {
             .match = "files-below",.para = mountpoint,.match_options =
                     einit_pmo_additive}, *pcl[3] = {
             &pcc, &pcf, NULL};
@@ -2393,8 +2395,8 @@ int eumount(char *mountpoint, struct einit_event *status)
 
         for (; cm[i]; i++) {
             if (strprefix(cm[i], mountpoint)) { // find mountpoints below
-                                                // this one that are still 
-                                                // mounted
+                // this one that are still 
+                // mounted
                 uint32_t n = strlen(mountpoint);
 
                 if (cm[i][n] == '/') {

@@ -226,6 +226,8 @@ int cfg_addnode_f(struct cfgnode *node)
                 void *bsl = cur->luggage;
 
                 // we risk not being atomic at this point but... it really 
+                // 
+                // 
                 // is unlikely to go weird.
                 ((struct cfgnode *) cur->value)->arbattrs = node->arbattrs;
                 cur->luggage = node->arbattrs;

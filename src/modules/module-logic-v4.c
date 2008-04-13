@@ -315,8 +315,7 @@ struct lmodule *module_logic_get_prime_candidate(struct lmodule **lm)
     return NULL;
 }
 
-char module_logic_check_for_circular_dependencies(char *service,
-                                                  struct lmodule
+char module_logic_check_for_circular_dependencies(char *service, struct lmodule
                                                   **dependencies)
 {
     struct stree *st =
@@ -416,9 +415,9 @@ struct lmodule **module_logic_find_things_to_enable()
                 set_str_add_stable(services_level1,
                                    module_logic_list_enable[i]);
 
-        struct stree *st =
-            streefind(module_logic_service_list,
-                      module_logic_list_enable[i], tree_find_first);
+        struct stree *st = streefind(module_logic_service_list,
+                                     module_logic_list_enable[i],
+                                     tree_find_first);
 
         if (st) {
             struct lmodule **lm = st->value;
@@ -762,11 +761,10 @@ struct lmodule **module_logic_find_things_to_enable()
                                     clash = 1;
                                 }
 
-                                if (inset
-                                    ((const void **)
-                                     module_logic_list_enable,
-                                     candidates_level1[j]->si->provides[k],
-                                     SET_TYPE_STRING)) {
+                                if (inset((const void **)
+                                          module_logic_list_enable,
+                                          candidates_level1[j]->si->
+                                          provides[k], SET_TYPE_STRING)) {
                                     j_in_target++;
                                 }
                             }
@@ -969,8 +967,7 @@ struct lmodule **module_logic_find_things_to_enable()
                                     fflush(stderr);
 #endif
 
-                                    candidates_level2 =
-                                        (struct lmodule **)
+                                    candidates_level2 = (struct lmodule **)
                                         setdel((void **) candidates_level2,
                                                candidates_level2[y]);
 
@@ -1522,9 +1519,10 @@ void module_logic_einit_event_handler_core_module_list_update(struct
             ssize_t i = 0;
 
             for (; cur->si->provides[i]; i++) {
-                struct stree *slnode = new_service_list ?
-                    streefind(new_service_list, cur->si->provides[i],
-                              tree_find_first) : NULL;
+                struct stree *slnode =
+                    new_service_list ? streefind(new_service_list,
+                                                 cur->si->provides[i],
+                                                 tree_find_first) : NULL;
                 struct lnode **curval =
                     (struct lnode **) (slnode ? slnode->value : NULL);
 
@@ -1653,9 +1651,8 @@ struct cfgnode *module_logic_prepare_mode_switch(char *modename,
     }
 
     if (disable) {
-        char disable_all =
-            inset((const void **) disable, (void *) "all",
-                  SET_TYPE_STRING);
+        char disable_all = inset((const void **) disable, (void *) "all",
+                                 SET_TYPE_STRING);
 
         if (disable_all) {
             char **tmp = mod_list_all_provided_services();
@@ -1765,9 +1762,8 @@ void module_logic_einit_event_handler_core_switch_mode_callback(void *p)
         module_logic_idle_actions();
     }
 
-    if (d->modename
-        && (strmatch(d->modename, "power-down")
-            || strmatch(d->modename, "power-reset"))) {
+    if (d->modename && (strmatch(d->modename, "power-down")
+                        || strmatch(d->modename, "power-reset"))) {
         usleep(50000);
         /*
          * at this point, we really should be dead already... 
@@ -2096,10 +2092,9 @@ void module_logic_einit_event_handler_core_service_update(struct
                                                           einit_event *ev)
 {
     if (!(ev->status & status_working)) {
-        module_logic_active_modules =
-            (struct lmodule **) setdel((void **)
-                                       module_logic_active_modules,
-                                       ev->para);
+        module_logic_active_modules = (struct lmodule **) setdel((void **)
+                                                                 module_logic_active_modules,
+                                                                 ev->para);
     }
 
     if (!(ev->status & status_failed) && (ev->status & status_enabled)) {

@@ -165,8 +165,7 @@ void linux_network_bonding_interface_construct(struct einit_event *ev)
 
                 memset(&newnode, 0, sizeof(struct cfgnode));
 
-                newnode.id =
-                    (char *)
+                newnode.id = (char *)
                     str_stabilise("configuration-kernel-modules-bonding");
                 newnode.type = einit_node_regular;
 

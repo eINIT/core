@@ -108,9 +108,8 @@ void linux_mdev_post_execute(struct einit_exec_data *xd)
     chmod("/dev/random", 0777);
     chmod("/dev/urandom", 0777);
 
-    pid_t p =
-        einit_fork(linux_mdev_post_load_kernel_extensions, NULL,
-                   thismodule->module->rid, thismodule);
+    pid_t p = einit_fork(linux_mdev_post_load_kernel_extensions, NULL,
+                         thismodule->module->rid, thismodule);
 
     if (p == 0) {
         struct einit_event eml =

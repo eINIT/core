@@ -135,10 +135,10 @@ char einit_ipx_sexp_handle_fd(struct einit_sexp_fd_reader *rd)
                 if ((sexp->secundus->type == es_cons)
                     && (sexp->secundus->primus->type == es_symbol)
                     && (sexp->secundus->secundus->type == es_cons)) {
-                    struct stree *st =
-                        streefind(einit_ipc_handlers,
-                                  sexp->secundus->primus->symbol,
-                                  tree_find_first);
+                    struct stree *st = streefind(einit_ipc_handlers,
+                                                 sexp->secundus->primus->
+                                                 symbol,
+                                                 tree_find_first);
                     if (st) {
                         do {
                             struct einit_ipc_handler *h = st->value;

@@ -286,11 +286,9 @@ int linux_network_wpa_supplicant_module_disable(struct dexecinfo
 
 int linux_network_wpa_supplicant_module_configure(struct lmodule *this)
 {
-    this->enable =
-        (int (*)(void *, struct einit_event *))
+    this->enable = (int (*)(void *, struct einit_event *))
         linux_network_wpa_supplicant_module_enable;
-    this->disable =
-        (int (*)(void *, struct einit_event *))
+    this->disable = (int (*)(void *, struct einit_event *))
         linux_network_wpa_supplicant_module_disable;
 
     char buffer[BUFFERSIZE];

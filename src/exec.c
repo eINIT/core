@@ -397,18 +397,18 @@ pid_t einit_exec(struct einit_exec_data * x)
         pid_t curpgrp;
 
         setpgid(p, p);          // create a new process group for the new
-                                // process
-        if (((curpgrp = tcgetpgrp(ctty = 2)) < 0) ||
-            ((curpgrp = tcgetpgrp(ctty = 0)) < 0) ||
-            ((curpgrp = tcgetpgrp(ctty = 1)) < 0))
+        // process
+        if (((curpgrp = tcgetpgrp(ctty = 2)) < 0)
+            || ((curpgrp = tcgetpgrp(ctty = 0)) < 0)
+            || ((curpgrp = tcgetpgrp(ctty = 1)) < 0))
             tcsetpgrp(ctty, p); // set foreground group
     }
 
     x->pid = p;
 
-    einit_exec_running =
-        (struct einit_exec_data **) set_noa_add((void **)
-                                                einit_exec_running, x);
+    einit_exec_running = (struct einit_exec_data **) set_noa_add((void **)
+                                                                 einit_exec_running,
+                                                                 x);
 
     einit_ping_core();
 

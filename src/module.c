@@ -465,9 +465,8 @@ int mod(enum einit_module_task task, struct lmodule *module,
      * done at all) 
      */
     if ((task & einit_module_enable)
-        &&
-        ((!(module->module->mode & einit_module_event_actions)
-          && !module->enable) || (module->status & status_enabled))) {
+        && ((!(module->module->mode & einit_module_event_actions)
+             && !module->enable) || (module->status & status_enabled))) {
       wontload:
         module->status ^= status_working;
 
@@ -477,10 +476,9 @@ int mod(enum einit_module_task task, struct lmodule *module,
     }
 
     if ((task & einit_module_disable)
-        &&
-        ((!(module->module->mode & einit_module_event_actions)
-          && !module->disable) || (module->status & status_disabled)
-         || (module->status == status_idle)))
+        && ((!(module->module->mode & einit_module_event_actions)
+             && !module->disable) || (module->status & status_disabled)
+            || (module->status == status_idle)))
         goto wontload;
 
     if (task & einit_module_enable) {
@@ -914,8 +912,7 @@ char mod_service_requirements_met(struct lmodule *module)
         for (i = 0; t[i]; i++) {
             if (!service_usage
                 || !(ha = streefind(service_usage, t[i], tree_find_first))
-                || !((struct service_usage_item *) (ha->value))->
-                provider) {
+                || !((struct service_usage_item *) (ha->value))->provider) {
                 ret = 0;
                 break;
             }
@@ -939,9 +936,10 @@ char mod_service_not_in_use(struct lmodule *module)
      */
 
     while (ha) {
-        if (((struct service_usage_item *) (ha->value))->users &&
-            (((struct service_usage_item *) (ha->value))->provider) &&
-            ((((struct service_usage_item *) (ha->value))->provider)[0]) &&
+        if (((struct service_usage_item *) (ha->value))->users
+            && (((struct service_usage_item *) (ha->value))->provider)
+            && ((((struct service_usage_item *) (ha->value))->provider)[0])
+            &&
             (!((((struct service_usage_item *) (ha->value))->provider)[1]))
             &&
             inset((const void

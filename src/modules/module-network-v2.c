@@ -424,8 +424,7 @@ int einit_module_network_v2_module_configure(struct lmodule *m)
 
     m->enable = einit_module_network_v2_module_enable;
     m->disable = einit_module_network_v2_module_disable;
-    m->custom =
-        (int (*)(void *, char *, struct einit_event * ev))
+    m->custom = (int (*)(void *, char *, struct einit_event * ev))
         einit_module_network_v2_module_custom;
 
     m->param = m;
@@ -529,15 +528,13 @@ int einit_module_network_v2_carrier_module_custom(struct lmodule *m,
     return status_failed;
 }
 
-int einit_module_network_v2_carrier_module_enable(void *p,
-                                                  struct einit_event
+int einit_module_network_v2_carrier_module_enable(void *p, struct einit_event
                                                   *status)
 {
     return einit_module_network_v2_carrier_module_custom(p, "up", status);
 }
 
-int einit_module_network_v2_carrier_module_disable(void *p,
-                                                   struct einit_event
+int einit_module_network_v2_carrier_module_disable(void *p, struct einit_event
                                                    *status)
 {
     return einit_module_network_v2_carrier_module_custom(p, "down",
@@ -550,8 +547,7 @@ int einit_module_network_v2_carrier_module_configure(struct lmodule *m)
 
     m->enable = einit_module_network_v2_carrier_module_enable;
     m->disable = einit_module_network_v2_carrier_module_disable;
-    m->custom =
-        (int (*)(void *, char *, struct einit_event * ev))
+    m->custom = (int (*)(void *, char *, struct einit_event * ev))
         einit_module_network_v2_carrier_module_custom;
 
     m->param = m;
@@ -793,9 +789,8 @@ void einit_module_network_v2_scanmodules(struct einit_event *ev)
     }
 
     if (automatic) {
-        char *au =
-            automatic ? set2str(':',
-                                (const char **) automatic) :
+        char *au = automatic ? set2str(':',
+                                       (const char **) automatic) :
             estrdup("none");
         char doadd = 1;
 

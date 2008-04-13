@@ -189,7 +189,7 @@ void setsort(void **set, enum set_sort_order task,
 
     if (!set || !set[0] || !set[1])
         return;                 // need a set with at least two elements
-                                // to do anything meaningful.
+    // to do anything meaningful.
 
     if (task == set_sort_order_string_lexical)
         sortfunction = sortfunction_lexical;

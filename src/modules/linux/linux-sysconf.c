@@ -188,11 +188,10 @@ void linux_sysconf_root_ok(struct einit_event *ev)
 
 void linux_sysconf_service_enabled(struct einit_event *ev)
 {
-    if (ev->string
-        && (strmatch(ev->string, "einit-psplash")
-            || strmatch(ev->string, "einit-usplash")
-            || strmatch(ev->string, "einit-exquisite")
-            || strmatch(ev->string, "einit-fbsplash"))) {
+    if (ev->string && (strmatch(ev->string, "einit-psplash")
+                       || strmatch(ev->string, "einit-usplash")
+                       || strmatch(ev->string, "einit-exquisite")
+                       || strmatch(ev->string, "einit-fbsplash"))) {
         linux_sysconf_block_chvt = 1;
     }
 }
@@ -260,10 +259,9 @@ void linux_sysconf_fix_ttys()
                         } else
                             if (strmatch
                                 (filenode->arbattrs[i], "kernel-vt")) {
-                            int arg =
-                                (strtol
-                                 (filenode->arbattrs[i + 1],
-                                  (char **) NULL, 10) << 8) | 11;
+                            int arg = (strtol(filenode->arbattrs[i + 1],
+                                              (char **) NULL,
+                                              10) << 8) | 11;
                             errno = 0;
 
                             ioctl(0, TIOCLINUX, &arg);

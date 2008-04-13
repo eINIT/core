@@ -135,8 +135,7 @@ int einit_monitor_loop(int argc, char **argv, char **env)
             close(commandpipe[1]);
 
             if (WIFEXITED(rstatus)
-                && (WEXITSTATUS(rstatus) !=
-                    einit_exit_status_die_respawn)) {
+                && (WEXITSTATUS(rstatus) != einit_exit_status_die_respawn)) {
                 if (WEXITSTATUS(rstatus) == EXIT_SUCCESS)
                     fprintf(stderr, "eINIT has quit properly (%i).\n",
                             WEXITSTATUS(rstatus));

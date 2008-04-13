@@ -141,9 +141,9 @@ void linux_udev_post_udevsettle(struct einit_exec_data *xd)
      * let's not forget about raid setups and the like here... 
      */
     if (!stat("/sbin/lvm", &st)) {
-        char *xtx[] =
-            { "/sbin/lvm", "vgscan", "-P", "--mkdnodes",
-      "--ignorelockingfailure", NULL };
+        char *xtx[] = { "/sbin/lvm", "vgscan", "-P", "--mkdnodes",
+            "--ignorelockingfailure", NULL
+        };
         einit_exec_without_shell_with_function_on_process_death(xtx,
                                                                 linux_udev_post_vgscan,
                                                                 thismodule);
@@ -175,9 +175,8 @@ void linux_udev_post_udevtrigger(struct einit_exec_data *xd)
 {
     fputs("loading kernel extensions...\n", stderr);
 
-    pid_t p =
-        einit_fork(linux_udev_post_load_kernel_extensions, NULL,
-                   thismodule->module->rid, thismodule);
+    pid_t p = einit_fork(linux_udev_post_load_kernel_extensions, NULL,
+                         thismodule->module->rid, thismodule);
 
     if (p == 0) {
         struct einit_event eml =

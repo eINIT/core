@@ -545,8 +545,8 @@ void setsecuritylevel(int newlevel)
         return;
     }
 #ifdef SECURE
-    warning("kernel security level changed from %d to %d",
-            curlevel, newlevel);
+    warning("kernel security level changed from %d to %d", curlevel,
+            newlevel);
 #endif
 #endif
 }
@@ -657,8 +657,8 @@ state_func_t single_user(void)
          */
         typ = getttynam("console");
         pp = getpwnam("root");
-        if (typ && (typ->ty_status & TTY_SECURE) == 0 &&
-            pp && *pp->pw_passwd) {
+        if (typ && (typ->ty_status & TTY_SECURE) == 0 && pp
+            && *pp->pw_passwd) {
             write_stderr(banner);
             for (;;) {
                 clear = getpass("Password:");
@@ -684,8 +684,8 @@ state_func_t single_user(void)
             write_stderr(SHREQUEST);
             write_stderr(shell);
             write_stderr(": ");
-            while ((num = read(STDIN_FILENO, cp, 1)) != -1 &&
-                   num != 0 && *cp != '\n' && cp < &altshell[127])
+            while ((num = read(STDIN_FILENO, cp, 1)) != -1 && num != 0
+                   && *cp != '\n' && cp < &altshell[127])
                 cp++;
             *cp = '\0';
             if (altshell[0] != '\0')
@@ -861,8 +861,8 @@ state_func_t run_script(const char *script)
         }
     } while (wpid != pid);
 
-    if (WIFSIGNALED(status) && WTERMSIG(status) == SIGTERM &&
-        requested_transition == catatonia) {
+    if (WIFSIGNALED(status) && WTERMSIG(status) == SIGTERM
+        && requested_transition == catatonia) {
         /*
          * /etc/rc executed /sbin/reboot; wait for the end quietly 
          */
@@ -999,8 +999,8 @@ session_t *new_session(session_t * sprev, int session_index,
     session_t *sp;
     int fd;
 
-    if ((typ->ty_status & TTY_ON) == 0 ||
-        typ->ty_name == 0 || typ->ty_getty == 0)
+    if ((typ->ty_status & TTY_ON) == 0 || typ->ty_name == 0
+        || typ->ty_getty == 0)
         return 0;
 
     sp = (session_t *) calloc(1, sizeof(session_t));
@@ -1194,8 +1194,8 @@ pid_t start_getty(session_t * sp)
     int too_quick = 0;
     char term[64], *env[2];
 
-    if (current_time >= sp->se_started &&
-        current_time - sp->se_started < GETTY_SPACING) {
+    if (current_time >= sp->se_started
+        && current_time - sp->se_started < GETTY_SPACING) {
         if (++sp->se_nspace > GETTY_NSPACE) {
             sp->se_nspace = 0;
             too_quick = 1;
@@ -1242,8 +1242,8 @@ pid_t start_getty(session_t * sp)
     } else
         env[0] = 0;
     execve(sp->se_getty_argv[0], sp->se_getty_argv, env);
-    stall("can't exec getty '%s' for port %s: %m",
-          sp->se_getty_argv[0], sp->se_device);
+    stall("can't exec getty '%s' for port %s: %m", sp->se_getty_argv[0],
+          sp->se_device);
     _exit(1);
 }
 
@@ -1607,8 +1607,9 @@ int runshutdown(void)
     }
 
     len = sizeof(shutdowntimeout);
-    if (sysctlbyname("kern.init_shutdown_timeout", &shutdowntimeout, &len,
-                     NULL, 0) == -1 || shutdowntimeout < 2)
+    if (sysctlbyname
+        ("kern.init_shutdown_timeout", &shutdowntimeout, &len, NULL,
+         0) == -1 || shutdowntimeout < 2)
         shutdowntimeout = DEATH_SCRIPT;
     alarm(shutdowntimeout);
     clang = 0;
@@ -1636,8 +1637,8 @@ int runshutdown(void)
             return -1;
         }
         if (wpid == pid && WIFSTOPPED(status)) {
-            warning("init: %s on %s stopped, restarting\n",
-                    shell, _PATH_RUNDOWN);
+            warning("init: %s on %s stopped, restarting\n", shell,
+                    _PATH_RUNDOWN);
             kill(pid, SIGCONT);
             wpid = -1;
         }
@@ -1648,8 +1649,8 @@ int runshutdown(void)
      */
     alarm(0);
 
-    if (WIFSIGNALED(status) && WTERMSIG(status) == SIGTERM &&
-        requested_transition == catatonia) {
+    if (WIFSIGNALED(status) && WTERMSIG(status) == SIGTERM
+        && requested_transition == catatonia) {
         /*
          * /etc/rc.shutdown executed /sbin/reboot;
          * wait for the end quietly

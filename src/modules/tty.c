@@ -123,7 +123,7 @@ void einit_tty_watcher(pid_t pid)
     while (cur) {
         if (cur->pid == pid) {
             killpg(pid, SIGHUP);        // send a SIGHUP to the getty's
-                                        // process group
+            // process group
 
             if (cur->restart)
                 node = cur->node;
@@ -266,9 +266,8 @@ int einit_tty_texec(struct cfgnode *node)
                                     dup2(newfd, 2);
                                 }
 #ifdef __linux__
-                                int fdc =
-                                    open("/dev/console",
-                                         O_WRONLY | O_NOCTTY);
+                                int fdc = open("/dev/console",
+                                               O_WRONLY | O_NOCTTY);
                                 if (fdc > 0) {
                                     ioctl(fdc, TIOCSCTTY, 1);
                                     close(fdc);
@@ -322,13 +321,13 @@ int einit_tty_texec(struct cfgnode *node)
                     pid_t curpgrp;
 
                     setpgid(realpid, realpid);  // create a new process
-                                                // group for the new
-                                                // process
-                    if (((curpgrp = tcgetpgrp(ctty = 2)) < 0) ||
-                        ((curpgrp = tcgetpgrp(ctty = 0)) < 0) ||
-                        ((curpgrp = tcgetpgrp(ctty = 1)) < 0))
+                    // group for the new
+                    // process
+                    if (((curpgrp = tcgetpgrp(ctty = 2)) < 0)
+                        || ((curpgrp = tcgetpgrp(ctty = 0)) < 0)
+                        || ((curpgrp = tcgetpgrp(ctty = 1)) < 0))
                         tcsetpgrp(ctty, realpid);       // set foreground
-                                                        // group
+                    // group
 
                     struct ttyst *new = ecalloc(1, sizeof(struct ttyst));
                     new->pid = realpid;
@@ -373,7 +372,7 @@ void einit_tty_disable_unused(char **enab_ttys)
                    cur->node->id + 18);
             cur->restart = 0;
             killpg(cur->pid, SIGHUP);   // send a SIGHUP to the getty's
-                                        // process group
+            // process group
             kill(cur->pid, SIGTERM);
         }
         cur = cur->next;

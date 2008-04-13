@@ -83,7 +83,7 @@ static const char KW_NMTOKENS[] = {
 };
 static const char KW_NOTATION[] =
     { ASCII_N, ASCII_O, ASCII_T, ASCII_A, ASCII_T, ASCII_I, ASCII_O,
-ASCII_N,
+    ASCII_N,
     '\0'
 };
 static const char KW_PCDATA[] = {
@@ -113,22 +113,17 @@ static const char KW_SYSTEM[] = {
 #define setTopLevel(state) ((state)->handler = internalSubset)
 #endif                          /* not XML_DTD */
 
-typedef int PTRCALL PROLOG_HANDLER(PROLOG_STATE * state,
-                                   int tok,
-                                   const char *ptr,
-                                   const char *end, const ENCODING * enc);
+typedef int PTRCALL PROLOG_HANDLER(PROLOG_STATE * state, int tok,
+                                   const char *ptr, const char *end,
+                                   const ENCODING * enc);
 
-static PROLOG_HANDLER
-    prolog0, prolog1, prolog2,
-    doctype0, doctype1, doctype2, doctype3, doctype4, doctype5,
-    internalSubset,
-    entity0, entity1, entity2, entity3, entity4, entity5, entity6,
-    entity7, entity8, entity9, entity10,
-    notation0, notation1, notation2, notation3, notation4,
-    attlist0, attlist1, attlist2, attlist3, attlist4, attlist5, attlist6,
-    attlist7, attlist8, attlist9,
-    element0, element1, element2, element3, element4, element5, element6,
-    element7,
+static PROLOG_HANDLER prolog0, prolog1, prolog2, doctype0, doctype1,
+    doctype2, doctype3, doctype4, doctype5, internalSubset, entity0,
+    entity1, entity2, entity3, entity4, entity5, entity6, entity7, entity8,
+    entity9, entity10, notation0, notation1, notation2, notation3,
+    notation4, attlist0, attlist1, attlist2, attlist3, attlist4, attlist5,
+    attlist6, attlist7, attlist8, attlist9, element0, element1, element2,
+    element3, element4, element5, element6, element7,
 #ifdef XML_DTD
  externalSubset0, externalSubset1, condSect0, condSect1, condSect2,
 #endif
@@ -139,9 +134,8 @@ static PROLOG_HANDLER
 
 static int FASTCALL common(PROLOG_STATE * state, int tok);
 
-static int PTRCALL
-prolog0(PROLOG_STATE * state,
-        int tok, const char *ptr, const char *end, const ENCODING * enc)
+static int PTRCALL prolog0(PROLOG_STATE * state, int tok, const char *ptr,
+                           const char *end, const ENCODING * enc)
 {
     switch (tok) {
     case XML_TOK_PROLOG_S:
@@ -159,9 +153,8 @@ prolog0(PROLOG_STATE * state,
     case XML_TOK_BOM:
         return XML_ROLE_NONE;
     case XML_TOK_DECL_OPEN:
-        if (!XmlNameMatchesAscii(enc,
-                                 ptr + 2 * MIN_BYTES_PER_CHAR(enc),
-                                 end, KW_DOCTYPE))
+        if (!XmlNameMatchesAscii
+            (enc, ptr + 2 * MIN_BYTES_PER_CHAR(enc), end, KW_DOCTYPE))
             break;
         state->handler = doctype0;
         return XML_ROLE_DOCTYPE_NONE;
@@ -172,9 +165,8 @@ prolog0(PROLOG_STATE * state,
     return common(state, tok);
 }
 
-static int PTRCALL
-prolog1(PROLOG_STATE * state,
-        int tok, const char *ptr, const char *end, const ENCODING * enc)
+static int PTRCALL prolog1(PROLOG_STATE * state, int tok, const char *ptr,
+                           const char *end, const ENCODING * enc)
 {
     switch (tok) {
     case XML_TOK_PROLOG_S:
@@ -186,9 +178,8 @@ prolog1(PROLOG_STATE * state,
     case XML_TOK_BOM:
         return XML_ROLE_NONE;
     case XML_TOK_DECL_OPEN:
-        if (!XmlNameMatchesAscii(enc,
-                                 ptr + 2 * MIN_BYTES_PER_CHAR(enc),
-                                 end, KW_DOCTYPE))
+        if (!XmlNameMatchesAscii
+            (enc, ptr + 2 * MIN_BYTES_PER_CHAR(enc), end, KW_DOCTYPE))
             break;
         state->handler = doctype0;
         return XML_ROLE_DOCTYPE_NONE;
@@ -199,9 +190,8 @@ prolog1(PROLOG_STATE * state,
     return common(state, tok);
 }
 
-static int PTRCALL
-prolog2(PROLOG_STATE * state,
-        int tok, const char *ptr, const char *end, const ENCODING * enc)
+static int PTRCALL prolog2(PROLOG_STATE * state, int tok, const char *ptr,
+                           const char *end, const ENCODING * enc)
 {
     switch (tok) {
     case XML_TOK_PROLOG_S:
@@ -217,9 +207,8 @@ prolog2(PROLOG_STATE * state,
     return common(state, tok);
 }
 
-static int PTRCALL
-doctype0(PROLOG_STATE * state,
-         int tok, const char *ptr, const char *end, const ENCODING * enc)
+static int PTRCALL doctype0(PROLOG_STATE * state, int tok, const char *ptr,
+                            const char *end, const ENCODING * enc)
 {
     switch (tok) {
     case XML_TOK_PROLOG_S:
@@ -232,9 +221,8 @@ doctype0(PROLOG_STATE * state,
     return common(state, tok);
 }
 
-static int PTRCALL
-doctype1(PROLOG_STATE * state,
-         int tok, const char *ptr, const char *end, const ENCODING * enc)
+static int PTRCALL doctype1(PROLOG_STATE * state, int tok, const char *ptr,
+                            const char *end, const ENCODING * enc)
 {
     switch (tok) {
     case XML_TOK_PROLOG_S:
@@ -259,9 +247,8 @@ doctype1(PROLOG_STATE * state,
     return common(state, tok);
 }
 
-static int PTRCALL
-doctype2(PROLOG_STATE * state,
-         int tok, const char *ptr, const char *end, const ENCODING * enc)
+static int PTRCALL doctype2(PROLOG_STATE * state, int tok, const char *ptr,
+                            const char *end, const ENCODING * enc)
 {
     switch (tok) {
     case XML_TOK_PROLOG_S:
@@ -273,9 +260,8 @@ doctype2(PROLOG_STATE * state,
     return common(state, tok);
 }
 
-static int PTRCALL
-doctype3(PROLOG_STATE * state,
-         int tok, const char *ptr, const char *end, const ENCODING * enc)
+static int PTRCALL doctype3(PROLOG_STATE * state, int tok, const char *ptr,
+                            const char *end, const ENCODING * enc)
 {
     switch (tok) {
     case XML_TOK_PROLOG_S:
@@ -287,9 +273,8 @@ doctype3(PROLOG_STATE * state,
     return common(state, tok);
 }
 
-static int PTRCALL
-doctype4(PROLOG_STATE * state,
-         int tok, const char *ptr, const char *end, const ENCODING * enc)
+static int PTRCALL doctype4(PROLOG_STATE * state, int tok, const char *ptr,
+                            const char *end, const ENCODING * enc)
 {
     switch (tok) {
     case XML_TOK_PROLOG_S:
@@ -304,9 +289,8 @@ doctype4(PROLOG_STATE * state,
     return common(state, tok);
 }
 
-static int PTRCALL
-doctype5(PROLOG_STATE * state,
-         int tok, const char *ptr, const char *end, const ENCODING * enc)
+static int PTRCALL doctype5(PROLOG_STATE * state, int tok, const char *ptr,
+                            const char *end, const ENCODING * enc)
 {
     switch (tok) {
     case XML_TOK_PROLOG_S:
@@ -318,36 +302,31 @@ doctype5(PROLOG_STATE * state,
     return common(state, tok);
 }
 
-static int PTRCALL
-internalSubset(PROLOG_STATE * state,
-               int tok,
-               const char *ptr, const char *end, const ENCODING * enc)
+static int PTRCALL internalSubset(PROLOG_STATE * state, int tok,
+                                  const char *ptr, const char *end,
+                                  const ENCODING * enc)
 {
     switch (tok) {
     case XML_TOK_PROLOG_S:
         return XML_ROLE_NONE;
     case XML_TOK_DECL_OPEN:
-        if (XmlNameMatchesAscii(enc,
-                                ptr + 2 * MIN_BYTES_PER_CHAR(enc),
-                                end, KW_ENTITY)) {
+        if (XmlNameMatchesAscii
+            (enc, ptr + 2 * MIN_BYTES_PER_CHAR(enc), end, KW_ENTITY)) {
             state->handler = entity0;
             return XML_ROLE_ENTITY_NONE;
         }
-        if (XmlNameMatchesAscii(enc,
-                                ptr + 2 * MIN_BYTES_PER_CHAR(enc),
-                                end, KW_ATTLIST)) {
+        if (XmlNameMatchesAscii
+            (enc, ptr + 2 * MIN_BYTES_PER_CHAR(enc), end, KW_ATTLIST)) {
             state->handler = attlist0;
             return XML_ROLE_ATTLIST_NONE;
         }
-        if (XmlNameMatchesAscii(enc,
-                                ptr + 2 * MIN_BYTES_PER_CHAR(enc),
-                                end, KW_ELEMENT)) {
+        if (XmlNameMatchesAscii
+            (enc, ptr + 2 * MIN_BYTES_PER_CHAR(enc), end, KW_ELEMENT)) {
             state->handler = element0;
             return XML_ROLE_ELEMENT_NONE;
         }
-        if (XmlNameMatchesAscii(enc,
-                                ptr + 2 * MIN_BYTES_PER_CHAR(enc),
-                                end, KW_NOTATION)) {
+        if (XmlNameMatchesAscii
+            (enc, ptr + 2 * MIN_BYTES_PER_CHAR(enc), end, KW_NOTATION)) {
             state->handler = notation0;
             return XML_ROLE_NOTATION_NONE;
         }
@@ -369,10 +348,9 @@ internalSubset(PROLOG_STATE * state,
 
 #ifdef XML_DTD
 
-static int PTRCALL
-externalSubset0(PROLOG_STATE * state,
-                int tok,
-                const char *ptr, const char *end, const ENCODING * enc)
+static int PTRCALL externalSubset0(PROLOG_STATE * state, int tok,
+                                   const char *ptr, const char *end,
+                                   const ENCODING * enc)
 {
     state->handler = externalSubset1;
     if (tok == XML_TOK_XML_DECL)
@@ -380,10 +358,9 @@ externalSubset0(PROLOG_STATE * state,
     return externalSubset1(state, tok, ptr, end, enc);
 }
 
-static int PTRCALL
-externalSubset1(PROLOG_STATE * state,
-                int tok,
-                const char *ptr, const char *end, const ENCODING * enc)
+static int PTRCALL externalSubset1(PROLOG_STATE * state, int tok,
+                                   const char *ptr, const char *end,
+                                   const ENCODING * enc)
 {
     switch (tok) {
     case XML_TOK_COND_SECT_OPEN:
@@ -410,9 +387,8 @@ externalSubset1(PROLOG_STATE * state,
 
 #endif                          /* XML_DTD */
 
-static int PTRCALL
-entity0(PROLOG_STATE * state,
-        int tok, const char *ptr, const char *end, const ENCODING * enc)
+static int PTRCALL entity0(PROLOG_STATE * state, int tok, const char *ptr,
+                           const char *end, const ENCODING * enc)
 {
     switch (tok) {
     case XML_TOK_PROLOG_S:
@@ -427,9 +403,8 @@ entity0(PROLOG_STATE * state,
     return common(state, tok);
 }
 
-static int PTRCALL
-entity1(PROLOG_STATE * state,
-        int tok, const char *ptr, const char *end, const ENCODING * enc)
+static int PTRCALL entity1(PROLOG_STATE * state, int tok, const char *ptr,
+                           const char *end, const ENCODING * enc)
 {
     switch (tok) {
     case XML_TOK_PROLOG_S:
@@ -441,9 +416,8 @@ entity1(PROLOG_STATE * state,
     return common(state, tok);
 }
 
-static int PTRCALL
-entity2(PROLOG_STATE * state,
-        int tok, const char *ptr, const char *end, const ENCODING * enc)
+static int PTRCALL entity2(PROLOG_STATE * state, int tok, const char *ptr,
+                           const char *end, const ENCODING * enc)
 {
     switch (tok) {
     case XML_TOK_PROLOG_S:
@@ -466,9 +440,8 @@ entity2(PROLOG_STATE * state,
     return common(state, tok);
 }
 
-static int PTRCALL
-entity3(PROLOG_STATE * state,
-        int tok, const char *ptr, const char *end, const ENCODING * enc)
+static int PTRCALL entity3(PROLOG_STATE * state, int tok, const char *ptr,
+                           const char *end, const ENCODING * enc)
 {
     switch (tok) {
     case XML_TOK_PROLOG_S:
@@ -480,9 +453,8 @@ entity3(PROLOG_STATE * state,
     return common(state, tok);
 }
 
-static int PTRCALL
-entity4(PROLOG_STATE * state,
-        int tok, const char *ptr, const char *end, const ENCODING * enc)
+static int PTRCALL entity4(PROLOG_STATE * state, int tok, const char *ptr,
+                           const char *end, const ENCODING * enc)
 {
     switch (tok) {
     case XML_TOK_PROLOG_S:
@@ -494,9 +466,8 @@ entity4(PROLOG_STATE * state,
     return common(state, tok);
 }
 
-static int PTRCALL
-entity5(PROLOG_STATE * state,
-        int tok, const char *ptr, const char *end, const ENCODING * enc)
+static int PTRCALL entity5(PROLOG_STATE * state, int tok, const char *ptr,
+                           const char *end, const ENCODING * enc)
 {
     switch (tok) {
     case XML_TOK_PROLOG_S:
@@ -514,9 +485,8 @@ entity5(PROLOG_STATE * state,
     return common(state, tok);
 }
 
-static int PTRCALL
-entity6(PROLOG_STATE * state,
-        int tok, const char *ptr, const char *end, const ENCODING * enc)
+static int PTRCALL entity6(PROLOG_STATE * state, int tok, const char *ptr,
+                           const char *end, const ENCODING * enc)
 {
     switch (tok) {
     case XML_TOK_PROLOG_S:
@@ -529,9 +499,8 @@ entity6(PROLOG_STATE * state,
     return common(state, tok);
 }
 
-static int PTRCALL
-entity7(PROLOG_STATE * state,
-        int tok, const char *ptr, const char *end, const ENCODING * enc)
+static int PTRCALL entity7(PROLOG_STATE * state, int tok, const char *ptr,
+                           const char *end, const ENCODING * enc)
 {
     switch (tok) {
     case XML_TOK_PROLOG_S:
@@ -554,9 +523,8 @@ entity7(PROLOG_STATE * state,
     return common(state, tok);
 }
 
-static int PTRCALL
-entity8(PROLOG_STATE * state,
-        int tok, const char *ptr, const char *end, const ENCODING * enc)
+static int PTRCALL entity8(PROLOG_STATE * state, int tok, const char *ptr,
+                           const char *end, const ENCODING * enc)
 {
     switch (tok) {
     case XML_TOK_PROLOG_S:
@@ -568,9 +536,8 @@ entity8(PROLOG_STATE * state,
     return common(state, tok);
 }
 
-static int PTRCALL
-entity9(PROLOG_STATE * state,
-        int tok, const char *ptr, const char *end, const ENCODING * enc)
+static int PTRCALL entity9(PROLOG_STATE * state, int tok, const char *ptr,
+                           const char *end, const ENCODING * enc)
 {
     switch (tok) {
     case XML_TOK_PROLOG_S:
@@ -582,9 +549,8 @@ entity9(PROLOG_STATE * state,
     return common(state, tok);
 }
 
-static int PTRCALL
-entity10(PROLOG_STATE * state,
-         int tok, const char *ptr, const char *end, const ENCODING * enc)
+static int PTRCALL entity10(PROLOG_STATE * state, int tok, const char *ptr,
+                            const char *end, const ENCODING * enc)
 {
     switch (tok) {
     case XML_TOK_PROLOG_S:
@@ -596,9 +562,9 @@ entity10(PROLOG_STATE * state,
     return common(state, tok);
 }
 
-static int PTRCALL
-notation0(PROLOG_STATE * state,
-          int tok, const char *ptr, const char *end, const ENCODING * enc)
+static int PTRCALL notation0(PROLOG_STATE * state, int tok,
+                             const char *ptr, const char *end,
+                             const ENCODING * enc)
 {
     switch (tok) {
     case XML_TOK_PROLOG_S:
@@ -610,9 +576,9 @@ notation0(PROLOG_STATE * state,
     return common(state, tok);
 }
 
-static int PTRCALL
-notation1(PROLOG_STATE * state,
-          int tok, const char *ptr, const char *end, const ENCODING * enc)
+static int PTRCALL notation1(PROLOG_STATE * state, int tok,
+                             const char *ptr, const char *end,
+                             const ENCODING * enc)
 {
     switch (tok) {
     case XML_TOK_PROLOG_S:
@@ -631,9 +597,9 @@ notation1(PROLOG_STATE * state,
     return common(state, tok);
 }
 
-static int PTRCALL
-notation2(PROLOG_STATE * state,
-          int tok, const char *ptr, const char *end, const ENCODING * enc)
+static int PTRCALL notation2(PROLOG_STATE * state, int tok,
+                             const char *ptr, const char *end,
+                             const ENCODING * enc)
 {
     switch (tok) {
     case XML_TOK_PROLOG_S:
@@ -645,9 +611,9 @@ notation2(PROLOG_STATE * state,
     return common(state, tok);
 }
 
-static int PTRCALL
-notation3(PROLOG_STATE * state,
-          int tok, const char *ptr, const char *end, const ENCODING * enc)
+static int PTRCALL notation3(PROLOG_STATE * state, int tok,
+                             const char *ptr, const char *end,
+                             const ENCODING * enc)
 {
     switch (tok) {
     case XML_TOK_PROLOG_S:
@@ -660,9 +626,9 @@ notation3(PROLOG_STATE * state,
     return common(state, tok);
 }
 
-static int PTRCALL
-notation4(PROLOG_STATE * state,
-          int tok, const char *ptr, const char *end, const ENCODING * enc)
+static int PTRCALL notation4(PROLOG_STATE * state, int tok,
+                             const char *ptr, const char *end,
+                             const ENCODING * enc)
 {
     switch (tok) {
     case XML_TOK_PROLOG_S:
@@ -678,9 +644,8 @@ notation4(PROLOG_STATE * state,
     return common(state, tok);
 }
 
-static int PTRCALL
-attlist0(PROLOG_STATE * state,
-         int tok, const char *ptr, const char *end, const ENCODING * enc)
+static int PTRCALL attlist0(PROLOG_STATE * state, int tok, const char *ptr,
+                            const char *end, const ENCODING * enc)
 {
     switch (tok) {
     case XML_TOK_PROLOG_S:
@@ -693,9 +658,8 @@ attlist0(PROLOG_STATE * state,
     return common(state, tok);
 }
 
-static int PTRCALL
-attlist1(PROLOG_STATE * state,
-         int tok, const char *ptr, const char *end, const ENCODING * enc)
+static int PTRCALL attlist1(PROLOG_STATE * state, int tok, const char *ptr,
+                            const char *end, const ENCODING * enc)
 {
     switch (tok) {
     case XML_TOK_PROLOG_S:
@@ -711,9 +675,8 @@ attlist1(PROLOG_STATE * state,
     return common(state, tok);
 }
 
-static int PTRCALL
-attlist2(PROLOG_STATE * state,
-         int tok, const char *ptr, const char *end, const ENCODING * enc)
+static int PTRCALL attlist2(PROLOG_STATE * state, int tok, const char *ptr,
+                            const char *end, const ENCODING * enc)
 {
     switch (tok) {
     case XML_TOK_PROLOG_S:
@@ -749,9 +712,8 @@ attlist2(PROLOG_STATE * state,
     return common(state, tok);
 }
 
-static int PTRCALL
-attlist3(PROLOG_STATE * state,
-         int tok, const char *ptr, const char *end, const ENCODING * enc)
+static int PTRCALL attlist3(PROLOG_STATE * state, int tok, const char *ptr,
+                            const char *end, const ENCODING * enc)
 {
     switch (tok) {
     case XML_TOK_PROLOG_S:
@@ -765,9 +727,8 @@ attlist3(PROLOG_STATE * state,
     return common(state, tok);
 }
 
-static int PTRCALL
-attlist4(PROLOG_STATE * state,
-         int tok, const char *ptr, const char *end, const ENCODING * enc)
+static int PTRCALL attlist4(PROLOG_STATE * state, int tok, const char *ptr,
+                            const char *end, const ENCODING * enc)
 {
     switch (tok) {
     case XML_TOK_PROLOG_S:
@@ -782,9 +743,8 @@ attlist4(PROLOG_STATE * state,
     return common(state, tok);
 }
 
-static int PTRCALL
-attlist5(PROLOG_STATE * state,
-         int tok, const char *ptr, const char *end, const ENCODING * enc)
+static int PTRCALL attlist5(PROLOG_STATE * state, int tok, const char *ptr,
+                            const char *end, const ENCODING * enc)
 {
     switch (tok) {
     case XML_TOK_PROLOG_S:
@@ -796,9 +756,8 @@ attlist5(PROLOG_STATE * state,
     return common(state, tok);
 }
 
-static int PTRCALL
-attlist6(PROLOG_STATE * state,
-         int tok, const char *ptr, const char *end, const ENCODING * enc)
+static int PTRCALL attlist6(PROLOG_STATE * state, int tok, const char *ptr,
+                            const char *end, const ENCODING * enc)
 {
     switch (tok) {
     case XML_TOK_PROLOG_S:
@@ -810,9 +769,8 @@ attlist6(PROLOG_STATE * state,
     return common(state, tok);
 }
 
-static int PTRCALL
-attlist7(PROLOG_STATE * state,
-         int tok, const char *ptr, const char *end, const ENCODING * enc)
+static int PTRCALL attlist7(PROLOG_STATE * state, int tok, const char *ptr,
+                            const char *end, const ENCODING * enc)
 {
     switch (tok) {
     case XML_TOK_PROLOG_S:
@@ -830,29 +788,25 @@ attlist7(PROLOG_STATE * state,
 /*
  * default value 
  */
-static int PTRCALL
-attlist8(PROLOG_STATE * state,
-         int tok, const char *ptr, const char *end, const ENCODING * enc)
+static int PTRCALL attlist8(PROLOG_STATE * state, int tok, const char *ptr,
+                            const char *end, const ENCODING * enc)
 {
     switch (tok) {
     case XML_TOK_PROLOG_S:
         return XML_ROLE_ATTLIST_NONE;
     case XML_TOK_POUND_NAME:
-        if (XmlNameMatchesAscii(enc,
-                                ptr + MIN_BYTES_PER_CHAR(enc),
-                                end, KW_IMPLIED)) {
+        if (XmlNameMatchesAscii
+            (enc, ptr + MIN_BYTES_PER_CHAR(enc), end, KW_IMPLIED)) {
             state->handler = attlist1;
             return XML_ROLE_IMPLIED_ATTRIBUTE_VALUE;
         }
-        if (XmlNameMatchesAscii(enc,
-                                ptr + MIN_BYTES_PER_CHAR(enc),
-                                end, KW_REQUIRED)) {
+        if (XmlNameMatchesAscii
+            (enc, ptr + MIN_BYTES_PER_CHAR(enc), end, KW_REQUIRED)) {
             state->handler = attlist1;
             return XML_ROLE_REQUIRED_ATTRIBUTE_VALUE;
         }
-        if (XmlNameMatchesAscii(enc,
-                                ptr + MIN_BYTES_PER_CHAR(enc),
-                                end, KW_FIXED)) {
+        if (XmlNameMatchesAscii
+            (enc, ptr + MIN_BYTES_PER_CHAR(enc), end, KW_FIXED)) {
             state->handler = attlist9;
             return XML_ROLE_ATTLIST_NONE;
         }
@@ -864,9 +818,8 @@ attlist8(PROLOG_STATE * state,
     return common(state, tok);
 }
 
-static int PTRCALL
-attlist9(PROLOG_STATE * state,
-         int tok, const char *ptr, const char *end, const ENCODING * enc)
+static int PTRCALL attlist9(PROLOG_STATE * state, int tok, const char *ptr,
+                            const char *end, const ENCODING * enc)
 {
     switch (tok) {
     case XML_TOK_PROLOG_S:
@@ -878,9 +831,8 @@ attlist9(PROLOG_STATE * state,
     return common(state, tok);
 }
 
-static int PTRCALL
-element0(PROLOG_STATE * state,
-         int tok, const char *ptr, const char *end, const ENCODING * enc)
+static int PTRCALL element0(PROLOG_STATE * state, int tok, const char *ptr,
+                            const char *end, const ENCODING * enc)
 {
     switch (tok) {
     case XML_TOK_PROLOG_S:
@@ -893,9 +845,8 @@ element0(PROLOG_STATE * state,
     return common(state, tok);
 }
 
-static int PTRCALL
-element1(PROLOG_STATE * state,
-         int tok, const char *ptr, const char *end, const ENCODING * enc)
+static int PTRCALL element1(PROLOG_STATE * state, int tok, const char *ptr,
+                            const char *end, const ENCODING * enc)
 {
     switch (tok) {
     case XML_TOK_PROLOG_S:
@@ -920,17 +871,15 @@ element1(PROLOG_STATE * state,
     return common(state, tok);
 }
 
-static int PTRCALL
-element2(PROLOG_STATE * state,
-         int tok, const char *ptr, const char *end, const ENCODING * enc)
+static int PTRCALL element2(PROLOG_STATE * state, int tok, const char *ptr,
+                            const char *end, const ENCODING * enc)
 {
     switch (tok) {
     case XML_TOK_PROLOG_S:
         return XML_ROLE_ELEMENT_NONE;
     case XML_TOK_POUND_NAME:
-        if (XmlNameMatchesAscii(enc,
-                                ptr + MIN_BYTES_PER_CHAR(enc),
-                                end, KW_PCDATA)) {
+        if (XmlNameMatchesAscii
+            (enc, ptr + MIN_BYTES_PER_CHAR(enc), end, KW_PCDATA)) {
             state->handler = element3;
             return XML_ROLE_CONTENT_PCDATA;
         }
@@ -956,9 +905,8 @@ element2(PROLOG_STATE * state,
     return common(state, tok);
 }
 
-static int PTRCALL
-element3(PROLOG_STATE * state,
-         int tok, const char *ptr, const char *end, const ENCODING * enc)
+static int PTRCALL element3(PROLOG_STATE * state, int tok, const char *ptr,
+                            const char *end, const ENCODING * enc)
 {
     switch (tok) {
     case XML_TOK_PROLOG_S:
@@ -978,9 +926,8 @@ element3(PROLOG_STATE * state,
     return common(state, tok);
 }
 
-static int PTRCALL
-element4(PROLOG_STATE * state,
-         int tok, const char *ptr, const char *end, const ENCODING * enc)
+static int PTRCALL element4(PROLOG_STATE * state, int tok, const char *ptr,
+                            const char *end, const ENCODING * enc)
 {
     switch (tok) {
     case XML_TOK_PROLOG_S:
@@ -993,9 +940,8 @@ element4(PROLOG_STATE * state,
     return common(state, tok);
 }
 
-static int PTRCALL
-element5(PROLOG_STATE * state,
-         int tok, const char *ptr, const char *end, const ENCODING * enc)
+static int PTRCALL element5(PROLOG_STATE * state, int tok, const char *ptr,
+                            const char *end, const ENCODING * enc)
 {
     switch (tok) {
     case XML_TOK_PROLOG_S:
@@ -1011,9 +957,8 @@ element5(PROLOG_STATE * state,
     return common(state, tok);
 }
 
-static int PTRCALL
-element6(PROLOG_STATE * state,
-         int tok, const char *ptr, const char *end, const ENCODING * enc)
+static int PTRCALL element6(PROLOG_STATE * state, int tok, const char *ptr,
+                            const char *end, const ENCODING * enc)
 {
     switch (tok) {
     case XML_TOK_PROLOG_S:
@@ -1038,9 +983,8 @@ element6(PROLOG_STATE * state,
     return common(state, tok);
 }
 
-static int PTRCALL
-element7(PROLOG_STATE * state,
-         int tok, const char *ptr, const char *end, const ENCODING * enc)
+static int PTRCALL element7(PROLOG_STATE * state, int tok, const char *ptr,
+                            const char *end, const ENCODING * enc)
 {
     switch (tok) {
     case XML_TOK_PROLOG_S:
@@ -1085,9 +1029,9 @@ element7(PROLOG_STATE * state,
 
 #ifdef XML_DTD
 
-static int PTRCALL
-condSect0(PROLOG_STATE * state,
-          int tok, const char *ptr, const char *end, const ENCODING * enc)
+static int PTRCALL condSect0(PROLOG_STATE * state, int tok,
+                             const char *ptr, const char *end,
+                             const ENCODING * enc)
 {
     switch (tok) {
     case XML_TOK_PROLOG_S:
@@ -1106,9 +1050,9 @@ condSect0(PROLOG_STATE * state,
     return common(state, tok);
 }
 
-static int PTRCALL
-condSect1(PROLOG_STATE * state,
-          int tok, const char *ptr, const char *end, const ENCODING * enc)
+static int PTRCALL condSect1(PROLOG_STATE * state, int tok,
+                             const char *ptr, const char *end,
+                             const ENCODING * enc)
 {
     switch (tok) {
     case XML_TOK_PROLOG_S:
@@ -1121,9 +1065,9 @@ condSect1(PROLOG_STATE * state,
     return common(state, tok);
 }
 
-static int PTRCALL
-condSect2(PROLOG_STATE * state,
-          int tok, const char *ptr, const char *end, const ENCODING * enc)
+static int PTRCALL condSect2(PROLOG_STATE * state, int tok,
+                             const char *ptr, const char *end,
+                             const ENCODING * enc)
 {
     switch (tok) {
     case XML_TOK_PROLOG_S:
@@ -1137,9 +1081,9 @@ condSect2(PROLOG_STATE * state,
 
 #endif                          /* XML_DTD */
 
-static int PTRCALL
-declClose(PROLOG_STATE * state,
-          int tok, const char *ptr, const char *end, const ENCODING * enc)
+static int PTRCALL declClose(PROLOG_STATE * state, int tok,
+                             const char *ptr, const char *end,
+                             const ENCODING * enc)
 {
     switch (tok) {
     case XML_TOK_PROLOG_S:
@@ -1151,9 +1095,8 @@ declClose(PROLOG_STATE * state,
     return common(state, tok);
 }
 
-static int PTRCALL
-error(PROLOG_STATE * state,
-      int tok, const char *ptr, const char *end, const ENCODING * enc)
+static int PTRCALL error(PROLOG_STATE * state, int tok, const char *ptr,
+                         const char *end, const ENCODING * enc)
 {
     return XML_ROLE_NONE;
 }

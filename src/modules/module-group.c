@@ -156,8 +156,7 @@ int module_group_module_configure(struct lmodule *tm)
 
     tm->enable =
         (int (*)(void *, struct einit_event *)) module_group_module_enable;
-    tm->disable =
-        (int (*)(void *, struct einit_event *))
+    tm->disable = (int (*)(void *, struct einit_event *))
         module_group_module_disable;
 
     return 0;

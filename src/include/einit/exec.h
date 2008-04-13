@@ -95,13 +95,13 @@ extern "C" {
 
     pid_t einit_exec_without_shell_with_function_on_process_death(char **,
                                                                   void (*)
-                                                                  (struct
-                                                                   einit_exec_data
-                                                                   *),
+                                                                   (struct
+                                                                    einit_exec_data
+                                                                    *),
                                                                   struct
                                                                   lmodule
                                                                   *);
-    pid_t
+     pid_t
         einit_exec_without_shell_with_function_on_process_death_options
         (char **, void (*)(struct einit_exec_data *), struct lmodule *,
          enum einit_exec_options);
@@ -110,7 +110,7 @@ extern "C" {
 
     pid_t einit_exec_auto(char *);
 
-    pid_t
+     pid_t
         einit_fork(void (*handle_dead_process) (struct einit_exec_data *),
                    void *data, char *rid, struct lmodule *module);
 

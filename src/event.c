@@ -134,9 +134,8 @@ void event_listen(enum einit_event_subsystems type,
 {
     char doadd = 1;
 
-    struct itree *it =
-        event_handlers ? itreefind(event_handlers, type,
-                                   tree_find_first) : NULL;
+    struct itree *it = event_handlers ? itreefind(event_handlers, type,
+                                                  tree_find_first) : NULL;
     while (it) {
         struct event_function *f = (struct event_function *) it->data;
 
@@ -323,12 +322,11 @@ struct exported_function **function_look_up(const char *name,
                 ef->name = ha->key;
 
             if (ef && (ef->version == version))
-                set =
-                    (struct exported_function **) set_noa_add((void **)
-                                                              set,
-                                                              (struct
-                                                               exported_function
-                                                               *) ef);
+                set = (struct exported_function **) set_noa_add((void **)
+                                                                set,
+                                                                (struct
+                                                                 exported_function
+                                                                 *) ef);
             ha = streefind(ha, name, tree_find_next);
         }
     } else {

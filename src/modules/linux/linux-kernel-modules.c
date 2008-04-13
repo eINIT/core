@@ -296,10 +296,9 @@ char **linux_kernel_modules_sound(struct einit_event *status)
         }
 
         char *b = NULL;
-        if (!rv
-            && (stat("/proc/asound/cards", &st)
-                || !(b = readfile("/proc/asound/cards"))
-                || (strtrim(b), strmatch(b, "--- no soundcards ---")))) {
+        if (!rv && (stat("/proc/asound/cards", &st)
+                    || !(b = readfile("/proc/asound/cards"))
+                    || (strtrim(b), strmatch(b, "--- no soundcards ---")))) {
             if (status) {
                 fbprintf(status,
                          "Could not detect custom ALSA settings, loading all detected ALSA drivers.");
@@ -360,8 +359,7 @@ char **linux_kernel_modules_sound(struct einit_event *status)
                     if ((len > 7) && (b[0] == 's') && (b[1] == 'n')
                         && (b[2] == 'd') && (b[len - 3] == 'o')
                         && (b[len - 2] == 's') && (b[len - 1] == 's')
-                        && !inset((const void **) rv, b,
-                                  SET_TYPE_STRING)) {
+                        && !inset((const void **) rv, b, SET_TYPE_STRING)) {
                         rv = set_str_add(rv, b);
                     }
 
@@ -481,11 +479,9 @@ int linux_kernel_modules_module_disable(char *p,
 
 int linux_kernel_modules_module_configure(struct lmodule *this)
 {
-    this->enable =
-        (int (*)(void *, struct einit_event *))
+    this->enable = (int (*)(void *, struct einit_event *))
         linux_kernel_modules_module_enable;
-    this->disable =
-        (int (*)(void *, struct einit_event *))
+    this->disable = (int (*)(void *, struct einit_event *))
         linux_kernel_modules_module_disable;
 
     this->param = this->module->rid + 21;

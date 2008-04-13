@@ -75,10 +75,10 @@ module_register(einit_checkpoint_self);
 
 const char *checkpoint_names[] = {
     "Alpha", "Bravo", "Charlie", "Delta", "Echo", "Foxtrot", "Golf",
-        "Hotel",
+    "Hotel",
     "India", "Juliet", "Kilo", "Lima", "Mike", "November", "Oscar", "Papa",
     "Quebec", "Romeo", "Sierra", "Tango", "Uniform", "Victor", "Whiskey",
-        "Xray",
+    "Xray",
     "Yankee", "Zulu"
 };
 

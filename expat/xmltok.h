@@ -149,22 +149,19 @@ extern "C" {
     struct encoding;
     typedef struct encoding ENCODING;
 
-    typedef int (PTRCALL * SCANNER) (const ENCODING *,
-                                     const char *,
+    typedef int (PTRCALL * SCANNER) (const ENCODING *, const char *,
                                      const char *, const char **);
 
     struct encoding {
         SCANNER scanners[XML_N_STATES];
         SCANNER literalScanners[XML_N_LITERAL_TYPES];
-        int (PTRCALL * sameName) (const ENCODING *,
-                                  const char *, const char *);
-        int (PTRCALL * nameMatchesAscii) (const ENCODING *,
-                                          const char *,
+        int (PTRCALL * sameName) (const ENCODING *, const char *,
+                                  const char *);
+        int (PTRCALL * nameMatchesAscii) (const ENCODING *, const char *,
                                           const char *, const char *);
         int (PTRFASTCALL * nameLength) (const ENCODING *, const char *);
         const char *(PTRFASTCALL * skipS) (const ENCODING *, const char *);
-        int (PTRCALL * getAtts) (const ENCODING * enc,
-                                 const char *ptr,
+        int (PTRCALL * getAtts) (const ENCODING * enc, const char *ptr,
                                  int attsMax, ATTRIBUTE * atts);
         int (PTRFASTCALL * charRefNumber) (const ENCODING * enc,
                                            const char *ptr);
@@ -280,12 +277,9 @@ extern "C" {
         const ENCODING **encPtr;
     } INIT_ENCODING;
 
-    int XmlParseXmlDecl(int isGeneralTextEntity,
-                        const ENCODING * enc,
-                        const char *ptr,
-                        const char *end,
-                        const char **badPtr,
-                        const char **versionPtr,
+    int XmlParseXmlDecl(int isGeneralTextEntity, const ENCODING * enc,
+                        const char *ptr, const char *end,
+                        const char **badPtr, const char **versionPtr,
                         const char **versionEndPtr,
                         const char **encodingNamePtr,
                         const ENCODING ** namedEncodingPtr,
@@ -302,16 +296,12 @@ extern "C" {
 
     typedef int (XMLCALL * CONVERTER) (void *userData, const char *p);
 
-    ENCODING *XmlInitUnknownEncoding(void *mem,
-                                     int *table,
+    ENCODING *XmlInitUnknownEncoding(void *mem, int *table,
                                      CONVERTER convert, void *userData);
 
-    int XmlParseXmlDeclNS(int isGeneralTextEntity,
-                          const ENCODING * enc,
-                          const char *ptr,
-                          const char *end,
-                          const char **badPtr,
-                          const char **versionPtr,
+    int XmlParseXmlDeclNS(int isGeneralTextEntity, const ENCODING * enc,
+                          const char *ptr, const char *end,
+                          const char **badPtr, const char **versionPtr,
                           const char **versionEndPtr,
                           const char **encodingNamePtr,
                           const ENCODING ** namedEncodingPtr,
@@ -321,8 +311,7 @@ extern "C" {
                           const char *name);
     const ENCODING *XmlGetUtf8InternalEncodingNS(void);
     const ENCODING *XmlGetUtf16InternalEncodingNS(void);
-    ENCODING *XmlInitUnknownEncodingNS(void *mem,
-                                       int *table,
+    ENCODING *XmlInitUnknownEncodingNS(void *mem, int *table,
                                        CONVERTER convert, void *userData);
 #ifdef __cplusplus
 }

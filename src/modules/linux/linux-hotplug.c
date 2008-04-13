@@ -279,9 +279,8 @@ int linux_hotplug_configure(struct lmodule *tm)
      * static dev, due to the hotplug event reader not being implemented
      * in udev 
      */
-    if (!dm
-        || (strcmp(dm, "mdev") && strcmp(dm, "edev")
-            && strcmp(dm, "static"))) {
+    if (!dm || (strcmp(dm, "mdev") && strcmp(dm, "edev")
+                && strcmp(dm, "static"))) {
         return status_configure_failed | status_not_in_use;
     }
 

@@ -242,15 +242,15 @@ extern "C" {
                                  * requires. */
         char **after;           /* !< Load this module after these
                                  * services, but only if they're loaded to 
-                                 * begin with */
+                                 * * * begin with */
         char **before;          /* !< Load this module before these
                                  * services, but only if they're loaded to 
-                                 * begin with */
+                                 * * * begin with */
 
         char **uses;            /* !< Suggest that the core load these
                                  * services along with us; doesn't
                                  * influence before/after behaviour on its 
-                                 * own */
+                                 * * * own */
 
 #if 0
         char **notwith;         /* !< A list of services that may not be
@@ -306,8 +306,10 @@ extern "C" {
                                                          */
         int (*custom) (void *, char *, struct einit_event *);   /* !<
                                                                  * Pointer 
-                                                                 * to the
+                                                                 * * * to
+                                                                 * the
                                                                  * module's 
+                                                                 * * *
                                                                  * custom()-function 
                                                                  */
 

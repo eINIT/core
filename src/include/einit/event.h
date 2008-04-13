@@ -115,8 +115,8 @@ extern "C" {
         /*
          * !< notification of module-list updates 
          */
-        einit_core_module_list_update_complete
-            = einit_event_subsystem_core | 0x007,
+        einit_core_module_list_update_complete =
+            einit_event_subsystem_core | 0x007,
 
         einit_core_update_configuration =
             einit_event_subsystem_core | 0x101,
@@ -318,7 +318,7 @@ extern "C" {
                                          * watch */
         enum einit_event_code chain_type;       /* !< the event to be
                                                  * called right after this 
-                                                 * one */
+                                                 * * * one */
 
         void **set;             /* !< a set that should make sense in
                                  * combination with the event type */

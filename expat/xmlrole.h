@@ -88,10 +88,9 @@ extern "C" {
     };
 
     typedef struct prolog_state {
-        int (PTRCALL * handler) (struct prolog_state * state,
-                                 int tok,
-                                 const char *ptr,
-                                 const char *end, const ENCODING * enc);
+        int (PTRCALL * handler) (struct prolog_state * state, int tok,
+                                 const char *ptr, const char *end,
+                                 const ENCODING * enc);
         unsigned level;
         int role_none;
 #ifdef XML_DTD

@@ -217,7 +217,7 @@ extern "C" {
 
     struct device_data {
         struct stree *mountpoints;      // values must be of type struct
-                                        // mountpoint_data
+        // mountpoint_data
         char *device;
 
         enum device_status device_status;

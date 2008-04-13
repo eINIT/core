@@ -192,13 +192,17 @@ struct itree *itreeadd(struct itree *tree, signed long key, void *value,
     case tree_value_string:
         ssize = strlen(value) + 1;
         lsize =
-            /* sizeof (struct itree) */ offsetof(struct itree,
-                                                 data) + ssize;
+            /*
+             * sizeof (struct itree) 
+             */ offsetof(struct itree,
+                         data) + ssize;
         break;
     default:
         lsize =
-            /* sizeof (struct itree) */ offsetof(struct itree,
-                                                 data) + size;
+            /*
+             * sizeof (struct itree) 
+             */ offsetof(struct itree,
+                         data) + size;
         break;
     }
 

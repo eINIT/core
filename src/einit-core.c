@@ -85,22 +85,36 @@ char **einit_startup_configuration_files = NULL;
 char *einit_default_startup_mode_switches[] = { "default", NULL };      // the 
                                                                         // 
                                                                         // 
+                                                                        // 
+                                                                        // 
                                                                         // list 
+                                                                        // 
+                                                                        // 
                                                                         // 
                                                                         // 
                                                                         // of 
                                                                         // 
                                                                         // 
+                                                                        // 
+                                                                        // 
                                                                         // modes 
+                                                                        // 
+                                                                        // 
                                                                         // 
                                                                         // 
                                                                         // to 
                                                                         // 
                                                                         // 
+                                                                        // 
+                                                                        // 
                                                                         // activate 
                                                                         // 
                                                                         // 
+                                                                        // 
+                                                                        // 
                                                                         // by 
+                                                                        // 
+                                                                        // 
                                                                         // 
                                                                         // 
                                                                         // default

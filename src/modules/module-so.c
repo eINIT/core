@@ -107,9 +107,9 @@ void einit_mod_so_scanmodules(struct einit_event *ev)
     }
 
     if (!modules) {
-        modules = readdirfilter(cfg_getnode("core-settings-modules", NULL),
-                                EINIT_LIB_BASE "/modules/", ".*\\.so",
-                                NULL, 0);
+        modules =
+            readdirfilter(cfg_getnode("core-settings-modules", NULL),
+                          EINIT_LIB_BASE "/modules/", ".*\\.so", NULL, 0);
     }
 
     /*

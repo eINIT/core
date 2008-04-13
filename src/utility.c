@@ -159,11 +159,9 @@ char **readdirfilter(struct cfgnode const *node, const char *default_dir,
                     goto cleanup_continue;
 
                 if (S_ISDIR(sbuf.st_mode)) {
-                    if ((entry->d_name[0] == '.') && (!entry->d_name[1] ||
-                                                      ((entry->d_name[1] ==
-                                                        '.')
-                                                       && !entry->
-                                                       d_name[2])))
+                    if ((entry->d_name[0] == '.')
+                        && (!entry->d_name[1] || ((entry->d_name[1] == '.')
+                                                  && !entry->d_name[2])))
                         goto cleanup_continue;
 
                     tmp = strcat(tmp, "/");
@@ -581,22 +579,22 @@ signed int parse_integer(const char *s)
 
     if (s[strlen(s) - 1] == 'b') {
         ret = strtol(s, (char **) NULL, 2);     // parse as binary number
-                                                // if argument ends with
-                                                // b, eg 100b
+        // if argument ends with
+        // b, eg 100b
     } else if (s[0] == '0') {
         if (s[1] == 'x')
             ret = strtol(s + 2, (char **) NULL, 16);    // parse as hex
-                                                        // number if
-                                                        // argument starts 
-                                                        // with 0x, eg
-                                                        // 0xff3
+        // number if
+        // argument starts 
+        // with 0x, eg
+        // 0xff3
         else
             ret = strtol(s, (char **) NULL, 8); // parse as octal number
-                                                // if argument starts with 
-                                                // 0, eg 0643
+        // if argument starts with 
+        // 0, eg 0643
     } else
         ret = atoi(s);          // if nothing else worked, parse as
-                                // decimal argument
+    // decimal argument
 
     return ret;
 }
@@ -680,8 +678,8 @@ char *escape_xml(const char *input)
 {
     char *retval = NULL;
     if (input) {
-        ssize_t olen = strlen(input) + 1,
-            blen = olen + BUFFERSIZE, cpos = 0, tpos = 0;
+        ssize_t olen = strlen(input) + 1, blen = olen + BUFFERSIZE, cpos =
+            0, tpos = 0;
 
         retval = emalloc(blen);
 
@@ -962,9 +960,9 @@ struct stree *regex_cache = NULL;
 
 int eregcomp_cache(regex_t * preg, const char *pattern, int cflags)
 {
-    struct stree *cache_hit =
-        regex_cache ? streefind(regex_cache, pattern,
-                                tree_find_first) : NULL;
+    struct stree *cache_hit = regex_cache ? streefind(regex_cache, pattern,
+                                                      tree_find_first) :
+        NULL;
 
     if (cache_hit) {
         memcpy(preg, cache_hit->value, sizeof(regex_t));

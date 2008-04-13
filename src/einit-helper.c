@@ -55,7 +55,8 @@ char o_sandbox = 0;
 
 void help_preface(char *argv0)
 {
-    fprintf(stdout, "Usage: %s [options]\n\n"
+    fprintf(stdout,
+            "Usage: %s [options]\n\n"
             " :: Manipulating a running instance of eINIT (Live) ::\n"
             " -e <service>         Enable <service>\n"
             " -d <service>         Disable <service>\n"
@@ -67,8 +68,7 @@ void help_preface(char *argv0)
             " -R                   Reboot\n\n"
             " -m <mode>            Switch to <mode>\n\n"
             " -u [file]            Update Configuration/Add [file]\n\n"
-            " :: Raw 9p I/O ::\n"
-            " [-]ls <path>         ls <path>\n"
+            " :: Raw 9p I/O ::\n" " [-]ls <path>         ls <path>\n"
             " [-]read <path>       read <path>\n"
             " [-]write <path> <t>  write <t> to <path>\n\n"
             " :: Advanced Options ::\n"

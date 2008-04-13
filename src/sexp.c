@@ -53,8 +53,7 @@
 enum einit_sexp_read_type { esr_string, esr_number, esr_symbol };
 
 static struct einit_sexp *einit_parse_sexp_in_buffer_with_buffer(char
-                                                                 *buffer,
-                                                                 int
+                                                                 *buffer, int
                                                                  *index,
                                                                  int stop,
                                                                  enum
@@ -216,13 +215,14 @@ static int einit_read_sexp_from_fd_reader_fill_buffer(struct
 
         reader->buffer = erealloc(reader->buffer, reader->size);
         // fprintf (stderr, "increasing buffer: %i (+%i)\n", reader->size, 
+        // 
+        // 
         // MIN_CHUNK_SIZE);
     }
     // fprintf (stderr, "reading from fd: %i\n", reader->fd);
 
-    int rres =
-        read(reader->fd, (reader->buffer + reader->position),
-             (reader->size - reader->position));
+    int rres = read(reader->fd, (reader->buffer + reader->position),
+                    (reader->size - reader->position));
 
     // fprintf (stderr, "result: %i\n", rres);
 
@@ -273,8 +273,8 @@ struct einit_sexp *einit_read_sexp_from_fd_reader(struct
     // reader->position, reader->buffer[0], reader->buffer[1],
     // reader->buffer[2]);
 
-    if (((rres == -1) && (errno != EAGAIN) && (errno != EINTR)) ||
-        ((rres == 0) && (reader->position == 0))) {
+    if (((rres == -1) && (errno != EAGAIN) && (errno != EINTR))
+        || ((rres == 0) && (reader->position == 0))) {
         close(reader->fd);
 
         efree(reader->buffer);

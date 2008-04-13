@@ -164,8 +164,7 @@ struct stree *streelinear_prepare(struct stree *st)
         struct itree *it = itreeroot(st->treenode);
         struct stree *t = NULL;
 
-        itreemap(it,
-                 (void (*)(struct itree *, void *))
+        itreemap(it, (void (*)(struct itree *, void *))
                  streelinear_prepare_iterator, (void *) &t);
 
         it = itreeroot(it);

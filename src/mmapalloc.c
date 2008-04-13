@@ -95,9 +95,8 @@ void *mmap_malloc(size_t s)
 
   retry:
 
-    void *p =
-        mmap(NULL, pages * pagesize, PROT_READ | PROT_WRITE,
-             MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+    void *p = mmap(NULL, pages * pagesize, PROT_READ | PROT_WRITE,
+                   MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
 
     if (p == MAP_FAILED) {
         /*

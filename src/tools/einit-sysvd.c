@@ -67,7 +67,9 @@ struct init_command {
     uint32_t runlevel;          // the runlevel argument
     uint32_t timeout;           // time between TERM and KILL
     char padding[368];          // padding, legacy applications expect the 
-                                // struct to be 384 bytes long
+                                // 
+    // 
+    // struct to be 384 bytes long
 };
 
 #define PIDFILE "/var/run/einit-sysvd.pid"
@@ -107,27 +109,27 @@ int initctl_wait(char *fifo)
         }
 
         memset(&ic, 0, sizeof(struct init_command));    // clear this
-                                                        // struct, just in 
-                                                        // case
+        // struct, just in 
+        // case
 
         if (read(nfd, &ic, sizeof(struct init_command)) > 12) { // enough
-                                                                // bytes
-                                                                // to
-                                                                // process 
-                                                                // were
-                                                                // read,
-                                                                // we dont 
-                                                                // care
-                                                                // about
-                                                                // the
-                                                                // rest
-                                                                // anyway
+            // bytes
+            // to
+            // process 
+            // were
+            // read,
+            // we dont 
+            // care
+            // about
+            // the
+            // rest
+            // anyway
             if (ic.signature == INITCTL_MAGIC) {
                 // INITCTL_CMD_START: what's that do?
                 // INITCTL_CMD_UNSETENV is deliberately ignored
                 if (ic.command == INITCTL_CMD_RUNLVL) { // switch
-                                                        // runlevels
-                                                        // (modes...)
+                    // runlevels
+                    // (modes...)
                     char *nmode = NULL;
 
                     switch (ic.runlevel) {
@@ -172,10 +174,12 @@ int initctl_wait(char *fifo)
                         einit_disconnect();
                     }
                 } else if (ic.command == INITCTL_CMD_SETENV) {  // padding 
-                                                                // contains 
-                                                                // the new 
-                                                                // environment 
-                                                                // string
+                                                                // 
+                    // 
+                    // contains 
+                    // the new 
+                    // environment 
+                    // string
                     char **cx = str2set(':', ic.padding);
                     if (cx) {
                         if (cx[0] && cx[1]) {
