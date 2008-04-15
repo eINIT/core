@@ -45,6 +45,8 @@
 #include <errno.h>
 #include <string.h>
 
+#include <fcntl.h>
+
 #include <einit/ipc.h>
 
 #define EXPECTED_EIV 1
@@ -79,82 +81,138 @@ module_register(einit_ipc_library_self);
 #define BAD_REQUEST "(reply unknown stub)"
 #define BAD_REQUEST_SIZE sizeof(BAD_REQUEST)
 
-void einit_ipc_library_stub(struct einit_sexp *sexp, int fd)
+void einit_ipc_library_stub(struct einit_sexp *sexp,
+                            struct einit_ipc_connection *cd)
 {
     char *r = einit_sexp_to_string(sexp);
     fprintf(stderr, "IPC STUB: %s\n", r);
 
     efree(r);
 
-    write(fd, BAD_REQUEST, BAD_REQUEST_SIZE);
+    write(cd->reader->fd, BAD_REQUEST, BAD_REQUEST_SIZE);
 }
 
-void einit_ipc_library_receive_events(struct einit_sexp *sexp, int fd)
+void einit_ipc_library_receive_events(struct einit_sexp *sexp,
+                                      struct einit_ipc_connection *cd)
 {
-    einit_ipc_library_stub(sexp, fd);
+    struct einit_sexp_fd_reader *reader = cd->reader;
+
+    if (sexp->type == es_symbol) {
+        if (strmatch (sexp->symbol, "replay-only")
+            || strmatch (sexp->symbol, "backlog")) {
+            for (cd->current_event = 0;
+                 einit_event_backlog[cd->current_event];
+                 cd->current_event++) {
+
+                int len = strlen (einit_event_backlog[cd->current_event]), r;
+
+                fcntl(reader->fd, F_SETFL, 0);
+
+                r = write (reader->fd,
+                           einit_event_backlog[cd->current_event],
+                           len);
+
+                fcntl(reader->fd, F_SETFL, O_NONBLOCK);
+
+                if ((r < 0) || (r == 0)) break;
+                if (r < len) {
+                    fprintf (stderr, "TOOT TOOT!\n");
+                }
+            }
+
+            if (strmatch (sexp->symbol, "replay-only")) {
+                cd->current_event = -1;
+            }
+        } else if (strmatch (sexp->symbol, "no-backlog")) {
+            for (cd->current_event = 0;
+                 einit_event_backlog[cd->current_event];
+                 cd->current_event++) ;
+        } else {
+            goto bad_request;
+        }
+
+        fcntl(reader->fd, F_SETFL, 0);
+        write (reader->fd, "(reply receive-events #t)", 25);
+        fcntl(reader->fd, F_SETFL, O_NONBLOCK);
+    } else {
+        bad_request:
+
+        fcntl(reader->fd, F_SETFL, 0);
+        write (reader->fd, "(reply receive-events #f)", 25);
+        fcntl(reader->fd, F_SETFL, O_NONBLOCK);
+    }
 }
 
 void einit_ipc_library_receive_specific_events(struct einit_sexp *sexp,
-                                               int fd)
+                                               struct einit_ipc_connection *cd)
 {
-    einit_ipc_library_stub(sexp, fd);
+    einit_ipc_library_stub(sexp, cd);
 }
 
 void einit_ipc_library_mute_specific_events(struct einit_sexp *sexp,
-                                            int fd)
+                                            struct einit_ipc_connection *cd)
 {
-    einit_ipc_library_stub(sexp, fd);
+    einit_ipc_library_stub(sexp, cd);
 }
 
-void einit_ipc_library_get_configuration(struct einit_sexp *sexp, int fd)
+void einit_ipc_library_get_configuration(struct einit_sexp *sexp,
+                                         struct einit_ipc_connection *cd)
 {
-    einit_ipc_library_stub(sexp, fd);
+    einit_ipc_library_stub(sexp, cd);
 }
 
-void einit_ipc_library_get_configuration_a(struct einit_sexp *sexp, int fd)
+void einit_ipc_library_get_configuration_a(struct einit_sexp *sexp,
+                                           struct einit_ipc_connection *cd)
 {
-    einit_ipc_library_stub(sexp, fd);
+    einit_ipc_library_stub(sexp, cd);
 }
 
-void einit_ipc_library_register_module(struct einit_sexp *sexp, int fd)
+void einit_ipc_library_register_module(struct einit_sexp *sexp,
+                                       struct einit_ipc_connection *cd)
 {
-    einit_ipc_library_stub(sexp, fd);
+    einit_ipc_library_stub(sexp, cd);
 }
 
 void einit_ipc_library_register_module_actions(struct einit_sexp *sexp,
-                                               int fd)
+                                               struct einit_ipc_connection *cd)
 {
-    einit_ipc_library_stub(sexp, fd);
+    einit_ipc_library_stub(sexp, cd);
 }
 
-void einit_ipc_library_list(struct einit_sexp *sexp, int fd)
+void einit_ipc_library_list(struct einit_sexp *sexp,
+                            struct einit_ipc_connection *cd)
 {
-    einit_ipc_library_stub(sexp, fd);
+    einit_ipc_library_stub(sexp, cd);
 }
 
-void einit_ipc_library_get_module(struct einit_sexp *sexp, int fd)
+void einit_ipc_library_get_module(struct einit_sexp *sexp,
+                                  struct einit_ipc_connection *cd)
 {
-    einit_ipc_library_stub(sexp, fd);
+    einit_ipc_library_stub(sexp, cd);
 }
 
-void einit_ipc_library_get_service(struct einit_sexp *sexp, int fd)
+void einit_ipc_library_get_service(struct einit_sexp *sexp,
+                                   struct einit_ipc_connection *cd)
 {
-    einit_ipc_library_stub(sexp, fd);
+    einit_ipc_library_stub(sexp, cd);
 }
 
-void einit_ipc_library_module_do_bang(struct einit_sexp *sexp, int fd)
+void einit_ipc_library_module_do_bang(struct einit_sexp *sexp,
+                                      struct einit_ipc_connection *cd)
 {
-    einit_ipc_library_stub(sexp, fd);
+    einit_ipc_library_stub(sexp, cd);
 }
 
-void einit_ipc_library_service_do_bang(struct einit_sexp *sexp, int fd)
+void einit_ipc_library_service_do_bang(struct einit_sexp *sexp,
+                                       struct einit_ipc_connection *cd)
 {
-    einit_ipc_library_stub(sexp, fd);
+    einit_ipc_library_stub(sexp, cd);
 }
 
-void einit_ipc_library_service_switch_mode(struct einit_sexp *sexp, int fd)
+void einit_ipc_library_service_switch_mode(struct einit_sexp *sexp,
+                                           struct einit_ipc_connection *cd)
 {
-    einit_ipc_library_stub(sexp, fd);
+    einit_ipc_library_stub(sexp, cd);
 }
 
 int einit_ipc_library_configure(struct lmodule *irr)

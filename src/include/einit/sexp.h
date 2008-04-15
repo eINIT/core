@@ -77,6 +77,8 @@ struct einit_sexp_fd_reader {
     int size;
     int position;
     int length;
+
+    void *custom;
 };
 
 struct einit_sexp *einit_read_sexp_from_fd_reader(struct

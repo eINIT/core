@@ -75,7 +75,7 @@ int einit_handle_pipe_fragment(struct einit_exec_data *x)
                 efree(cmd);
             } else {
                 if (!x->rid) {
-                    notice(5, "%s", buffer);
+                    notice(5, "%s", sp[i]);
                 } else {
                     struct einit_event evx =
                         evstaticinit(einit_feedback_module_status);

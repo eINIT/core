@@ -52,17 +52,59 @@
 #include <einit/sexp.h>
 #include <einit/ipc.h>
 
+struct einit_ipc_connection *einit_ipc_connections = NULL;
+
 int einit_ipc_sexp_fd = -1;
-struct einit_sexp_fd_reader **einit_ipc_sexp_fd_readers = NULL;
 
 struct einit_ipc_handler {
-    void (*handler) (struct einit_sexp *, int);
+    void (*handler) (struct einit_sexp *, struct einit_ipc_connection *);
 };
 
 struct stree *einit_ipc_handlers = NULL;
 
+char ** einit_event_backlog = NULL;
+
+void einit_ipc_add_connection (enum ipc_flag flags,
+                               struct einit_sexp_fd_reader *reader)
+{
+    struct einit_ipc_connection *n =
+        emalloc (sizeof (struct einit_ipc_connection));
+
+    n->flags = flags;
+    n->current_event = -1;
+    n->reader = reader;
+
+    reader->custom = n;
+
+    n->next = einit_ipc_connections;
+    einit_ipc_connections = n;
+};
+
+void einit_ipc_remove_connection (struct einit_ipc_connection *c)
+{
+    if (c == einit_ipc_connections) {
+        einit_ipc_connections = einit_ipc_connections->next;
+
+        efree (c);
+    } else {
+        struct einit_ipc_connection *o = einit_ipc_connections;
+
+        while (o)
+        {
+            if (o->next == c) {
+                o->next = c->next;
+                efree (c);
+                return;
+            }
+
+            o = o->next;
+        }
+    }
+}
+
 void einit_ipc_register_handler(const char *name,
-                                void (*handler) (struct einit_sexp *, int))
+                                void (*handler) (struct einit_sexp *,
+                                                 struct einit_ipc_connection *))
 {
     if (einit_ipc_handlers) {
         struct stree *st =
@@ -91,7 +133,7 @@ void einit_ipc_register_handler(const char *name,
 
 void einit_ipc_unregister_handler(const char *name,
                                   void (*handler) (struct einit_sexp *,
-                                                   int))
+                                         struct einit_ipc_connection *))
 {
     if (!einit_ipc_handlers)
         return;
@@ -145,7 +187,7 @@ char einit_ipx_sexp_handle_fd(struct einit_sexp_fd_reader *rd)
 
                                 if (h->handler) {
                                     h->handler(sexp->secundus->secundus->
-                                               primus, rd->fd);
+                                               primus, rd->custom);
                                 }
                             } while ((st =
                                       streefind(einit_ipc_handlers,
@@ -182,10 +224,7 @@ void einit_ipx_sexp_handle_connect()
 
     struct einit_sexp_fd_reader *rd = einit_create_sexp_fd_reader(fd);
 
-    einit_ipc_sexp_fd_readers =
-        (struct einit_sexp_fd_reader **) set_noa_add((void *)
-                                                     einit_ipc_sexp_fd_readers,
-                                                     rd);
+    einit_ipc_add_connection (0, rd);
 }
 
 int einit_ipc_sexp_prepare(fd_set * rfds)
@@ -199,17 +238,17 @@ int einit_ipc_sexp_prepare(fd_set * rfds)
     if (r < einit_ipc_sexp_fd)
         r = einit_ipc_sexp_fd;
 
-    if (einit_ipc_sexp_fd_readers) {
-        int i = 0;
+    struct einit_ipc_connection *c = einit_ipc_connections;
 
-        for (; einit_ipc_sexp_fd_readers[i]; i++) {
-            fprintf(stderr, "querying: %i\n",
-                    einit_ipc_sexp_fd_readers[i]->fd);
+    while (c) {
+        struct einit_ipc_connection *o = c;
+        struct einit_sexp_fd_reader *reader = o->reader;
 
-            FD_SET(einit_ipc_sexp_fd_readers[i]->fd, rfds);
-            if (r < einit_ipc_sexp_fd_readers[i]->fd)
-                r = einit_ipc_sexp_fd_readers[i]->fd;
-        }
+        c = c->next;
+
+        FD_SET(reader->fd, rfds);
+        if (r < reader->fd)
+            r = reader->fd;
     }
 
     return r;
@@ -223,28 +262,21 @@ void einit_ipc_sexp_handle(fd_set * rfds)
     if (FD_ISSET(einit_ipc_sexp_fd, rfds))
         einit_ipx_sexp_handle_connect();
 
-    if (einit_ipc_sexp_fd_readers) {
-        int i = 0;
+    struct einit_ipc_connection *c = einit_ipc_connections;
 
-        for (; einit_ipc_sexp_fd_readers[i]; i++) {
-            if (FD_ISSET(einit_ipc_sexp_fd_readers[i]->fd, rfds)) {
-                fprintf(stderr, "readable: %i\n",
-                        einit_ipc_sexp_fd_readers[i]->fd);
+    while (c) {
+        struct einit_ipc_connection *o = c;
+        struct einit_sexp_fd_reader *reader = o->reader;
 
-                if (einit_ipx_sexp_handle_fd(einit_ipc_sexp_fd_readers[i])) {
-                    fprintf(stderr, "client disconnected\n");
+        c = c->next;
 
-                    einit_ipc_sexp_fd_readers =
-                        (struct einit_sexp_fd_reader **) setdel((void **)
-                                                                einit_ipc_sexp_fd_readers,
-                                                                einit_ipc_sexp_fd_readers
-                                                                [i]);
+        if (FD_ISSET(reader->fd, rfds)) {
+            fprintf(stderr, "readable: %i\n", reader->fd);
 
-                    if (einit_ipc_sexp_fd_readers)
-                        i--;
-                    else
-                        return;
-                }
+            if (einit_ipx_sexp_handle_fd(reader)) {
+                fprintf(stderr, "client disconnected\n");
+
+                einit_ipc_remove_connection (o);
             }
         }
     }
@@ -337,38 +369,77 @@ void einit_ipc_sexp_power_event_handler(struct einit_event *ev)
     close(fd);
 }
 
-void einit_ipc_generic_event_handler(struct einit_event *ev)
+void einit_ipc_update_event_listeners ()
 {
-    const char *s = einit_event_encode (ev);
+    struct einit_ipc_connection *c = einit_ipc_connections;
 
-    if (coremode & einit_mode_sandbox) {
-        fprintf (stderr, "%s\n", s);
+    while (c) {
+        struct einit_sexp_fd_reader *reader = c->reader;
+
+        if (c->current_event > 0) {
+            for (; einit_event_backlog[c->current_event]; c->current_event++) {
+                int len = strlen (einit_event_backlog[c->current_event]), r;
+
+                /*
+                 * we're escaping the non-blocking mode for sheer ease-of-use
+                 */
+
+                fcntl(reader->fd, F_SETFL, 0);
+
+                r = write (reader->fd,
+                           einit_event_backlog[c->current_event],
+                           len);
+
+                fcntl(reader->fd, F_SETFL, O_NONBLOCK);
+
+                /*
+                 * in case something bad happens, just break out
+                 */
+
+                if ((r < 0) || (r == 0)) break;
+                if (r < len) {
+                    fprintf (stderr, "TOOT TOOT!\n");
+                }
+            }
+        }
+
+        c = c->next;
     }
 }
 
-void einit_ipc_sexp_einit_core_forked_subprocess(struct einit_event *ev)
+
+void einit_ipc_generic_event_handler(struct einit_event *ev)
 {
-    event_ignore(einit_core_forked_subprocess,
-                 einit_ipc_sexp_einit_core_forked_subprocess);
+    if (ev->type != einit_core_forked_subprocess) {
+        const char *s = einit_event_encode (ev);
 
-    event_ignore(einit_boot_dev_writable,
-                 einit_ipc_sexp_boot_event_handler_root_device_ok);
-    event_ignore(einit_boot_root_device_ok,
-                 einit_ipc_sexp_boot_event_handler_root_device_ok);
+        if (coremode & einit_mode_sandbox) {
+            fprintf (stderr, "%s\n", s);
+        }
 
-    event_ignore(einit_event_subsystem_any, einit_ipc_generic_event_handler);
+        einit_event_backlog = set_str_add_stable (einit_event_backlog, (char *)s);
+    } else {
+        /*
+         * we need to make a check for this in the generic handler anyway,
+         * might as well do the handling here
+         */
 
-    if (einit_ipc_sexp_fd > 0) {
-        close(einit_ipc_sexp_fd);
-        einit_ipc_sexp_fd = -1;
+        event_ignore(einit_boot_dev_writable,
+                     einit_ipc_sexp_boot_event_handler_root_device_ok);
+        event_ignore(einit_boot_root_device_ok,
+                     einit_ipc_sexp_boot_event_handler_root_device_ok);
+
+        event_ignore(einit_event_subsystem_any, einit_ipc_generic_event_handler);
+
+        if (einit_ipc_sexp_fd > 0) {
+            close(einit_ipc_sexp_fd);
+            einit_ipc_sexp_fd = -1;
+        }
     }
 }
 
 void einit_ipc_setup()
 {
-    event_listen(einit_core_forked_subprocess,
-                 einit_ipc_sexp_einit_core_forked_subprocess);
-
     event_listen(einit_boot_dev_writable,
                  einit_ipc_sexp_boot_event_handler_root_device_ok);
     event_listen(einit_boot_root_device_ok,

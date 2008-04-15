@@ -277,7 +277,7 @@ void einit_event_loop_skip_old()
 
 void einit_replay_events()
 {
-    einit_ipc_request ("(request receive-events replay-log)");
+    einit_ipc_request ("(request receive-events replay-only)");
 }
 
 /*

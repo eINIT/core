@@ -45,14 +45,25 @@ extern "C" {
 
 #include <einit/sexp.h>
 
+    enum ipc_flag {
+        if_none = 0x0000
+    };
+
+    struct einit_ipc_connection {
+        enum ipc_flag flags;
+        signed int current_event;
+        struct einit_sexp_fd_reader *reader;
+        struct einit_ipc_connection *next;
+    };
+
     void einit_ipc_setup();
 
     void einit_ipc_register_handler(const char *name,
                                     void (*handler) (struct einit_sexp *,
-                                                     int));
+                                                     struct einit_ipc_connection *));
     void einit_ipc_unregister_handler(const char *name,
                                       void (*handler) (struct einit_sexp *,
-                                                       int));
+                                                       struct einit_ipc_connection *));
 
     void einit_ipc_request_callback(const char *request,
                                     void (*handler) (struct einit_sexp *));
@@ -68,6 +79,8 @@ extern "C" {
     char einit_ipx_sexp_handle_fd(struct einit_sexp_fd_reader *rd);
 
     struct einit_sexp *einit_ipc_request(const char *request);
+
+    char ** einit_event_backlog;
 
 #endif
 
