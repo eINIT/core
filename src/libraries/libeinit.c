@@ -268,11 +268,13 @@ char **einit_module_get_options(const char *rid)
 void einit_event_loop()
 {
     einit_ipc_request ("(request receive-events backlog)");
+    einit_ipc_loop_infinite();
 }
 
 void einit_event_loop_skip_old()
 {
     einit_ipc_request ("(request receive-events no-backlog)");
+    einit_ipc_loop_infinite();
 }
 
 void einit_replay_events()
