@@ -84,6 +84,7 @@ enum control_type {
 };
 
 struct textbuffer_entry **textbuffer = NULL;
+char updatesok = 0;
 
 int progress = 0;
 int starting_bufferitem = 0;
@@ -548,9 +549,9 @@ void update_do()
 
 void update()
 {
-    // pthread_mutex_lock (&update_mutex);
+    if (!updatesok) return;
+
     update_do();
-    // pthread_mutex_unlock (&update_mutex);
 }
 
 void event_handler_mode_switching(struct einit_event *ev)
@@ -678,21 +679,6 @@ void event_handler_broken_services(struct einit_event *ev)
 
 int main(int argc, char **argv, char **env)
 {
-    initscr();
-    start_color();
-    cbreak();
-    noecho();
-
-    init_pair(attr_red, COLOR_RED, COLOR_BLACK);
-    init_pair(attr_blue, COLOR_BLUE, COLOR_BLACK);
-    init_pair(attr_green, COLOR_GREEN, COLOR_BLACK);
-    init_pair(attr_yellow, COLOR_YELLOW, COLOR_BLACK);
-    init_pair(attr_white, COLOR_WHITE, COLOR_BLACK);
-
-    nonl();
-    intrflush(stdscr, FALSE);
-    keypad(stdscr, TRUE);
-
     if (!einit_connect(&argc, argv)) {
         // perror ("Could not connect to eINIT");
         sleep(1);
@@ -722,9 +708,31 @@ int main(int argc, char **argv, char **env)
     event_listen(einit_feedback_unresolved_services,
                  event_handler_unresolved_services);
 
-    einit_event_loop();
+    fputs ("synchronising...\n", stderr);
+    einit_replay_events();
+    fputs ("synchronised...\n", stderr);
+    updatesok = 1;
 
-    endwin();
+    initscr();
+    start_color();
+    cbreak();
+    noecho();
+
+    init_pair(attr_red, COLOR_RED, COLOR_BLACK);
+    init_pair(attr_blue, COLOR_BLUE, COLOR_BLACK);
+    init_pair(attr_green, COLOR_GREEN, COLOR_BLACK);
+    init_pair(attr_yellow, COLOR_YELLOW, COLOR_BLACK);
+    init_pair(attr_white, COLOR_WHITE, COLOR_BLACK);
+
+    nonl();
+    intrflush(stdscr, FALSE);
+    keypad(stdscr, TRUE);
+
+    update_do ();
+
+    einit_event_loop_skip_old();
+
+    endwin(); 
 
     einit_disconnect();
 

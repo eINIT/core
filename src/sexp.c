@@ -111,7 +111,7 @@ static struct einit_sexp *einit_parse_sexp_in_buffer_with_buffer(char
             }
         } else {
             if ((buffer[*index] == '(') || (buffer[*index] == ')')
-                || isspace(buffer[*index])) {
+                || !(buffer[*index]) || isspace(buffer[*index])) {
                 stbuffer[sb_pos] = 0;
                 struct einit_sexp *rv;
 
@@ -149,7 +149,7 @@ static struct einit_sexp *einit_parse_sexp_in_buffer(char *buffer,
     struct einit_sexp *rv = NULL;
 
     for (; (*index) < stop; (*index)++) {
-        if (!isspace(buffer[*index])) {
+        if ((buffer[*index]) && !isspace(buffer[*index])) {
             if (isdigit(buffer[*index])) {
                 return einit_parse_sexp_in_buffer_with_buffer(buffer,
                                                               index, stop,
@@ -280,7 +280,7 @@ struct einit_sexp *einit_read_sexp_from_fd_reader(struct
     }
 
     for (ppos = 0;
-         (ppos < reader->position) && isspace(reader->buffer[ppos]);
+         (ppos < reader->position) && (!(reader->buffer[ppos]) || isspace(reader->buffer[ppos]));
          ppos++);
     if (ppos == reader->position) {
         reader->position = 0;
@@ -588,6 +588,23 @@ struct einit_sexp *se_stringset_to_list (char **s)
 
     for (; s[i]; i++) {
         v->secundus = se_cons (se_string(str_stabilise(s[i])),
+                               (struct einit_sexp *)sexp_end_of_list);
+        v = v->secundus;
+    }
+
+    return r;
+}
+
+struct einit_sexp *se_symbolset_to_list (char **s)
+{
+    if (!s) return (struct einit_sexp *)sexp_end_of_list;
+    int i = 1;
+    struct einit_sexp *r = se_cons (se_symbol(str_stabilise(s[0])),
+                                    (struct einit_sexp *)sexp_end_of_list);
+    struct einit_sexp *v = r;
+
+    for (; s[i]; i++) {
+        v->secundus = se_cons (se_symbol(str_stabilise(s[i])),
                                (struct einit_sexp *)sexp_end_of_list);
         v = v->secundus;
     }

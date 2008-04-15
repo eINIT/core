@@ -249,39 +249,111 @@ void einit_module_call(const char *rid, const char *action)
     einit_ipc_request (buffer);
 }
 
+struct lmodule *einit_get_core_module_descriptor (const char *rid)
+{
+    char buffer[BUFFERSIZE];
+
+    snprintf (buffer, BUFFERSIZE, "(request get-module %s)", rid);
+
+    struct einit_sexp *s = einit_ipc_request (buffer);
+
+    return einit_decode_lmodule_from_sexpr(s);
+}
+
 char *einit_module_get_name(const char *rid)
 {
-    return "unknown";
+    struct lmodule *lm = einit_get_core_module_descriptor (rid);
+
+    if (lm) {
+        char *rv = lm->module->name;
+        einit_destroy_core_module_descriptor (lm);
+
+        return rv;
+    } else {
+        return NULL;
+    }
 }
 
 char **einit_module_get_provides(const char *rid)
 {
-    return NULL;
+    struct lmodule *lm = einit_get_core_module_descriptor (rid);
+
+    if (lm) {
+        char **rv = lm->si ? lm->si->provides : NULL;
+        einit_destroy_core_module_descriptor (lm);
+
+        return rv;
+    } else {
+        return NULL;
+    }
 }
 
 char **einit_module_get_requires(const char *rid)
 {
-    return NULL;
+    struct lmodule *lm = einit_get_core_module_descriptor (rid);
+
+    if (lm) {
+        char **rv = lm->si ? lm->si->requires : NULL;
+        einit_destroy_core_module_descriptor (lm);
+
+        return rv;
+    } else {
+        return NULL;
+    }
 }
 
 char **einit_module_get_after(const char *rid)
 {
-    return NULL;
+    struct lmodule *lm = einit_get_core_module_descriptor (rid);
+
+    if (lm) {
+        char **rv = lm->si ? lm->si->after : NULL;
+        einit_destroy_core_module_descriptor (lm);
+
+        return rv;
+    } else {
+        return NULL;
+    }
 }
 
 char **einit_module_get_before(const char *rid)
 {
-    return NULL;
+    struct lmodule *lm = einit_get_core_module_descriptor (rid);
+
+    if (lm) {
+        char **rv = lm->si ? lm->si->before : NULL;
+        einit_destroy_core_module_descriptor (lm);
+
+        return rv;
+    } else {
+        return NULL;
+    }
 }
 
 char **einit_module_get_status(const char *rid)
 {
-    return NULL;
+    struct lmodule *lm = einit_get_core_module_descriptor (rid);
+
+    if (lm) {
+        einit_destroy_core_module_descriptor (lm);
+
+        return NULL;
+    } else {
+        return NULL;
+    }
 }
 
 char **einit_module_get_options(const char *rid)
 {
-    return NULL;
+    struct lmodule *lm = einit_get_core_module_descriptor (rid);
+
+    if (lm) {
+        einit_destroy_core_module_descriptor (lm);
+
+        return NULL;
+    } else {
+        return NULL;
+    }
 }
 
 void einit_event_loop()
@@ -474,6 +546,7 @@ struct smodule *einit_decode_module_from_sexpr(struct einit_sexp *sexp)
                 break;
 
             case smps_done:
+            default:
                 break;
         }
 
@@ -487,6 +560,46 @@ struct smodule *einit_decode_module_from_sexpr(struct einit_sexp *sexp)
 
     return sm;
 }
+
+struct lmodule *einit_decode_lmodule_from_sexpr(struct einit_sexp *sexp)
+{
+    struct smodule *sm = einit_decode_module_from_sexpr (sexp);
+
+    if (sm) {
+        struct lmodule *lm = ecalloc (1, sizeof (struct lmodule));
+        lm->module = sm;
+
+        struct einit_sexp *p =
+                se_cdr (se_cdr (se_cdr (se_cdr (se_cdr (se_cdr (se_cdr (se_cdr (se_cdr (sexp)))))))));
+
+        struct einit_sexp *status = se_car(p);
+        struct einit_sexp *actions = se_car(se_cdr(p));
+
+        /* TODO : parse status and actions */
+
+        if (sm->si.provides || sm->si.requires || sm->si.after || sm->si.before || sm->si.uses) {
+            lm->si = emalloc (sizeof (*(lm->si)));
+
+            lm->si->provides = sm->si.provides ? sm->si.provides : NULL;
+            lm->si->requires = sm->si.requires ? sm->si.requires : NULL;
+            lm->si->after = sm->si.after ? sm->si.after : NULL;
+            lm->si->before = sm->si.before ? sm->si.before : NULL;
+            lm->si->uses = sm->si.uses ? sm->si.uses : NULL;
+        }
+
+        return lm;
+    } else {
+        return NULL;
+    }
+}
+
+void einit_destroy_core_module_descriptor (struct lmodule *lm)
+{
+    if (lm->si) efree (lm->si);
+    if (lm->module) efree ((void *)(lm->module));
+    efree (lm);
+}
+
 
 void einit_register_module(struct smodule *s)
 {

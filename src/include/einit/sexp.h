@@ -40,7 +40,7 @@
 #define EINIT_SEXP_H
 
 enum einit_sexp_type {
-    es_boolean_true,
+    es_boolean_true = 0,
     es_boolean_false,
     es_symbol,
     es_string,
@@ -113,5 +113,6 @@ struct einit_sexp *se_integer (int);
 struct einit_sexp *se_string (const char *s);
 struct einit_sexp *se_symbol (const char *s);
 struct einit_sexp *se_stringset_to_list (char **s);
+struct einit_sexp *se_symbolset_to_list (char **s);
 
 #endif

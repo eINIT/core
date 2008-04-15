@@ -121,7 +121,11 @@ extern "C" {
     const char *einit_event_encode(struct einit_event *ev);
 
     struct smodule *einit_decode_module_from_sexpr(struct einit_sexp *sexp);
+    struct lmodule *einit_decode_lmodule_from_sexpr(struct einit_sexp *sexp);
     void einit_register_module(struct smodule *s);
+
+    struct lmodule *einit_get_core_module_descriptor (const char *rid);
+    void einit_destroy_core_module_descriptor (struct lmodule *lm);
 
     /*
      * !\brief Grab and Handle Events This will run an event loop that

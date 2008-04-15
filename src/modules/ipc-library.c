@@ -186,10 +186,57 @@ void einit_ipc_library_list(struct einit_sexp *sexp,
     einit_ipc_library_stub(sexp, cd);
 }
 
+/*
+ * (request get-module rid)
+ * (reply get-module (rid "name" (provides) (requires) (before) (after) (uses)
+ *  run-once deprecated (status) (actions)))
+ */
+
 void einit_ipc_library_get_module(struct einit_sexp *sexp,
                                   struct einit_ipc_connection *cd)
 {
-    einit_ipc_library_stub(sexp, cd);
+    struct einit_sexp_fd_reader *reader = cd->reader;
+
+    if (sexp->type == es_symbol) {
+        struct lmodule *lm = mod_lookup_rid (sexp->symbol);
+
+        if (!lm || !lm->module) goto fail;
+
+        struct einit_sexp *sp = 
+            se_cons(se_symbol ("reply"),
+            se_cons(se_symbol ("get-module"),
+            se_cons(se_cons(se_symbol (lm->module->rid),
+                se_cons(se_string (lm->module->name),
+                se_cons(se_symbolset_to_list(lm->si ? lm->si->provides : NULL),
+                se_cons(se_symbolset_to_list(lm->si ? lm->si->requires : NULL),
+                se_cons(se_symbolset_to_list(lm->si ? lm->si->before : NULL),
+                se_cons(se_symbolset_to_list(lm->si ? lm->si->after : NULL),
+                se_cons(se_symbolset_to_list(lm->si ? lm->si->uses : NULL),
+                se_cons(se_symbol("#f"),
+                se_cons(se_symbol("#f"),
+                se_cons((struct einit_sexp *)sexp_end_of_list,
+                se_cons((struct einit_sexp *)sexp_end_of_list,
+                        (struct einit_sexp *)sexp_end_of_list))))))))))),
+                    (struct einit_sexp *)sexp_end_of_list)));
+
+        char *r = einit_sexp_to_string(sp);
+
+        fprintf (stderr, "reply: %s\n", r);
+
+        einit_sexp_destroy(sp);
+
+        fcntl(reader->fd, F_SETFL, 0);
+        write (reader->fd, r, strlen(r));
+        fcntl(reader->fd, F_SETFL, O_NONBLOCK);
+
+        efree (r);
+    } else {
+        fail:
+
+        fcntl(reader->fd, F_SETFL, 0);
+        write (reader->fd, "(reply get-module #f)", 21);
+        fcntl(reader->fd, F_SETFL, O_NONBLOCK);
+    }
 }
 
 void einit_ipc_library_get_service(struct einit_sexp *sexp,

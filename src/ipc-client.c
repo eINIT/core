@@ -53,7 +53,6 @@
 #include <einit/ipc.h>
 
 #include <sys/select.h>
-#include <setjmp.h>
 
 struct einit_ipc_callback {
     void (*handler) (struct einit_sexp *);
@@ -182,7 +181,7 @@ void einit_ipc_handle_sexp_event(struct einit_sexp *sexp)
     }
 }
 
-char einit_ipc_loop()
+char einit_ipc_loop_s(struct einit_sexp **tp)
 {
     if (!einit_ipc_client_rd)
         return 0;
@@ -234,6 +233,10 @@ char einit_ipc_loop()
                             handler(sexp);
                         }
                     }
+                } else if (tp && (sexp->primus->type == es_symbol)
+                    && (strmatch(sexp->primus->symbol, "reply"))) {
+                    *tp = sexp;
+                    return 0;
                 }
             } else {
                 if ((sexp->primus->type == es_symbol)
@@ -243,7 +246,7 @@ char einit_ipc_loop()
             }
         } else {
             char *r = einit_sexp_to_string(sexp);
-            fprintf(stderr, "BAD MESSAGE: %s\n", r);
+            fprintf(stderr, "BAD MESSAGE: (%i) \"%s\"\n", sexp->type, r);
 
             efree(r);
         }
@@ -252,6 +255,11 @@ char einit_ipc_loop()
     }
 
     return 0;
+}
+
+char einit_ipc_loop()
+{
+    return einit_ipc_loop_s (0);
 }
 
 void einit_ipc_loop_infinite()
@@ -324,32 +332,37 @@ int einit_ipc_get_fd()
     return einit_ipc_client_rd->fd;
 }
 
-/*
- * the following utilises a wee bit of maegick...
- * not enough to be concerned tho
- */
-
-jmp_buf einit_ipc_request_jump_marker;
-struct einit_sexp *einit_ipc_request_result;
-
-void einit_ipc_request_handler(struct einit_sexp *sexp)
-{
-    einit_ipc_request_result = se_car(se_cdr(se_cdr(sexp)));
-
-    sexp->secundus->secundus->primus = (struct einit_sexp *) sexp_nil;
-    einit_sexp_destroy(sexp);
-
-    longjmp(einit_ipc_request_jump_marker, 1);
-}
-
 struct einit_sexp *einit_ipc_request(const char *request)
 {
-    einit_ipc_request_callback(request, einit_ipc_request_handler);
+    if (!einit_ipc_client_rd)
+        return NULL;
 
-    if (setjmp(einit_ipc_request_jump_marker))
-        return einit_ipc_request_result;
+    int fd = einit_ipc_client_rd->fd;
+    struct einit_sexp *sexp = NULL;
 
-    einit_ipc_loop_infinite();
+    write(fd, request, strlen(request));
+    fsync(fd);
+
+    fprintf (stderr, "REQUEST: %s\n", request);
+
+    while (1) {
+        int selectres;
+
+        fd_set rfds;
+
+        FD_ZERO(&rfds);
+        FD_SET(fd, &rfds);
+
+        selectres = select((fd + 1), &rfds, NULL, NULL, 0);
+
+        if (selectres > 0) {
+            einit_ipc_loop_s (&sexp);
+        }
+
+        if (sexp) {
+            return sexp;
+        }
+    }
 
     return (struct einit_sexp *) sexp_bad;
 }
