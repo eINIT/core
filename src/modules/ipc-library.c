@@ -201,19 +201,74 @@ void einit_ipc_library_get_service(struct einit_sexp *sexp,
 void einit_ipc_library_module_do_bang(struct einit_sexp *sexp,
                                       struct einit_ipc_connection *cd)
 {
-    einit_ipc_library_stub(sexp, cd);
+    struct einit_sexp_fd_reader *reader = cd->reader;
+
+    struct einit_sexp *primus = se_car(sexp),
+    *secundus = se_car(se_cdr(sexp));
+
+    if ((primus->type == es_symbol) && (secundus->type == es_symbol)) {
+        fcntl(reader->fd, F_SETFL, 0);
+        write (reader->fd, "(reply module-do! #t)", 21);
+        fcntl(reader->fd, F_SETFL, O_NONBLOCK);
+
+        struct lmodule *lm = mod_lookup_rid (primus->symbol);
+
+        if (strmatch (secundus->symbol, "enable")) {
+            mod (einit_module_enable, lm, NULL);
+        } else if (strmatch (secundus->symbol, "disable")) {
+            mod (einit_module_disable, lm, NULL);
+        } else {
+            mod (einit_module_custom, lm, (char*)(secundus->symbol));
+        }
+    } else {
+        fcntl(reader->fd, F_SETFL, 0);
+        write (reader->fd, "(reply module-do! #f)", 21);
+        fcntl(reader->fd, F_SETFL, O_NONBLOCK);
+    }
 }
 
 void einit_ipc_library_service_do_bang(struct einit_sexp *sexp,
                                        struct einit_ipc_connection *cd)
 {
-    einit_ipc_library_stub(sexp, cd);
+    struct einit_sexp_fd_reader *reader = cd->reader;
+
+    struct einit_sexp *primus = se_car(sexp),
+    *secundus = se_car(se_cdr(sexp));
+
+    if ((primus->type == es_symbol) && (secundus->type == es_symbol)) {
+        fcntl(reader->fd, F_SETFL, 0);
+        write (reader->fd, "(reply service-do! #t)", 22);
+        fcntl(reader->fd, F_SETFL, O_NONBLOCK);
+
+        struct einit_event ev = evstaticinit (einit_core_change_service_status);
+        ev.rid = (char*)(primus->symbol);
+        ev.string = (char*)(secundus->symbol);
+        event_emit (&ev, 0);
+    } else {
+        fcntl(reader->fd, F_SETFL, 0);
+        write (reader->fd, "(reply service-do! #f)", 22);
+        fcntl(reader->fd, F_SETFL, O_NONBLOCK);
+    }
 }
 
 void einit_ipc_library_service_switch_mode(struct einit_sexp *sexp,
                                            struct einit_ipc_connection *cd)
 {
-    einit_ipc_library_stub(sexp, cd);
+    struct einit_sexp_fd_reader *reader = cd->reader;
+
+    if (sexp->type == es_symbol) {
+        fcntl(reader->fd, F_SETFL, 0);
+        write (reader->fd, "(reply switch-mode! #t)", 23);
+        fcntl(reader->fd, F_SETFL, O_NONBLOCK);
+
+        struct einit_event ev = evstaticinit (einit_core_switch_mode);
+        ev.string = (char*)(sexp->symbol);
+        event_emit (&ev, 0);
+    } else {
+        fcntl(reader->fd, F_SETFL, 0);
+        write (reader->fd, "(reply switch-mode! #f)", 23);
+        fcntl(reader->fd, F_SETFL, O_NONBLOCK);
+    }
 }
 
 int einit_ipc_library_configure(struct lmodule *irr)
@@ -242,7 +297,7 @@ int einit_ipc_library_configure(struct lmodule *irr)
                                einit_ipc_library_module_do_bang);
     einit_ipc_register_handler("service-do!",
                                einit_ipc_library_service_do_bang);
-    einit_ipc_register_handler("switch-mode",
+    einit_ipc_register_handler("switch-mode!",
                                einit_ipc_library_service_switch_mode);
 
     return 0;

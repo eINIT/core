@@ -107,7 +107,12 @@ void einit_power_reset()
 }
 
 void einit_switch_mode(const char *mode)
-{                               // think "runlevel"
+{                               /* think "runlevel" */
+    char buffer[BUFFERSIZE];
+
+    snprintf (buffer, BUFFERSIZE, "(request switch-mode! %s)", mode);
+
+    einit_ipc_request (buffer);
 }
 
 /*
@@ -219,18 +224,29 @@ char einit_disconnect()
         waitpid(einit_ipc_client_pid, NULL, 0);
     }
 
-    /*
-     * FIXME 
-     */
+    close (einit_ipc_get_fd());
+
     return 1;
 }
 
 void einit_service_call(const char *service, const char *action)
 {
+    char buffer[BUFFERSIZE];
+
+    snprintf (buffer, BUFFERSIZE, "(request service-do! (%s %s))", service,
+              action);
+
+    einit_ipc_request (buffer);
 }
 
 void einit_module_call(const char *rid, const char *action)
 {
+    char buffer[BUFFERSIZE];
+
+    snprintf (buffer, BUFFERSIZE, "(request module-do! (%s %s))", rid,
+              action);
+
+    einit_ipc_request (buffer);
 }
 
 char *einit_module_get_attribute(const char *rid, const char *attribute)
@@ -239,6 +255,7 @@ char *einit_module_get_attribute(const char *rid, const char *attribute)
 
 char *einit_module_get_name(const char *rid)
 {
+    return einit_module_get_attribute(rid, "name");
 }
 
 char **einit_module_get_provides(const char *rid)

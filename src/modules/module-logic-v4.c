@@ -1953,27 +1953,27 @@ void module_logic_einit_event_handler_core_change_service_status(struct
      * do stuff here 
      */
 
-    if (ev->set && ev->set[0] && ev->set[1]) {
-        if (strmatch(ev->set[1], "enable")
-            || strmatch(ev->set[1], "start")) {
+    if (ev->string && ev->rid) {
+        if (strmatch(ev->string, "enable")
+            || strmatch(ev->string, "start")) {
             if (!inset
-                ((const void **) module_logic_list_enable, ev->set[0],
+                ((const void **) module_logic_list_enable, ev->rid,
                  SET_TYPE_STRING))
                 module_logic_list_enable =
                     set_str_add_stable(module_logic_list_enable,
-                                       ev->set[0]);
+                                       ev->rid);
 
             struct lmodule **spawn = module_logic_find_things_to_enable();
 
             module_logic_spawn_set_enable(spawn);
-        } else if (strmatch(ev->set[1], "disable")
-                   || strmatch(ev->set[1], "stop")) {
+        } else if (strmatch(ev->string, "disable")
+                   || strmatch(ev->string, "stop")) {
             if (!inset
-                ((const void **) module_logic_list_disable, ev->set[0],
+                ((const void **) module_logic_list_disable, ev->rid,
                  SET_TYPE_STRING))
                 module_logic_list_disable =
                     set_str_add_stable(module_logic_list_disable,
-                                       ev->set[0]);
+                                       ev->rid);
 
             struct lmodule **spawn = module_logic_find_things_to_disable();
 
@@ -1981,7 +1981,7 @@ void module_logic_einit_event_handler_core_change_service_status(struct
         } else {
             struct lmodule **m = NULL;
             struct stree *st =
-                streefind(module_logic_service_list, ev->set[0],
+                streefind(module_logic_service_list, ev->rid,
                           tree_find_first);
 
             if (st) {
@@ -1991,7 +1991,7 @@ void module_logic_einit_event_handler_core_change_service_status(struct
             if (m) {
                 int i = 0;
                 for (; m[i]; i++) {
-                    int r = mod(einit_module_custom, m[i], ev->set[1]);
+                    int r = mod(einit_module_custom, m[i], ev->string);
 
                     ev->integer = ev->integer || (r & status_failed);
                 }
