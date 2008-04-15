@@ -360,7 +360,14 @@ struct einit_sexp *einit_ipc_request(const char *request)
         }
 
         if (sexp) {
-            return sexp;
+            struct einit_sexp *res = se_car(se_cdr(se_cdr(sexp)));
+
+            sexp->secundus->secundus->primus = (struct einit_sexp *) sexp_nil;
+            einit_sexp_destroy(sexp);
+
+            fprintf (stderr, "REPLY FOR REQUEST: %s\n", request);
+
+            return res;
         }
     }
 

@@ -71,8 +71,10 @@ void *event_emit(struct einit_event *event,
 
         fcntl(fd, F_SETFL, O_NONBLOCK);
 
+        if (!r || r < 0) return NULL;
         if (r < len) {
-            fprintf (stderr, "TOOT TOOT!\n");
+            fprintf (stderr, "BAD EVENT! tried to write %d bytes,"
+                             " but only wrote %d bytes\n", len, r);
         }
 
         return NULL;

@@ -398,7 +398,8 @@ void einit_ipc_update_event_listeners ()
 
                 if ((r < 0) || (r == 0)) break;
                 if (r < len) {
-                    fprintf (stderr, "TOOT TOOT!\n");
+                    fprintf (stderr, "TOOT TOOT! tried to write %d bytes,"
+                                     " but only wrote %d bytes\n", len, r);
                 }
             }
         }
