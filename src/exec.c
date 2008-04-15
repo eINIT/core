@@ -60,6 +60,9 @@ int einit_handle_pipe_fragment(struct einit_exec_data *x)
 
     if (ret > 0) {
         buffer[ret] = 0;
+
+        strtrim(buffer);
+
         char **sp = str2set('\n', buffer);
         int i = 0;
         for (; sp[i]; i++) {
