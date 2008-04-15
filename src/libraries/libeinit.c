@@ -249,37 +249,39 @@ void einit_module_call(const char *rid, const char *action)
     einit_ipc_request (buffer);
 }
 
-char *einit_module_get_attribute(const char *rid, const char *attribute)
-{
-}
-
 char *einit_module_get_name(const char *rid)
 {
-    return einit_module_get_attribute(rid, "name");
+    return "unknown";
 }
 
 char **einit_module_get_provides(const char *rid)
 {
+    return NULL;
 }
 
 char **einit_module_get_requires(const char *rid)
 {
+    return NULL;
 }
 
 char **einit_module_get_after(const char *rid)
 {
+    return NULL;
 }
 
 char **einit_module_get_before(const char *rid)
 {
+    return NULL;
 }
 
 char **einit_module_get_status(const char *rid)
 {
+    return NULL;
 }
 
 char **einit_module_get_options(const char *rid)
 {
+    return NULL;
 }
 
 void einit_event_loop()
@@ -361,7 +363,7 @@ struct smodule *einit_decode_module_from_sexpr(struct einit_sexp *sexp)
                     sm = emalloc(sizeof (struct smodule));
                     memset (sm, 0, sizeof (struct smodule));
 
-                    sm->rid = p->symbol;
+                    sm->rid = (char*)(p->symbol);
                 } else {
                     return NULL;
                 }
@@ -369,7 +371,7 @@ struct smodule *einit_decode_module_from_sexpr(struct einit_sexp *sexp)
 
             case smps_name:
                 if (p->type == es_string) {
-                    sm->name = p->string;
+                    sm->name = (char*)(p->string);
                 } else {
                     efree (sm);
                     return NULL;
@@ -493,6 +495,7 @@ void einit_register_module(struct smodule *s)
 char *einit_get_configuration_string(const char *key,
                                      const char *attribute)
 {
+    return NULL;
 }
 
 signed int einit_get_configuration_integer(const char *key,
@@ -521,8 +524,10 @@ char einit_get_configuration_boolean(const char *key,
 
 char **einit_get_configuration_attributes(const char *key)
 {
+    return NULL;
 }
 
 char ***einit_get_configuration_prefix(const char *prefix)
 {
+    return NULL;
 }

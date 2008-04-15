@@ -113,6 +113,8 @@ void set_module_status(char *name, enum einit_module_status status)
             s.feedback_job =
                 inset((const void **) t, "job-feedback", SET_TYPE_STRING);
             efree(t);
+        } else {
+            s.feedback_job = 0;
         }
 
         status_tree = streeadd(status_tree, name, &s, sizeof(s), NULL);
