@@ -92,6 +92,7 @@ void einit_ipc_library_stub(struct einit_sexp *sexp,
     write(cd->reader->fd, BAD_REQUEST, BAD_REQUEST_SIZE);
 }
 
+/* TODO: allow the clients to tell us what events it should receive */
 void einit_ipc_library_receive_events(struct einit_sexp *sexp,
                                       struct einit_ipc_connection *cd)
 {

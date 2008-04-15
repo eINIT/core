@@ -48,9 +48,10 @@
 #include <einit/bitch.h>
 #include <errno.h>
 #include <einit/itree.h>
-
 #include <einit/einit.h>
+#include <einit/ipc.h>
 #include <time.h>
+#include <fcntl.h>
 
 struct itree *event_handlers = NULL;
 
@@ -61,9 +62,18 @@ void *event_emit(struct einit_event *event,
         return NULL;
 
     if (flags & einit_event_flag_remote) {
-        /*
-         * FIXME 
-         */
+        const char *s = einit_event_encode (event);
+        int fd = einit_ipc_get_fd(), r, len = strlen (s);
+
+        fcntl(fd, F_SETFL, 0);
+
+        r = write (fd, s, len);
+
+        fcntl(fd, F_SETFL, O_NONBLOCK);
+
+        if (r < len) {
+            fprintf (stderr, "TOOT TOOT!\n");
+        }
 
         return NULL;
     }

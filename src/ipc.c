@@ -418,6 +418,8 @@ void einit_ipc_generic_event_handler(struct einit_event *ev)
         }
 
         einit_event_backlog = set_str_add_stable (einit_event_backlog, (char *)s);
+
+        einit_ipc_update_event_listeners ();
     } else {
         /*
          * we need to make a check for this in the generic handler anyway,
