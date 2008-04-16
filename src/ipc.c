@@ -57,7 +57,7 @@ struct einit_ipc_connection *einit_ipc_connections = NULL;
 int einit_ipc_sexp_fd = -1;
 
 struct einit_ipc_handler {
-    void (*handler) (struct einit_sexp *, struct einit_ipc_connection *);
+    void (*handler) (struct einit_sexp *, int, struct einit_ipc_connection *);
 };
 
 struct stree *einit_ipc_handlers = NULL;
@@ -103,7 +103,7 @@ void einit_ipc_remove_connection (struct einit_ipc_connection *c)
 }
 
 void einit_ipc_register_handler(const char *name,
-                                void (*handler) (struct einit_sexp *,
+                                void (*handler) (struct einit_sexp *, int,
                                                  struct einit_ipc_connection *))
 {
     if (einit_ipc_handlers) {
@@ -132,7 +132,7 @@ void einit_ipc_register_handler(const char *name,
 }
 
 void einit_ipc_unregister_handler(const char *name,
-                                  void (*handler) (struct einit_sexp *,
+                                  void (*handler) (struct einit_sexp *, int,
                                          struct einit_ipc_connection *))
 {
     if (!einit_ipc_handlers)
@@ -167,44 +167,44 @@ char einit_ipx_sexp_handle_fd(struct einit_sexp_fd_reader *rd)
 
         char *s = einit_sexp_to_string(sexp);
         if (s) {
-            fprintf(stderr, "read sexp: %s\n", s);
+//            fprintf(stderr, "read sexp: %s\n", s);
             efree(s);
         }
 
-        if (sexp->type == es_cons) {
-            if (sexp->primus->type == es_symbol) {
-                if (strmatch(sexp->primus->symbol, "request")) {
-                    if ((sexp->secundus->type == es_cons)
-                        && (sexp->secundus->primus->type == es_symbol)
-                        && (sexp->secundus->secundus->type == es_cons)) {
-                        struct stree *st = streefind(einit_ipc_handlers,
-                                                     sexp->secundus->
-                                                     primus->symbol,
-                                                     tree_find_first);
-                        if (st) {
-                            do {
-                                struct einit_ipc_handler *h = st->value;
+        if ((sexp->type == es_cons) && (sexp->primus->type == es_symbol)) {
+            if (strmatch(sexp->primus->symbol, "request")) {
+                if ((sexp->secundus->type == es_cons)
+                    && (sexp->secundus->primus->type == es_symbol)
+                    && (sexp->secundus->secundus->type == es_cons)
+                    && (sexp->secundus->secundus->secundus->type == es_cons)
+                    && (sexp->secundus->secundus->secundus->secundus->type == es_list_end)) {
+                    struct stree *st = streefind(einit_ipc_handlers,
+                                                 sexp->secundus->
+                                                 primus->symbol,
+                                                 tree_find_first);
+                    if (st) {
+                        do {
+                            struct einit_ipc_handler *h = st->value;
 
-                                if (h->handler) {
-                                    h->handler(sexp->secundus->secundus->
-                                               primus, rd->custom);
-                                }
-                            } while ((st =
-                                      streefind(einit_ipc_handlers,
-                                                sexp->secundus->primus->
-                                                symbol, tree_find_next)));
-                        } else {
-                            char buffer[BUFFERSIZE];
+                            if (h->handler) {
+                                h->handler(sexp->secundus->secundus->secundus->primus,
+                                           sexp->secundus->secundus->primus->integer,
+                                           rd->custom);
+                            }
+                        } while ((st = streefind(einit_ipc_handlers,
+                                            sexp->secundus->primus->
+                                            symbol, tree_find_next)));
+                    } else {
+                        char buffer[BUFFERSIZE];
 
-                            snprintf(buffer, BUFFERSIZE,
-                                     "(reply %s bad-request)",
-                                     sexp->secundus->primus->symbol);
-                            write(rd->fd, buffer, strlen(buffer));
-                        }
+                        snprintf(buffer, BUFFERSIZE,
+                                 "(%i bad-request)",
+                                 sexp->secundus->secundus->primus->integer);
+                        write(rd->fd, buffer, strlen(buffer));
                     }
-                } else if (strmatch(sexp->primus->symbol, "event")) {
-                    einit_ipc_handle_sexp_event(sexp->secundus);
                 }
+            } else if (strmatch(sexp->primus->symbol, "event")) {
+                einit_ipc_handle_sexp_event(sexp->secundus);
             }
         }
     }
@@ -217,7 +217,7 @@ char einit_ipx_sexp_handle_fd(struct einit_sexp_fd_reader *rd)
 void einit_ipx_sexp_handle_connect()
 {
     int fd = accept(einit_ipc_sexp_fd, NULL, 0);
-    fprintf(stderr, "connected: %i\n", fd);
+//    fprintf(stderr, "connected: %i\n", fd);
 
     if (fd < 0)
         return;
@@ -271,10 +271,10 @@ void einit_ipc_sexp_handle(fd_set * rfds)
         c = c->next;
 
         if (FD_ISSET(reader->fd, rfds)) {
-            fprintf(stderr, "readable: %i\n", reader->fd);
+//            fprintf(stderr, "readable: %i\n", reader->fd);
 
             if (einit_ipx_sexp_handle_fd(reader)) {
-                fprintf(stderr, "client disconnected\n");
+//                fprintf(stderr, "client disconnected\n");
 
                 einit_ipc_remove_connection (o);
             }
@@ -456,3 +456,4 @@ void einit_ipc_setup()
 
     event_listen(einit_event_subsystem_any, einit_ipc_generic_event_handler);
 }
+

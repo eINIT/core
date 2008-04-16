@@ -46,8 +46,6 @@
 
 #include <fcntl.h>
 
-#define REQUEST "(request list requests)"
-
 void callback(struct einit_sexp *sexp)
 {
     char *r = einit_sexp_to_string(sexp);
@@ -85,9 +83,6 @@ int main(int argc, char **argv)
     if (!einit_connect(&argc, argv)) {
         return 0;
     }
-
-    struct einit_sexp *sexp = einit_ipc_request(REQUEST);
-    callback(sexp);
 
     /*
      * einit_ipc_request_callback(REQUEST, callback);

@@ -54,12 +54,7 @@
 
 #include <sys/select.h>
 
-struct einit_ipc_callback {
-    void (*handler) (struct einit_sexp *);
-    struct einit_ipc_callback *next;
-};
-
-struct einit_ipc_callback *einit_ipc_callbacks = NULL;
+struct itree *einit_ipc_replies = NULL;
 
 struct einit_sexp_fd_reader *einit_ipc_client_rd = NULL;
 
@@ -181,7 +176,7 @@ void einit_ipc_handle_sexp_event(struct einit_sexp *sexp)
     }
 }
 
-char einit_ipc_loop_s(struct einit_sexp **tp)
+char einit_ipc_loop()
 {
     if (!einit_ipc_client_rd)
         return 0;
@@ -197,69 +192,60 @@ char einit_ipc_loop_s(struct einit_sexp **tp)
             continue;
         }
 
-        if (sexp->type == es_cons) {
-            if ((sexp->secundus->type == es_cons)
-                && (sexp->secundus->secundus->type == es_cons)
-                && (sexp->secundus->secundus->secundus->type ==
-                    es_list_end)) {
+        if ((sexp->type == es_cons) && (sexp->secundus->type == es_cons)) {
+            if ((sexp->primus->type == es_integer) &&
+                (sexp->secundus->secundus->type == es_list_end)) {
+                /* 2-tuple and starts with an integer: reply */
+                char *r = einit_sexp_to_string(sexp);
+//                fprintf(stderr, "REPLY: %s\n", r);
+                efree(r);
+
+//                fprintf (stderr, "storing reply with id=%i\n", sexp->primus->integer);
+
+                einit_ipc_replies = itreeadd (einit_ipc_replies, sexp->primus->integer, sexp->secundus->primus, tree_value_noalloc);
+                continue;
+            }
+                
+            if ((sexp->secundus->secundus->type == es_cons) &&
+                (sexp->secundus->secundus->secundus->type == es_cons) &&
+                (sexp->secundus->secundus->secundus->secundus->type == es_list_end) &&
+                (sexp->primus->type == es_symbol) &&
+                (strmatch(sexp->primus->symbol, "request"))) {
                 /*
-                 * 3-tuple: must be a reply, or a request 
+                 * 4-tuple: must be a request
                  */
                 char *r = einit_sexp_to_string(sexp);
-                fprintf(stderr, "REPLY OR REQUEST: %s\n", r);
+                fprintf(stderr, "REQUEST: %s\n", r);
 
                 efree(r);
 
-                if (einit_ipc_callbacks
-                    && (sexp->primus->type == es_symbol)
-                    && (strmatch(sexp->primus->symbol, "reply"))) {
-                    void (*handler) (struct einit_sexp *) =
-                        einit_ipc_callbacks->handler;
-                    struct einit_ipc_callback *t = einit_ipc_callbacks;
+                /*
+                 * TODO: still need to handle this somehow
+                 */
 
-                    einit_ipc_callbacks = t->next;
-                    efree(t);
+                einit_sexp_destroy(sexp);
 
-                    if (sexp->secundus->secundus->primus->type ==
-                        es_symbol) {
-                        if (strmatch
-                            (sexp->secundus->secundus->primus->symbol,
-                             "bad-request")) {
-                            char *r = einit_sexp_to_string(sexp);
-                            fprintf(stderr, "BAD REQUEST: %s\n", r);
-
-                            efree(r);
-                        } else {
-                            handler(sexp);
-                        }
-                    }
-                } else if (tp && (sexp->primus->type == es_symbol)
-                    && (strmatch(sexp->primus->symbol, "reply"))) {
-                    *tp = sexp;
-                    return 0;
-                }
-            } else {
-                if ((sexp->primus->type == es_symbol)
-                    && (strmatch(sexp->primus->symbol, "event"))) {
-                    einit_ipc_handle_sexp_event(sexp->secundus);
-                }
+                continue;
             }
-        } else {
-            char *r = einit_sexp_to_string(sexp);
-            fprintf(stderr, "BAD MESSAGE: (%i) \"%s\"\n", sexp->type, r);
 
-            efree(r);
+            if ((sexp->primus->type == es_symbol)
+                && (strmatch(sexp->primus->symbol, "event"))) {
+                einit_ipc_handle_sexp_event(sexp->secundus);
+                einit_sexp_destroy(sexp);
+
+                continue;
+            }
         }
+        
+        char *r = einit_sexp_to_string(sexp);
+        fprintf(stderr, "BAD MESSAGE: (%i) \"%s\"\n", sexp->type, r);
+
+        efree(r);
 
         einit_sexp_destroy(sexp);
     }
 
     return 0;
-}
-
-char einit_ipc_loop()
-{
-    return einit_ipc_loop_s (0);
 }
 
 void einit_ipc_loop_infinite()
@@ -280,23 +266,6 @@ void einit_ipc_loop_infinite()
             einit_ipc_loop();
         }
     }
-}
-
-void einit_ipc_request_callback(const char *request,
-                                void (*handler) (struct einit_sexp *))
-{
-    if (!einit_ipc_client_rd)
-        return;
-
-    struct einit_ipc_callback *cb =
-        emalloc(sizeof(struct einit_ipc_callback));
-    cb->next = einit_ipc_callbacks;
-    cb->handler = handler;
-
-    einit_ipc_callbacks = cb;
-
-    write(einit_ipc_client_rd->fd, request, strlen(request));
-    fsync(einit_ipc_client_rd->fd);
 }
 
 char einit_ipc_connect(const char *address)
@@ -332,44 +301,59 @@ int einit_ipc_get_fd()
     return einit_ipc_client_rd->fd;
 }
 
-struct einit_sexp *einit_ipc_request(const char *request)
+int einit_ipc_current_id = 0;
+
+struct einit_sexp *einit_ipc_request_sexp_raw(struct einit_sexp *request)
 {
-    if (!einit_ipc_client_rd)
-        return NULL;
+    if (!einit_ipc_client_rd) return NULL;
+    int id = (se_car(se_cdr(se_cdr(request))))->integer;
 
     int fd = einit_ipc_client_rd->fd;
-    struct einit_sexp *sexp = NULL;
 
-    write(fd, request, strlen(request));
+    char *r = einit_sexp_to_string (request);
+    write(fd, r, strlen(r));
     fsync(fd);
-
-    fprintf (stderr, "REQUEST: %s\n", request);
+//    fprintf (stderr, "REQUEST: %s\n", r);
+    efree (r);
 
     while (1) {
         int selectres;
-
         fd_set rfds;
-
         FD_ZERO(&rfds);
         FD_SET(fd, &rfds);
-
         selectres = select((fd + 1), &rfds, NULL, NULL, 0);
 
         if (selectres > 0) {
-            einit_ipc_loop_s (&sexp);
+            einit_ipc_loop ();
         }
 
-        if (sexp) {
-            struct einit_sexp *res = se_car(se_cdr(se_cdr(sexp)));
+        if (einit_ipc_replies) {
+            struct itree *t = itreefind (einit_ipc_replies, id, tree_find_first);
 
-            sexp->secundus->secundus->primus = (struct einit_sexp *) sexp_nil;
-            einit_sexp_destroy(sexp);
+            if (t) {
+                struct einit_sexp *rv = (struct einit_sexp *)(t->value);
+//                fprintf (stderr, "REPLY FOR REQUEST: %s, REPLY=%s\n", r, einit_sexp_to_string(rv));
+//                efree (r);
 
-            fprintf (stderr, "REPLY FOR REQUEST: %s\n", request);
-
-            return res;
+                return rv;
+            }// else {
+//                fprintf (stderr, "NO REPLY FOR REQUEST: %s [id=%i]\n", r, id);
+//            }
         }
     }
 
     return (struct einit_sexp *) sexp_bad;
 }
+
+struct einit_sexp *einit_ipc_request(const char *rq, struct einit_sexp *payload)
+{
+    struct einit_sexp *req =
+        se_cons (se_symbol ("request"),
+        se_cons (se_symbol (rq),
+        se_cons (se_integer (einit_ipc_current_id++),
+        se_cons (payload,
+                 (struct einit_sexp *)sexp_end_of_list))));
+
+    return einit_ipc_request_sexp_raw(req);
+}
+
