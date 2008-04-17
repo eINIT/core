@@ -491,17 +491,26 @@ void einit_config_xml_expat_event_handler_core_update_configuration(struct
                     einit_config_xml_expat_parse_configuration_file
                         (xml_configuration_files[i]);
                 }
-                ev->chain_type = einit_core_configuration_update;
 
-                break;
+                goto update;
             }
         }
     }
 
     if (ev->string) {
         einit_config_xml_expat_parse_configuration_file(ev->string);
-        ev->chain_type = einit_core_configuration_update;
+
+        goto update;
     }
+
+    return;
+
+    update:
+    {
+        struct einit_event se = evstaticinit (einit_event_subsystem_any);
+        event_emit (&se, 0);
+    }
+
 }
 
 extern char **einit_startup_configuration_files;

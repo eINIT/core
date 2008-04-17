@@ -306,16 +306,12 @@ extern "C" {
         einit_laptop_lid_closed = einit_event_subsystem_laptop | 0x002
     };
 
-#define evstaticinit(ttype) { ttype, 0, NULL, NULL, 0, 0, 0, 0, NULL, { NULL }, NULL }
+#define evstaticinit(ttype) { ttype, NULL, NULL, 0, 0, 0, 0, NULL, { NULL }, NULL }
 #define evstaticdestroy(ev) { }
 
     struct einit_event {
         enum einit_event_code type;     /* !< the event or subsystem to
                                          * watch */
-        enum einit_event_code chain_type;
-        /*
-         * !< the event to be called right after this one 
-         */
 
         void **set;             /* !< a set that should make sense in
                                  * combination with the event type */
@@ -362,7 +358,7 @@ extern "C" {
         void (*handler) (struct einit_event *);
     };
 
-    void *event_emit(struct einit_event *, enum einit_event_emit_flags);
+    void event_emit(struct einit_event *, enum einit_event_emit_flags);
     void event_listen(enum einit_event_subsystems,
                       void (*)(struct einit_event *));
     void event_ignore(enum einit_event_subsystems,

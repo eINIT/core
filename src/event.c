@@ -55,11 +55,11 @@
 
 struct itree *event_handlers = NULL;
 
-void *event_emit(struct einit_event *event,
-                 enum einit_event_emit_flags flags)
+void event_emit(struct einit_event *event,
+                enum einit_event_emit_flags flags)
 {
     if (!event || !event->type)
-        return NULL;
+        return;
 
     if (flags & einit_event_flag_remote) {
         const char *s = einit_event_encode (event);
@@ -71,74 +71,58 @@ void *event_emit(struct einit_event *event,
 
         fcntl(fd, F_SETFL, O_NONBLOCK);
 
-        if (!r || r < 0) return NULL;
+        if (!r || r < 0) return;
         if (r < len) {
             fprintf (stderr, "BAD EVENT! tried to write %d bytes,"
                              " but only wrote %d bytes\n", len, r);
         }
 
-        return NULL;
+        return;
     }
 
-    struct event_function **f = NULL;
+    void (*handler)(struct einit_event *);
+    struct event_function *f = NULL;
     uint32_t subsystem = event->type & EVENT_SUBSYSTEM_MASK;
 
     if (event_handlers) {
         struct itree *it = NULL;
 
+        it = itreefind(event_handlers, einit_event_subsystem_any,
+                       tree_find_first);
+
+        while (it) {
+            f = ((struct event_function *)it->data);
+            handler = f->handler;
+
+            it = itreefind(it, einit_event_subsystem_any, tree_find_next);
+
+            handler(event);
+        }
+
         if (event->type != subsystem) {
             it = itreefind(event_handlers, event->type, tree_find_first);
 
             while (it) {
-                f = (struct event_function **) set_fix_add((void **) f,
-                                                           it->data,
-                                                           sizeof(struct
-                                                                  event_function));
+                f = ((struct event_function *)it->data);
+                handler = f->handler;
 
                 it = itreefind(it, event->type, tree_find_next);
+                f->handler(event);
             }
         }
 
         it = itreefind(event_handlers, subsystem, tree_find_first);
 
         while (it) {
-            f = (struct event_function **) set_fix_add((void **) f,
-                                                       it->data,
-                                                       sizeof(struct
-                                                              event_function));
+            f = ((struct event_function *)it->data);
+            handler = f->handler;
 
             it = itreefind(it, subsystem, tree_find_next);
-        }
-
-        it = itreefind(event_handlers, einit_event_subsystem_any,
-                       tree_find_first);
-
-        while (it) {
-            f = (struct event_function **) set_fix_add((void **) f,
-                                                       it->data,
-                                                       sizeof(struct
-                                                              event_function));
-
-            it = itreefind(it, einit_event_subsystem_any, tree_find_next);
+            f->handler(event);
         }
     }
 
-    if (f) {
-        int i = 0;
-        for (; f[i]; i++) {
-            f[i]->handler(event);
-        }
-
-        efree(f);
-    }
-
-    if (event->chain_type) {
-        event->type = event->chain_type;
-        event->chain_type = 0;
-        event_emit(event, flags);
-    }
-
-    return NULL;
+    return;
 }
 
 void event_listen(enum einit_event_subsystems type,
