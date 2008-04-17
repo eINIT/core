@@ -120,25 +120,9 @@ void einit_ipc_library_receive_events(struct einit_sexp *sexp, int id,
     if (sexp->type == es_symbol) {
         if (strmatch (sexp->symbol, "replay-only")
             || strmatch (sexp->symbol, "backlog")) {
-            for (cd->current_event = 0;
-                 einit_event_backlog[cd->current_event];
-                 cd->current_event++) {
+            cd->current_event = 0;
 
-                int len = strlen (einit_event_backlog[cd->current_event]), r;
-
-                fcntl(reader->fd, F_SETFL, 0);
-
-                r = write (reader->fd,
-                           einit_event_backlog[cd->current_event],
-                           len);
-
-                fcntl(reader->fd, F_SETFL, O_NONBLOCK);
-
-                if ((r < 0) || (r == 0)) break;
-                if (r < len) {
-                    fprintf (stderr, "TOOT TOOT!\n");
-                }
-            }
+            einit_ipc_update_event_listeners ();
 
             if (strmatch (sexp->symbol, "replay-only")) {
                 cd->current_event = -1;

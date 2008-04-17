@@ -376,9 +376,13 @@ void einit_ipc_update_event_listeners ()
     while (c) {
         struct einit_sexp_fd_reader *reader = c->reader;
 
-        if (c->current_event > 0) {
+        if (c->current_event >= 0) {
             for (; einit_event_backlog[c->current_event]; c->current_event++) {
                 int len = strlen (einit_event_backlog[c->current_event]), r;
+
+/*                if (coremode & einit_mode_sandbox) {
+                    fprintf (stderr, "%s\n", einit_event_backlog[c->current_event]);
+                }*/
 
                 /*
                  * we're escaping the non-blocking mode for sheer ease-of-use

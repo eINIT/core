@@ -71,6 +71,7 @@ extern "C" {
     char einit_ipc_loop();
 
     void einit_ipc_loop_infinite();
+    void einit_ipc_update_event_listeners ();
 
     int einit_ipc_get_fd();
 

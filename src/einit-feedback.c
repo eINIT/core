@@ -118,6 +118,10 @@ void set_module_status(char *name, enum einit_module_status status)
             s.name = name;
         }
 
+        if (streefind(status_tree, name, tree_find_first)) {
+            return;
+        }
+
         status_tree = streeadd(status_tree, name, &s, sizeof(s), NULL);
     } else {
         struct module_status *s = e->value;
@@ -148,6 +152,10 @@ void set_module_progress(char *name, int p)
             einit_destroy_core_module_descriptor (lm);
         } else {
             s.name = name;
+        }
+
+        if (streefind(status_tree, name, tree_find_first)) {
+            return;
         }
 
         status_tree = streeadd(status_tree, name, &s, sizeof(s), NULL);
@@ -293,22 +301,6 @@ void display_status(char *rid)
 
         if (st) {
             struct module_status *s = st->value;
-
-            /*
-             * "[ working ]" 
-             */
-            /*
-             * "[ failed ]" 
-             */
-            /*
-             * "[ enabled ]" 
-             */
-            /*
-             * "[ OK ]" 
-             */
-            /*
-             * "[ diasbled ]" 
-             */
 
             char *name = st->key;
             if (s->name)

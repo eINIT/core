@@ -174,7 +174,8 @@ void einit_ipc_handle_sexp_event(struct einit_sexp *sexp)
     }
 
     if (ev) {
-//        fprintf(stderr, "EVENT, decoded, emitting\n");
+/*        fprintf(stderr, "EVENT, decoded, emitting: %s\n",
+                einit_event_encode(ev));*/
 
         event_emit(ev, 0);
         efree(ev);
