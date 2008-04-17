@@ -210,7 +210,7 @@ char einit_ipc_loop()
                 einit_ipc_replies = itreeadd (einit_ipc_replies, sexp->primus->integer, sexp->secundus->primus, tree_value_noalloc);
                 continue;
             }
-                
+
             if ((sexp->secundus->secundus->type == es_cons) &&
                 (sexp->secundus->secundus->secundus->type == es_cons) &&
                 (sexp->secundus->secundus->secundus->secundus->type == es_list_end) &&

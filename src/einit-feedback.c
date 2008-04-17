@@ -94,7 +94,7 @@ char *mode_to = "(none)";
 char **broken = NULL;
 char **unresolved = NULL;
 
-char show_notices = 0;
+char show_notices = 1;
 
 enum control_type control_mode = control_automatic;
 
