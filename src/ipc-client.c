@@ -203,9 +203,7 @@ char einit_ipc_loop()
             if ((sexp->primus->type == es_integer) &&
                 (sexp->secundus->secundus->type == es_list_end)) {
                 /* 2-tuple and starts with an integer: reply */
-                char *r = einit_sexp_to_string(sexp);
-//                fprintf(stderr, "REPLY: %s\n", r);
-                efree(r);
+                fprintf(stderr, "REPLY!\n");
 
 //                fprintf (stderr, "storing reply with id=%i\n", sexp->primus->integer);
 
@@ -221,10 +219,7 @@ char einit_ipc_loop()
                 /*
                  * 4-tuple: must be a request
                  */
-                char *r = einit_sexp_to_string(sexp);
-                fprintf(stderr, "REQUEST: %s\n", r);
-
-                efree(r);
+                fprintf(stderr, "REQUEST!\n");
 
                 /*
                  * TODO: still need to handle this somehow
@@ -247,10 +242,7 @@ char einit_ipc_loop()
             }
         }
 
-        r = einit_sexp_to_string(sexp);
-        fprintf(stderr, "BAD MESSAGE: (%i) \"%s\"\n", sexp->type, r);
-
-        efree(r);
+        fprintf(stderr, "BAD MESSAGE!\n");
 
         einit_sexp_destroy(sexp);
     }
