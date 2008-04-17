@@ -708,11 +708,6 @@ int main(int argc, char **argv, char **env)
     event_listen(einit_feedback_unresolved_services,
                  event_handler_unresolved_services);
 
-    fputs ("synchronising...\n", stderr);
-    einit_replay_events();
-    fputs ("synchronised...\n", stderr);
-    updatesok = 1;
-
     initscr();
     start_color();
     cbreak();
@@ -728,9 +723,9 @@ int main(int argc, char **argv, char **env)
     intrflush(stdscr, FALSE);
     keypad(stdscr, TRUE);
 
-    update_do ();
+    updatesok = 1;
 
-    einit_event_loop_skip_old();
+    einit_event_loop();
 
     endwin(); 
 
