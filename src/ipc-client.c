@@ -131,7 +131,10 @@ void einit_ipc_handle_sexp_event(struct einit_sexp *sexp)
             break;
         case seps_string:
             if (p->type == es_string) {
-                ev->string = (char *) p->string;
+                if (p->string[0])
+                    ev->string = (char *) p->string;
+                else
+                    ev->string = NULL;
             } else {
                 efree(ev);
                 return;
@@ -171,7 +174,7 @@ void einit_ipc_handle_sexp_event(struct einit_sexp *sexp)
     }
 
     if (ev) {
-        fprintf(stderr, "EVENT, decoded, emitting\n");
+//        fprintf(stderr, "EVENT, decoded, emitting\n");
 
         event_emit(ev, 0);
         efree(ev);
@@ -194,16 +197,16 @@ char einit_ipc_loop()
             continue;
         }
 
-        char *r = einit_sexp_to_string(sexp);
-        fprintf(stderr, "READ SEXP: (%i) \"%s\"\n", sexp->type, r);
+//        char *r = einit_sexp_to_string(sexp);
+//        fprintf(stderr, "READ SEXP: (%i) \"%s\"\n", sexp->type, r);
 
-        efree(r);
+//        efree(r);
 
         if ((sexp->type == es_cons) && (sexp->secundus->type == es_cons)) {
             if ((sexp->primus->type == es_integer) &&
                 (sexp->secundus->secundus->type == es_list_end)) {
                 /* 2-tuple and starts with an integer: reply */
-                fprintf(stderr, "REPLY!\n");
+//                fprintf(stderr, "REPLY!\n");
 
 //                fprintf (stderr, "storing reply with id=%i\n", sexp->primus->integer);
 
@@ -219,7 +222,7 @@ char einit_ipc_loop()
                 /*
                  * 4-tuple: must be a request
                  */
-                fprintf(stderr, "REQUEST!\n");
+//                fprintf(stderr, "REQUEST!\n");
 
                 /*
                  * TODO: still need to handle this somehow
@@ -233,7 +236,7 @@ char einit_ipc_loop()
             if ((sexp->primus->type == es_symbol)
                 && (strmatch(sexp->primus->symbol, "event"))) {
 
-                fprintf(stderr, "EVENT, decoding\n");
+//                fprintf(stderr, "EVENT, decoding\n");
 
                 einit_ipc_handle_sexp_event(sexp->secundus);
                 einit_sexp_destroy(sexp);
@@ -242,7 +245,7 @@ char einit_ipc_loop()
             }
         }
 
-        fprintf(stderr, "BAD MESSAGE!\n");
+//        fprintf(stderr, "BAD MESSAGE!\n");
 
         einit_sexp_destroy(sexp);
     }
