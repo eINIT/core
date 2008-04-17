@@ -507,7 +507,7 @@ void einit_config_xml_expat_event_handler_core_update_configuration(struct
 
     update:
     {
-        struct einit_event se = evstaticinit (einit_event_subsystem_any);
+        struct einit_event se = evstaticinit (einit_core_configuration_update);
         event_emit (&se, 0);
     }
 
