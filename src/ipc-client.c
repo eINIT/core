@@ -171,6 +171,8 @@ void einit_ipc_handle_sexp_event(struct einit_sexp *sexp)
     }
 
     if (ev) {
+        fprintf(stderr, "EVENT, decoded, emitting\n");
+
         event_emit(ev, 0);
         efree(ev);
     }
@@ -235,6 +237,9 @@ char einit_ipc_loop()
 
             if ((sexp->primus->type == es_symbol)
                 && (strmatch(sexp->primus->symbol, "event"))) {
+
+                fprintf(stderr, "EVENT, decoding\n");
+
                 einit_ipc_handle_sexp_event(sexp->secundus);
                 einit_sexp_destroy(sexp);
 
