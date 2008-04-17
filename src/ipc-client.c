@@ -192,6 +192,11 @@ char einit_ipc_loop()
             continue;
         }
 
+        char *r = einit_sexp_to_string(sexp);
+        fprintf(stderr, "READ SEXP: (%i) \"%s\"\n", sexp->type, r);
+
+        efree(r);
+
         if ((sexp->type == es_cons) && (sexp->secundus->type == es_cons)) {
             if ((sexp->primus->type == es_integer) &&
                 (sexp->secundus->secundus->type == es_list_end)) {
@@ -236,8 +241,8 @@ char einit_ipc_loop()
                 continue;
             }
         }
-        
-        char *r = einit_sexp_to_string(sexp);
+
+        r = einit_sexp_to_string(sexp);
         fprintf(stderr, "BAD MESSAGE: (%i) \"%s\"\n", sexp->type, r);
 
         efree(r);

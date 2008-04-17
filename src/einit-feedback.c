@@ -106,16 +106,16 @@ void set_module_status(char *name, enum einit_module_status status)
         struct module_status s;
 
         s.status = status;
-        s.name = einit_module_get_name(name);
         s.progress = 0;
 
-        char **t = einit_module_get_options(name);
-        if (t) {
-            s.feedback_job =
-                inset((const void **) t, "job-feedback", SET_TYPE_STRING);
-            efree(t);
+        struct lmodule *lm = einit_get_core_module_descriptor (name);
+
+        if (lm) {
+            s.name = lm->module->name;
+            s.feedback_job = (lm->module->mode & einit_feedback_job) ? 1 : 0;
+            einit_destroy_core_module_descriptor (lm);
         } else {
-            s.feedback_job = 0;
+            s.name = name;
         }
 
         status_tree = streeadd(status_tree, name, &s, sizeof(s), NULL);
@@ -138,13 +138,17 @@ void set_module_progress(char *name, int p)
         struct module_status s;
 
         s.status = status_idle;
-        s.name = einit_module_get_name(name);
-
-        char **t = einit_module_get_options(name);
-        s.feedback_job =
-            inset((const void **) t, "job-feedback", SET_TYPE_STRING);
-
         s.progress = p;
+
+        struct lmodule *lm = einit_get_core_module_descriptor (name);
+
+        if (lm) {
+            s.name = lm->module->name;
+            s.feedback_job = (lm->module->mode & einit_feedback_job) ? 1 : 0;
+            einit_destroy_core_module_descriptor (lm);
+        } else {
+            s.name = name;
+        }
 
         status_tree = streeadd(status_tree, name, &s, sizeof(s), NULL);
     } else {
