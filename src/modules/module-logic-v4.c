@@ -44,6 +44,8 @@
 #include <einit/bitch.h>
 
 #include <string.h>
+#include <unistd.h>
+#include <stdlib.h>
 
 int einit_module_logic_v4_configure(struct lmodule *);
 
