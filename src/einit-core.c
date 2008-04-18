@@ -537,7 +537,6 @@ int main(int argc, char **argv, char **environ)
     int i;
     // char crash_threshold = 5;
     char suppress_version = 0;
-    char do_wait = 0;
     int alarm_pipe[2];
     char *ipc_socket = NULL;
     int ipc_socket_fd;
@@ -748,8 +747,9 @@ int main(int argc, char **argv, char **environ)
         event_listen(einit_boot_root_device_ok,
                      core_event_einit_boot_root_device_ok);
     } else {
+        coremode |= einit_mode_ipconly;
         einit_ipc_run_server (ipc_socket);
     }
 
-    return einit_main_loop(!do_wait);
+     return einit_main_loop((coremode & einit_mode_ipconly) ? 0 : 1);
 }
