@@ -58,9 +58,11 @@ void help_preface(char *argv0)
     fprintf(stdout,
             "Usage: %s [options]\n\n"
             " :: Manipulating a running instance of eINIT (Live) ::\n"
+            " -l                   List services\n"
             " -e <service>         Enable <service>\n"
             " -d <service>         Disable <service>\n"
             " -c <service> <f>     Call Custom Hook <f> on <service>\n\n"
+            " -lm                  List modules\n"
             " -em <module>         Enable <module>\n"
             " -dm <module>         Disable <module>\n"
             " -cm <module> <f>     Call Custom Hook <f> on <module>\n\n"
@@ -68,16 +70,13 @@ void help_preface(char *argv0)
             " -R                   Reboot\n\n"
             " -m <mode>            Switch to <mode>\n\n"
             " -u [file]            Update Configuration/Add [file]\n\n"
-            " :: Raw 9p I/O ::\n" " [-]ls <path>         ls <path>\n"
-            " [-]read <path>       read <path>\n"
-            " [-]write <path> <t>  write <t> to <path>\n\n"
             " :: Advanced Options ::\n"
             " --wtf                Examine Configuration Files\n"
             " -q                   Force doing all calls on a running instance of eINIT\n"
             " -p                   Force doing all calls on a private instance of eINIT\n"
             " -L, --licence        Display Licence\n"
             " -v, --version        Display Version\n\n"
-            " -a <address>         Specify a custom 9p Address to use for IPC\n\n"
+            " -a <socket>          Specify a custom unix socket to use for IPC\n\n"
             " :: Core Help ::\n", argv0);
 }
 
@@ -95,6 +94,9 @@ int main(int argc, char **argv, char **env)
     char *c_mode = NULL;
     char c_down = 0;
     char c_reset = 0;
+
+    char o_lm = 0;
+    char o_l = 0;
 
     char o_cake = 0;
 
@@ -154,11 +156,16 @@ int main(int argc, char **argv, char **env)
             } else {
                 c_update = "update";
             }
+        } else if (strmatch(argv[i], "-l")) {
+            o_l = 1;
+        } else if (strmatch(argv[i], "-lm")) {
+            o_lm = 1;
         }
     }
 
     if (!c_version && !c_licence && !c_wtf && !c_service[0] && !c_module[0]
-        && !c_mode && !c_down && !c_reset && !o_cake && !c_update)
+        && !c_mode && !c_down && !c_reset && !o_cake && !c_update && !o_lm &&
+        !o_l)
         c_help = 1;
 
     if (o_cake) {
@@ -166,7 +173,7 @@ int main(int argc, char **argv, char **env)
     }
 
     if (c_mode || c_service[0] || c_module[0] || c_down || c_reset
-        || c_update) {
+        || c_update || o_lm || o_l) {
         if (!einit_connect(&argc, argv)) {
             perror("Could not connect to eINIT");
             exit(EXIT_FAILURE);
@@ -196,6 +203,28 @@ int main(int argc, char **argv, char **env)
             /*
              * FIXME 
              */
+        }
+
+        if (o_lm) {
+            char **modules = einit_list_modules();
+
+            if (modules) {
+                int i = 0;
+                for (; modules[i]; i++) {
+                    fprintf (stdout, " * %s\n", modules[i]);
+                }
+            }
+        }
+
+        if (o_l) {
+            char **services = einit_list_services();
+
+            if (services) {
+                int i = 0;
+                for (; services[i]; i++) {
+                    fprintf (stdout, " * %s\n", services[i]);
+                }
+            }
         }
 
         einit_disconnect();

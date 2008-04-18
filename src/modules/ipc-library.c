@@ -180,16 +180,38 @@ void einit_ipc_library_register_module_actions(struct einit_sexp *sexp, int id,
 void einit_ipc_library_list(struct einit_sexp *sexp, int id,
                             struct einit_ipc_connection *cd)
 {
-    if (sexp->type == es_symbol) {
-        if (strmatch (sexp->symbol, "modules")) {
-        } else {
-          goto bad_request;
-        }
-    } else {
-        bad_request:
+    struct einit_sexp_fd_reader *reader = cd->reader;
 
-        einit_ipc_reply_simple (id, "#f", cd);
+    if (sexp->type == es_symbol) {
+        char **l = NULL;
+
+        if (strmatch (sexp->symbol, "modules")) {
+            l = mod_list_all_available_modules();
+        }
+
+        if (strmatch (sexp->symbol, "services")) {
+            l = mod_list_all_available_services();
+        }
+
+        if (l) {
+            char *m = set2str (' ', (const char **)l);
+
+            if (m) {
+                int size = strlen (m) + 38; /* 32 for the int, just in case */
+                char buffer[size];
+
+                snprintf (buffer, size, "(%i (%s))", id, m);
+
+                fcntl(reader->fd, F_SETFL, 0);
+                write (reader->fd, buffer, strlen(buffer));
+                fcntl(reader->fd, F_SETFL, O_NONBLOCK);
+
+                return;
+            }
+        }
     }
+
+    einit_ipc_reply_simple (id, "#f", cd);
 }
 
 /*

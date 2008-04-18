@@ -176,6 +176,9 @@ extern "C" {
     char **einit_get_configuration_attributes(const char *key);
     char ***einit_get_configuration_prefix(const char *prefix);
 
+    char **einit_list_modules ();
+    char **einit_list_services ();
+
 #ifdef __cplusplus
 }
 #endif

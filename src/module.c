@@ -1073,7 +1073,24 @@ struct lmodule **mod_list_all_enabled_modules()
 
 char **mod_list_all_available_services()
 {
-    return NULL;
+    char **rv = NULL;
+
+    struct lmodule *module = mlist;
+    while (module) {
+        if (module->si && module->si->provides) {
+            int i = 0;
+            for (; module->si->provides[i]; i++) {
+                if (!inset ((const void **)rv, module->si->provides[i],
+                            SET_TYPE_STRING))
+
+                    rv = set_str_add_stable (rv, module->si->provides[i]);
+            }
+        }
+
+        module = module->next;
+    }
+
+    return rv;
 }
 
 char **mod_list_all_available_modules()

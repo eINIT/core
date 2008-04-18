@@ -112,7 +112,7 @@ void einit_switch_mode(const char *mode)
 }
 
 /*
- * client 
+ * client
  */
 
 const char *einit_ipc_address = DEFAULT_EINIT_ADDRESS;
@@ -253,12 +253,8 @@ char *einit_module_get_name(const char *rid)
         char *rv = lm->module->name;
         einit_destroy_core_module_descriptor (lm);
 
-//        fprintf (stderr, "name: %s\n", rv);
-
         return rv;
     } else {
-//        fprintf (stderr, "no name: %s\n", rid);
-
         return NULL;
     }
 }
@@ -426,9 +422,6 @@ struct smodule *einit_decode_module_from_sexpr(struct einit_sexp *sexp)
 
                     sm->rid = (char*)(p->symbol);
                 } else {
-
-//                    fprintf (stderr, "breaking (rid)\n");
-
                     return NULL;
                 }
                 break;
@@ -438,9 +431,6 @@ struct smodule *einit_decode_module_from_sexpr(struct einit_sexp *sexp)
                     sm->name = (char*)(p->string);
                 } else {
                     efree (sm);
-
-//                    fprintf (stderr, "breaking (name)\n");
-
                     return NULL;
                 }
                 break;
@@ -455,9 +445,6 @@ struct smodule *einit_decode_module_from_sexpr(struct einit_sexp *sexp)
                                 (char *) pp->symbol);
                     } else {
                         efree (sm);
-
-//                        fprintf (stderr, "breaking (provides)\n");
-
                         return NULL;
                     }
 
@@ -475,8 +462,6 @@ struct smodule *einit_decode_module_from_sexpr(struct einit_sexp *sexp)
                                 (char *) pp->symbol);
                     } else {
                         efree (sm);
-//                        fprintf (stderr, "breaking (requires)\n");
-
                         return NULL;
                     }
 
@@ -494,8 +479,6 @@ struct smodule *einit_decode_module_from_sexpr(struct einit_sexp *sexp)
                                 (char *) pp->string);
                     } else {
                         efree (sm);
-//                        fprintf (stderr, "breaking (before)\n");
-
                         return NULL;
                     }
 
@@ -514,7 +497,6 @@ struct smodule *einit_decode_module_from_sexpr(struct einit_sexp *sexp)
                     } else {
                         efree (sm);
 
-//                        fprintf (stderr, "breaking (after)\n");
                         return NULL;
                     }
 
@@ -532,8 +514,6 @@ struct smodule *einit_decode_module_from_sexpr(struct einit_sexp *sexp)
                                 (char *) pp->symbol);
                     } else {
                         efree (sm);
-                        
-//                        fprintf (stderr, "breaking (uses)\n");
 
                         return NULL;
                     }
@@ -617,6 +597,10 @@ void einit_register_module(struct smodule *s)
 char *einit_get_configuration_string(const char *key,
                                      const char *attribute)
 {
+    if (!attribute) attribute = "s";
+
+    
+
     return NULL;
 }
 
@@ -652,4 +636,42 @@ char **einit_get_configuration_attributes(const char *key)
 char ***einit_get_configuration_prefix(const char *prefix)
 {
     return NULL;
+}
+
+char **einit_list (char *r)
+{
+    struct einit_sexp *s = einit_ipc_request ("list", se_symbol(r));
+    struct einit_sexp *p = s;
+    char ** rv = NULL;
+
+    if (!s) return NULL;
+
+    while (p->type == es_cons) {
+        struct einit_sexp *pp = p->primus;
+
+        if (pp->type == es_symbol) {
+            rv = set_str_add_stable(rv, (char *) pp->symbol);
+        } else {
+            efree (rv);
+            einit_sexp_destroy (s);
+
+            return NULL;
+        }
+
+        p = p->secundus;
+    }
+
+    einit_sexp_destroy (s);
+
+    return rv;
+}
+
+char **einit_list_modules ()
+{
+    return einit_list("modules");
+}
+
+char **einit_list_services ()
+{
+    return einit_list("services");
 }
