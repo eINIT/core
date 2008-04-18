@@ -79,6 +79,8 @@ static struct einit_sexp *einit_parse_sexp_in_buffer_with_buffer(char
     char *stbuffer = emalloc(stop - (*index));
     int sb_pos = 0;
 
+//    fprintf (stderr, "parsing string\n");
+
     for (; (*index) < stop; (*index)++) {
         if (buffertype == esr_string) {
             if (sc_quote) {
@@ -148,6 +150,8 @@ static struct einit_sexp *einit_parse_sexp_in_buffer(char *buffer,
 {
     struct einit_sexp *rv = NULL;
 
+//    fprintf (stderr, "parsing buffer\n");
+
     for (; (*index) < stop; (*index)++) {
         if ((buffer[*index]) && !isspace(buffer[*index])) {
             if (isdigit(buffer[*index])) {
@@ -188,6 +192,12 @@ static struct einit_sexp *einit_parse_sexp_in_buffer(char *buffer,
                         tmp =
                             einit_parse_sexp_in_buffer(buffer, index,
                                                        stop);
+
+                        if (!tmp) { /* catch incompletely read sexprs */
+                            ccons->secundus = sexp_end_of_list; 
+                            einit_sexp_destroy(rv);
+                            return NULL;
+                        }
 
                         if (tmp != sexp_end_of_list) {
                             ccons->secundus = einit_sexp_create(es_cons);
@@ -232,6 +242,7 @@ static int einit_read_sexp_from_fd_reader_fill_buffer(struct
         reader->size += MIN_CHUNK_SIZE;
 
         reader->buffer = erealloc(reader->buffer, reader->size);
+//        fprintf (stderr, "buffer size: %i\n", reader->size);
     }
     // fprintf (stderr, "reading from fd: %i\n", reader->fd);
 

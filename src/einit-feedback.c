@@ -578,12 +578,12 @@ void event_handler_mode_switch_done(struct einit_event *ev)
 void event_handler_update_module_status(struct einit_event *ev)
 {
     if (ev->rid) {
-        set_module_status(ev->rid, ev->status);
-
         if (ev->string)
             add_text_buffer_entry(ev->rid, ev->string);
         else
             add_text_buffer_entry(ev->rid, "status");
+
+        set_module_status(ev->rid, ev->status);
 
         if (ev->flag)
             set_module_progress(ev->rid, ev->flag);
