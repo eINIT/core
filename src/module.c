@@ -64,9 +64,6 @@ struct stree *service_usage = NULL;
 
 struct lmodule *mod_update(struct lmodule *module)
 {
-    if (!module->module)
-        return module;
-
     struct service_information *original_data = NULL;
 
     if (module->module->si.provides || module->module->si.requires
@@ -283,9 +280,7 @@ struct einit_event *mod_initialise_feedback_event(struct lmodule *module,
     struct einit_event *fb = evinit(einit_feedback_module_status);
     fb->task = task;
     fb->status = status_working;
-
-    if (module && module->module && module->module->rid)
-        fb->rid = module->module->rid;
+    fb->rid = module->module->rid;
 
     return fb;
 }
@@ -310,9 +305,7 @@ void mod_emit_pre_hook_event(struct lmodule *module,
         struct einit_event ees = evstaticinit(einit_core_service_update);
         ees.task = task;
         ees.status = status_working;
-        ees.string = (module->module
-                      && module->module->rid) ? module->module->
-            rid : module->si->provides[0];
+        ees.string = module->module->rid;
         ees.set = (void **) module->si->provides;
         ees.para = (void *) module;
         event_emit(&ees, 0);
@@ -335,8 +328,7 @@ void mod_completion_handler(struct lmodule *module, struct einit_event *fb,
     struct einit_event ees = evstaticinit(einit_core_service_update);
     ees.task = task;
     ees.status = fb->status;
-    ees.string = (module->module
-                  && module->module->rid) ? module->module->rid : "??";
+    ees.string = module->module->rid;
     ees.set =
         (void **) ((module->si && module->si->provides) ? module->si->
                    provides : nserv);
@@ -353,8 +345,7 @@ void mod_completion_handler_no_change(struct lmodule *module,
     struct einit_event ees = evstaticinit(einit_core_service_update);
     ees.task = task;
     ees.status = module->status;
-    ees.string = (module->module
-                  && module->module->rid) ? module->module->rid : "??";
+    ees.string = module->module->rid;
     ees.set =
         (void **) ((module->si && module->si->provides) ? module->si->
                    provides : nserv);
@@ -440,9 +431,6 @@ int mod(enum einit_module_task task, struct lmodule *module,
 {
     struct einit_event *fb;
     unsigned int ret;
-
-    if (!module || !module->module)
-        return 0;
 
     if (task & einit_module_custom) {
         if (!custom_command) {
@@ -616,8 +604,7 @@ struct lmodule *mod_lookup_rid(const char *rid)
 
     struct lmodule *module = mlist;
     while (module) {
-        if (module->module && module->module->rid
-            && strmatch(module->module->rid, rid)) {
+        if (strmatch(module->module->rid, rid)) {
             break;
         }
 
@@ -632,13 +619,13 @@ char *mod_lookup_pid(pid_t pid)
     struct lmodule *module = mlist;
     while (module) {
         if (module->pid == pid) {
-            break;
+            return module->module->rid;
         }
 
         module = module->next;
     }
 
-    return (module && module->module) ? module->module->rid : NULL;
+    return NULL;
 }
 
 void mod_update_pids()
@@ -1082,4 +1069,23 @@ struct lmodule **mod_list_all_enabled_modules()
         m = m->next;
     }
     return ret;
+}
+
+char **mod_list_all_available_services()
+{
+    return NULL;
+}
+
+char **mod_list_all_available_modules()
+{
+    char **rv = NULL;
+
+    struct lmodule *module = mlist;
+    while (module) {
+        rv = set_str_add_stable (rv, module->module->rid);
+
+        module = module->next;
+    }
+
+    return rv;
 }

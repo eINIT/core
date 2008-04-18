@@ -394,6 +394,9 @@ extern "C" {
     struct lmodule **mod_get_all_users_of_service(char *service);
     struct lmodule **mod_get_all_providers(char *service);
 
+    char **mod_list_all_available_services();
+    char **mod_list_all_available_modules();
+
     /*
      * !\} 
      */

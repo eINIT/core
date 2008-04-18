@@ -115,8 +115,6 @@ void einit_ipc_library_stub(struct einit_sexp *sexp, int id,
 void einit_ipc_library_receive_events(struct einit_sexp *sexp, int id,
                                       struct einit_ipc_connection *cd)
 {
-    struct einit_sexp_fd_reader *reader = cd->reader;
-
     if (sexp->type == es_symbol) {
         if (strmatch (sexp->symbol, "replay-only")
             || strmatch (sexp->symbol, "backlog")) {
@@ -182,7 +180,16 @@ void einit_ipc_library_register_module_actions(struct einit_sexp *sexp, int id,
 void einit_ipc_library_list(struct einit_sexp *sexp, int id,
                             struct einit_ipc_connection *cd)
 {
-    einit_ipc_library_stub(sexp, id, cd);
+    if (sexp->type == es_symbol) {
+        if (strmatch (sexp->symbol, "modules")) {
+        } else {
+          goto bad_request;
+        }
+    } else {
+        bad_request:
+
+        einit_ipc_reply_simple (id, "#f", cd);
+    }
 }
 
 /*
@@ -210,8 +217,12 @@ void einit_ipc_library_get_module(struct einit_sexp *sexp, int id,
                 se_cons(se_stringset_to_list(lm->si ? lm->si->before : NULL),
                 se_cons(se_stringset_to_list(lm->si ? lm->si->after : NULL),
                 se_cons(se_symbolset_to_list(lm->si ? lm->si->uses : NULL),
-                se_cons(se_symbol("#f"),
-                se_cons(se_symbol("#f"),
+                se_cons((struct einit_sexp *)
+                          ((lm->module->mode & einit_feedback_job) ?
+                             sexp_true : sexp_false),
+                se_cons((struct einit_sexp *)
+                          ((lm->module->mode & einit_module_deprecated) ?
+                             sexp_true : sexp_false),
                 se_cons((struct einit_sexp *)sexp_end_of_list,
                 se_cons((struct einit_sexp *)sexp_end_of_list,
                         (struct einit_sexp *)sexp_end_of_list))))))))))),
