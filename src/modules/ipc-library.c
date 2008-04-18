@@ -42,6 +42,7 @@
 #include <einit/module.h>
 #include <einit/config.h>
 #include <einit/bitch.h>
+#include <einit/einit.h>
 #include <errno.h>
 #include <string.h>
 
@@ -290,7 +291,15 @@ void einit_ipc_library_get_configuration_a(struct einit_sexp *sexp, int id,
 void einit_ipc_library_register_module(struct einit_sexp *sexp, int id,
                                        struct einit_ipc_connection *cd)
 {
-    einit_ipc_library_stub(sexp, id, cd);
+    struct smodule *sm = einit_decode_module_from_sexpr(sexp);
+
+    if (sm) {
+        mod_add_or_update (NULL, sm, substitue_and_prune);
+        einit_ipc_reply_simple (id, "#t", cd);
+        return;
+    }
+
+    einit_ipc_reply_simple (id, "#f", cd);
 }
 
 void einit_ipc_library_register_module_actions(struct einit_sexp *sexp, int id,

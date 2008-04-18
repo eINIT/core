@@ -592,6 +592,23 @@ void einit_destroy_core_module_descriptor (struct lmodule *lm)
 
 void einit_register_module(struct smodule *s)
 {
+    struct einit_sexp *sp = 
+                se_cons(se_symbol (s->rid),
+                se_cons(se_string (s->name),
+                se_cons(se_symbolset_to_list(s->si.provides),
+                se_cons(se_symbolset_to_list(s->si.requires),
+                se_cons(se_stringset_to_list(s->si.before),
+                se_cons(se_stringset_to_list(s->si.after),
+                se_cons(se_symbolset_to_list(s->si.uses),
+                se_cons((struct einit_sexp *)
+                          ((s->mode & einit_feedback_job) ?
+                             sexp_true : sexp_false),
+                se_cons((struct einit_sexp *)
+                          ((s->mode & einit_module_deprecated) ?
+                             sexp_true : sexp_false),
+                        (struct einit_sexp *)sexp_end_of_list)))))))));
+
+    einit_ipc_request ("register-module", sp);
 }
 
 char *einit_get_configuration_string(const char *key,
