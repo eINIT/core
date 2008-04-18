@@ -75,7 +75,7 @@ void einit_sigint(int signal, siginfo_t * siginfo, void *context)
         kill(send_sigint_pid, SIGINT);
 }
 
-int run_core(int argc, char **argv, char **env, int command_pipe)
+int run_core(int argc, char **argv, char **env, int ipcsocket)
 {
     char *narg[argc + 8];
     int i = 0;
@@ -85,11 +85,11 @@ int run_core(int argc, char **argv, char **env, int command_pipe)
         narg[i] = argv[i];
     }
 
-    if (command_pipe) {
-        narg[i] = "--command-pipe";
+    if (ipcsocket) {
+        narg[i] = "--socket";
         i++;
 
-        snprintf(tmp1, BUFFERSIZE, "%i", command_pipe);
+        snprintf(tmp1, BUFFERSIZE, "%i", ipcsocket);
         narg[i] = tmp1;
         i++;
     }
@@ -103,29 +103,26 @@ int run_core(int argc, char **argv, char **env, int command_pipe)
 
 int einit_monitor_loop(int argc, char **argv, char **env)
 {
-    int commandpipe[2];
+    int ipcsocket[2];
     pid_t core_pid;
 
-    pipe(commandpipe);
-    // socketpair (AF_UNIX, SOCK_STREAM, 0, commandpipe);
-    fcntl(commandpipe[1], F_SETFD, FD_CLOEXEC);
+    socketpair (AF_UNIX, SOCK_STREAM, 0, ipcsocket);
 
     core_pid = fork();
 
     switch (core_pid) {
     case 0:
-        close(commandpipe[1]);
-        run_core(argc, argv, env, commandpipe[0]);
+        close(ipcsocket[1]);
+        run_core(argc, argv, env, ipcsocket[0]);
     case -1:
         perror("einit-monitor: couldn't fork()");
         sleep(1);
-        close(commandpipe[0]);
-        close(commandpipe[1]);
+        close(ipcsocket[0]);
+        close(ipcsocket[1]);
 
         return einit_monitor_loop(argc, argv, env);
     default:
-        close(commandpipe[0]);
-
+        close(ipcsocket[0]);
         send_sigint_pid = core_pid;
         break;
     }
@@ -137,7 +134,7 @@ int einit_monitor_loop(int argc, char **argv, char **env)
                                                  * ANY process */
 
         if (wpid == core_pid) {
-            close(commandpipe[1]);
+            close(ipcsocket[1]);
 
             if (WIFEXITED(rstatus)
                 && (WEXITSTATUS(rstatus) != einit_exit_status_die_respawn)) {
@@ -190,7 +187,7 @@ int einit_monitor_loop(int argc, char **argv, char **env)
             snprintf(buffer, BUFFERSIZE, PID_TERMINATED_EVENT, wpid);
             len = strlen(buffer);
 
-            if (write(commandpipe[1], buffer, len) < len) {
+            if (write(ipcsocket[1], buffer, len) < len) {
                 perror("couldn't write data");
             }
         }

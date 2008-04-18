@@ -149,53 +149,6 @@ void core_einit_core_module_action_complete(struct einit_event *ev)
         mod_complete(ev->rid, ev->task, ev->status);
 }
 
-void einit_process_raw_event(int fd)
-{
-    static char epre_buffer[BUFFERSIZE];
-    static ssize_t epre_offset = 0;
-    ssize_t r;
-    int i = 0;
-
-    if ((r =
-         read(fd, epre_buffer + epre_offset,
-              BUFFERSIZE - 1 - epre_offset)) > 0) {
-        epre_offset += r;
-
-        /*
-         * fprintf (stderr, "\n.\nthis is what's in my buffer:\n**\n");
-         * write (2, epre_buffer, epre_offset); fprintf (stderr, "\n.\n");
-         */
-
-      retry:
-
-        for (i = 0; i <= epre_offset; i++) {
-            if ((i > 3) && (epre_buffer[i - 2] == '\n')
-                && (epre_buffer[i - 1] == '.')
-                && (epre_buffer[i] == '\n')) {
-                epre_buffer[i] = 0;
-                epre_buffer[i - 1] = 0;
-                epre_buffer[i - 2] = 0;
-
-                if (epre_buffer[0])
-                    /*
-                     * einit_event_loop_decoder (epre_buffer, i, NULL); 
-                     */
-                    /*
-                     * FIXME 
-                     */
-
-                    if (epre_offset - i + 1) {
-                        memmove(epre_buffer, epre_buffer + i + 1,
-                                epre_offset - i + 1);
-                    }
-                epre_offset -= (i + 1);
-
-                goto retry;
-            }
-        }
-    }
-}
-
 stack_t signalstack;
 
 void sched_signal_sigint(int, siginfo_t *, void *);
@@ -459,18 +412,9 @@ void einit_add_fd_handler_function(void (*fdhandle) (fd_set *))
     einit_fd_handler_functions = c;
 }
 
-struct einit_sexp_fd_reader *einit_raw_ipc_reader = NULL;
-
 int einit_raw_ipc_prepare(fd_set * rfds)
 {
     int rv = 0;
-
-    if (einit_raw_ipc_reader) {
-        FD_SET(einit_raw_ipc_reader->fd, rfds);
-
-        if (einit_raw_ipc_reader->fd > rv)
-            rv = einit_raw_ipc_reader->fd;
-    }
 
     if (einit_alarm_pipe_read != -1) {
         FD_SET(einit_alarm_pipe_read, rfds);
@@ -484,12 +428,6 @@ int einit_raw_ipc_prepare(fd_set * rfds)
 
 void einit_raw_ipc_handle(fd_set * rfds)
 {
-    if (einit_raw_ipc_reader && FD_ISSET(einit_raw_ipc_reader->fd, rfds)) {
-        if (einit_ipx_sexp_handle_fd(einit_raw_ipc_reader)) {
-            einit_raw_ipc_reader = NULL;
-        }
-    }
-
     if ((einit_alarm_pipe_read != -1)
         && FD_ISSET(einit_alarm_pipe_read, rfds)) {
         char buffer[BUFFERSIZE];
@@ -601,6 +539,8 @@ int main(int argc, char **argv, char **environ)
     char suppress_version = 0;
     char do_wait = 0;
     int alarm_pipe[2];
+    char *ipc_socket = NULL;
+    int ipc_socket_fd;
 
 #if defined(__linux__) && defined(PR_SET_NAME)
     prctl(PR_SET_NAME, "einit [core]", 0, 0, 0);
@@ -661,14 +601,12 @@ int main(int argc, char **argv, char **environ)
                         einit_default_startup_configuration_files[0]++;
 
                     coremode |= einit_mode_sandbox;
-                } else if (strmatch(argv[i], "--command-pipe")) {
-                    einit_raw_ipc_reader =
-                        einit_create_sexp_fd_reader(parse_integer
-                                                    (argv[i + 1]));
-
+                } else if (strmatch(argv[i], "--ipc")) {
+                    ipc_socket = argv[i+1];
                     i++;
-                } else if (strmatch(argv[i], "--do-wait")) {
-                    do_wait = 1;
+                } else if (strmatch(argv[i], "--socket") && argv[i+1]) {
+                    ipc_socket_fd = parse_integer(argv[i+1]);
+                    i++;
                 }
 
                 break;
@@ -799,12 +737,18 @@ int main(int argc, char **argv, char **environ)
     event_emit(&update_event, 0);
     evstaticdestroy(update_event);
 
-    if (!do_wait) {
+    if (ipc_socket_fd) {
+        einit_ipc_connect_client(ipc_socket_fd);
+    }
+
+    if (!ipc_socket) {
         /*
          * actual init code 
          */
         event_listen(einit_boot_root_device_ok,
                      core_event_einit_boot_root_device_ok);
+    } else {
+        einit_ipc_run_server (ipc_socket);
     }
 
     return einit_main_loop(!do_wait);

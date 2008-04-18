@@ -83,6 +83,9 @@ extern "C" {
 
     char ** einit_event_backlog;
 
+    char einit_ipc_run_server(char *socket);
+    void einit_ipc_connect_client(int fd);
+
 #endif
 
 #ifdef __cplusplus

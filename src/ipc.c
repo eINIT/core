@@ -53,7 +53,7 @@
 #include <einit/ipc.h>
 
 struct einit_ipc_connection *einit_ipc_connections = NULL;
-
+char *einit_ipc_socket;
 int einit_ipc_sexp_fd = -1;
 
 struct einit_ipc_handler {
@@ -222,9 +222,7 @@ void einit_ipx_sexp_handle_connect()
     if (fd < 0)
         return;
 
-    struct einit_sexp_fd_reader *rd = einit_create_sexp_fd_reader(fd);
-
-    einit_ipc_add_connection (0, rd);
+    einit_ipc_connect_client(fd);
 }
 
 int einit_ipc_sexp_prepare(fd_set * rfds)
@@ -294,54 +292,7 @@ char einit_ipx_sexp_prepare_fd()
 
     unlink(address);
 
-    einit_ipc_sexp_fd = socket(PF_UNIX, SOCK_STREAM, 0);
-
-    if (einit_ipc_sexp_fd < 0) {
-        perror("socket()");
-        return 0;
-    }
-
-    struct sockaddr_un addr = {.sun_family = AF_UNIX };
-    snprintf(addr.sun_path, sizeof(addr.sun_path), "%s", address);
-
-    if (bind
-        (einit_ipc_sexp_fd, (const struct sockaddr *) &addr,
-         sizeof(struct sockaddr_un)) < 0) {
-        perror("bind()");
-        close(einit_ipc_sexp_fd);
-        einit_ipc_sexp_fd = -1;
-        return 0;
-    }
-
-    if (listen(einit_ipc_sexp_fd, 10) < 0) {
-        perror("listen()");
-        close(einit_ipc_sexp_fd);
-        einit_ipc_sexp_fd = -1;
-        return 0;
-    }
-
-    fcntl(einit_ipc_sexp_fd, F_SETFL, O_NONBLOCK);
-    fcntl(einit_ipc_sexp_fd, F_SETFD, FD_CLOEXEC);
-
-    char *group = cfg_getstring("subsystem-ipc-9p/group", NULL);
-    char *chmod_i = cfg_getstring("subsystem-ipc-9p/chmod", NULL);
-
-    if (!group)
-        group = "einit";
-    if (!chmod_i)
-        chmod_i = "0660";
-    mode_t smode = parse_integer(chmod_i);
-
-    gid_t g;
-    lookupuidgid(NULL, &g, NULL, group);
-
-    chown(address, 0, g);
-    chmod(address, smode);
-
-    einit_add_fd_prepare_function(einit_ipc_sexp_prepare);
-    einit_add_fd_handler_function(einit_ipc_sexp_handle);
-
-    return 1;
+    return einit_ipc_run_server(address);
 }
 
 void einit_ipc_sexp_boot_event_handler_root_device_ok(struct einit_event
@@ -461,3 +412,61 @@ void einit_ipc_setup()
     event_listen(einit_event_subsystem_any, einit_ipc_generic_event_handler);
 }
 
+char einit_ipc_run_server(char *address)
+{
+    einit_ipc_sexp_fd = socket(PF_UNIX, SOCK_STREAM, 0);
+
+    if (einit_ipc_sexp_fd < 0) {
+        perror("socket()");
+        return 0;
+    }
+
+    struct sockaddr_un addr = {.sun_family = AF_UNIX };
+    snprintf(addr.sun_path, sizeof(addr.sun_path), "%s", address);
+
+    if (bind
+        (einit_ipc_sexp_fd, (const struct sockaddr *) &addr,
+         sizeof(struct sockaddr_un)) < 0) {
+        perror("bind()");
+        close(einit_ipc_sexp_fd);
+        einit_ipc_sexp_fd = -1;
+        return 0;
+    }
+
+    if (listen(einit_ipc_sexp_fd, 10) < 0) {
+        perror("listen()");
+        close(einit_ipc_sexp_fd);
+        einit_ipc_sexp_fd = -1;
+        return 0;
+    }
+
+    fcntl(einit_ipc_sexp_fd, F_SETFL, O_NONBLOCK);
+    fcntl(einit_ipc_sexp_fd, F_SETFD, FD_CLOEXEC);
+
+    char *group = cfg_getstring("subsystem-ipc-9p/group", NULL);
+    char *chmod_i = cfg_getstring("subsystem-ipc-9p/chmod", NULL);
+
+    if (!group)
+        group = "einit";
+    if (!chmod_i)
+        chmod_i = "0660";
+    mode_t smode = parse_integer(chmod_i);
+
+    gid_t g;
+    lookupuidgid(NULL, &g, NULL, group);
+
+    chown(address, 0, g);
+    chmod(address, smode);
+
+    einit_add_fd_prepare_function(einit_ipc_sexp_prepare);
+    einit_add_fd_handler_function(einit_ipc_sexp_handle);
+
+    return 1;
+}
+
+void einit_ipc_connect_client(int fd)
+{
+    struct einit_sexp_fd_reader *rd = einit_create_sexp_fd_reader(fd);
+
+    einit_ipc_add_connection (0, rd);
+}
