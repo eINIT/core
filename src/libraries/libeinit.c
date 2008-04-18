@@ -193,7 +193,7 @@ char einit_connect_spawn(int *argc, char **argv)
          */
 
         execl(EINIT_LIB_BASE "/bin/einit-core", "einit-core", "--ipc",
-              address, "--do-wait", (sandbox ? "--sandbox" : NULL), NULL);
+              address, (sandbox ? "--sandbox" : NULL), NULL);
 
         exit(EXIT_FAILURE);
         break;
