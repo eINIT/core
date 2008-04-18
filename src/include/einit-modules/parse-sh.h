@@ -76,11 +76,14 @@ extern "C" {
 
 #else
 
-    int parse_sh_f(const char *, void (*)(const char **, uint8_t));
+    int parse_sh_f (const char *,
+                  void (*)(const char **,
+                        enum einit_sh_parser_pa, void *),
+                        void *);
 
 #define parse_sh_configure(mod) ;
 
-#define parse_sh(data, callback) parse_sh_f(data, callback, NULL)
+#define parse_sh(data, callback) parse_sh_ud(data, callback, NULL)
 #define parse_sh_ud(data, callback, user) parse_sh_f(data, callback, user)
 
 #endif

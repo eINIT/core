@@ -166,6 +166,7 @@ extern "C" {
 
 #define pexec(command, variables, uid, gid, user, group, local_environment, status) pexec_f(command, variables, uid, gid, user, group, local_environment, status)
 #define pexec_v1(command,variables,env,status) pexec (command, variables, 0, 0, NULL, NULL, env, status)
+#define pexec_simple(command, status) pexec (command, NULL, 0, 0, NULL, NULL, NULL, status);
 
 #define eexec(command, variables, uid, gid, user, group, local_environment, status) eexec_f(command, variables, uid, gid, user, group, local_environment, status)
 

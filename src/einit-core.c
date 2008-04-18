@@ -539,7 +539,7 @@ int main(int argc, char **argv, char **environ)
     char suppress_version = 0;
     int alarm_pipe[2];
     char *ipc_socket = NULL;
-    int ipc_socket_fd;
+    int ipc_socket_fd = 0;
 
 #if defined(__linux__) && defined(PR_SET_NAME)
     prctl(PR_SET_NAME, "einit [core]", 0, 0, 0);
@@ -705,7 +705,10 @@ int main(int argc, char **argv, char **environ)
                 eprintf(stdout, " [%s]", (*coremodules[cp])->rid);
             lmm = mod_add(NULL, (*coremodules[cp]));
 
-            lmm->source = (char *) str_stabilise("core");
+            if (lmm)
+            {
+                lmm->source = (char *) str_stabilise("core");
+            }
         }
 
         if (!suppress_version)
