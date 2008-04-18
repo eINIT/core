@@ -41,8 +41,8 @@ Export('env')
 
 SConscript(ScriptsBundle)
 
-ScriptsEinit = ['src/sconscript',
-                'src/modules/sconscript',
+ScriptsEinit = ['src/modules/sconscript',
+                'src/sconscript',
                 'data/sconscript']
 
 destdir = ARGUMENTS.get('destdir', '')

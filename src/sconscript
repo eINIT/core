@@ -1,4 +1,4 @@
-Import(['env', 'InstallDirSbin', 'InstallDirLib', 'InstallDirLibBin', 'InternalModules', 'InstallDirInclude', 'AssemblyDir', 'ASMFunctionsAvailable', 'uname'])
+Import(['env', 'InstallDirSbin', 'InstallDirLib', 'InstallDirLibBin', 'InternalModules', 'InstallDirInclude', 'AssemblyDir', 'ASMFunctionsAvailable', 'uname', 'InternalModuleObjects'])
 
 import glob
 
@@ -33,13 +33,13 @@ if uname == 'Darwin':
 if uname == 'FreeBSD':
  CodeCoreMonitorObjects = [ 'freebsd/einit-monitor.c' ]
 
-coreLibs = ['einit', 'core-modules']
+coreLibs = ['einit']
 
 if uname != 'FreeBSD':
  if 'module-so' in InternalModules:
   coreLibs += [ 'dl' ]
 
-einitCore = env.Program ('einit-core', CodeCoreObjects, LIBS=coreLibs, LIBPATH=['.', 'modules'], CCFLAGS='-DEINIT_CORE', LINKFLAGS=linkCore)
+einitCore = env.Program ('einit-core', CodeCoreObjects + InternalModuleObjects, LIBS=coreLibs, LIBPATH=['.'], CCFLAGS='-DEINIT_CORE', LINKFLAGS=linkCore)
 if uname != 'FreeBSD':
  einitMonitor = env.Program ('einit-monitor', CodeCoreMonitorObjects)
 if uname == 'FreeBSD':
