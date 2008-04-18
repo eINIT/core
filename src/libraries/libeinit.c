@@ -641,12 +641,8 @@ char einit_get_configuration_boolean(const char *key,
     return 0;
 }
 
-char **einit_get_configuration_attributes(const char *key)
+static char **sexp2arbattrs(char **rv, struct einit_sexp *s)
 {
-    struct einit_sexp *s = einit_ipc_request ("get-configuration-multi",
-                                              se_symbol(key));
-    char **rv = NULL;
-
     if (s) {
         struct einit_sexp *p = s;
         while (p->type == es_cons) {
@@ -660,16 +656,50 @@ char **einit_get_configuration_attributes(const char *key)
 
             p = p->secundus;
         }
-
-        einit_sexp_destroy (s);
     }
+
+    return rv;
+}
+
+char **einit_get_configuration_attributes(const char *key)
+{
+    struct einit_sexp *s = einit_ipc_request ("get-configuration-multi",
+                                              se_symbol(key));
+
+    char **rv = NULL;
+
+    rv = sexp2arbattrs(rv, s);
+    if (s) einit_sexp_destroy (s);
 
     return rv;
 }
 
 char ***einit_get_configuration_prefix(const char *prefix)
 {
-    return NULL;
+    struct einit_sexp *s = einit_ipc_request ("get-configuration*",
+                                              se_symbol(prefix));
+    char ***rv = NULL;
+
+    if (s) {
+        struct einit_sexp *p = s;
+        while (p->type == es_cons) {
+            struct einit_sexp *primus = se_car(se_car(p));
+            struct einit_sexp *secundus = se_car(se_cdr(se_car(p)));
+
+            if (primus->type == es_symbol) {
+                char **e = set_str_add_stable (NULL, (char *)primus->symbol);
+                e = sexp2arbattrs(e, secundus);
+
+                rv = (char***)set_noa_add((void**)rv, e);
+            }
+
+            p = p->secundus;
+        }
+
+        einit_sexp_destroy (s);
+    }
+
+    return rv;
 }
 
 char **einit_list (char *r)
