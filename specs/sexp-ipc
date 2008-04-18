@@ -1,6 +1,31 @@
 zeh closer specz:
- 
-note: replies and to requests kinda work like fifos: first one read is the first one to get a reply
+
+SEXPRS:
+we're using sexprs for our IPC, but they're kinda trimmed down for what we need:
+the only valid types are these:
+ * "strings" up to 4095 characters in length
+ * integers (123456) up to 31 characters in length
+ * symbols up to 1023 characters in length
+ * (lists of mixed contents)
+ * booleans #t and #f
+ * #nil
+
+special rules:
+ * "strings
+may span across newlines
+and have things \"escaped\" with a \\ backslash"
+ * anything that starts with a hash '#' is turned into either #t, #f or #nil, depending on whether the
+   first char is 't', 'f', or anything else. that means # is also #nil
+ * \\ backslash-escapes only work in strings. in symbols, backslashes turn into literal characters
+ * \n, \t and the like don't turn into newlines or tabs. just use literal newlines, or tabs.
+ * \0 is interpreted as whitespace, but try to avoid it anyway
+ * some other sexpr parsers allow omitting whitespace when one would think that things are clear enough,
+   for example: ("hello"123"world") would be read as ("hello" 123 "world") by those parsers. einit's
+   sexpr parser doesn't allow this tho, so don't do it.
+
+note: you can't really depend on the order of replies as soon as events are in the game. if you dont use
+events, you'll end up with something fifo-ish. if you do use events, it might turn lifo, or something
+really weird, so just dont depend on the order of replies. 
  
 signals: (work both ways, no replies)
 ------------------------------------------------------------------------
@@ -20,8 +45,11 @@ you get to write this at any time you feel like it.
  
 requests: (should also work both ways, always require a reply)
 ------------------------------------------------------------------------
-(request type payload)
-(reply type payload)
+REQUESTS: (request type tag payload)
+REPLIES: (tag payload)
+
+the tag MUST be an integer. that integer may also be re-used for new requests, if the old one got a reply
+already.
  
 --- event requests:
  
@@ -35,11 +63,15 @@ tell the core you want to receive events, including everything emitted before yo
  
 * (request receive-events replay-only) ; verbatim
   (reply receive-events <#t/#f>)
-tell the core you want to receive events, but only olden ones, not new events. you get the reply to this /after/ all the events have been signaled to you.
+tell the core you want to receive events, but only olden ones, not new events. you get the reply to this
+/after/ all the events have been signaled to you.
  
 * (request receive-specific-events type)
   (reply receive-specific-events <#t/#f>)
-tell the core you want to receive events of the specified type (a symbol). multiple calls to this stack and tell the core to give you events of multiple types. using this will not actually make the core send you any events, it'll just flag the appropriate events for you. to start receiving the events, use one of the three calls above. if you don't use this command, then you'll simply receive _all_ events.
+tell the core you want to receive events of the specified type (a symbol). multiple calls to this stack
+and tell the core to give you events of multiple types. using this will not actually make the core send
+you any events, it'll just flag the appropriate events for you. to start receiving the events, use one
+of the three calls above. if you don't use this command, then you'll simply receive _all_ events.
  
 * (request mute-specific-events type)
   (reply mute-specific-events <#t/#f>)
@@ -63,7 +95,8 @@ retrieve loads of config data by means of a common prefix. prefix is a symbol
  
 * (request register-module (rid "name" (provides) (requires) (before) (after) (uses) run-once deprecated))
   (reply register-module <#t/#f>)
-register an event-based module handler. run-once and deprecated are booleans, the (provides), etc are lists of symbols. rid is also a symbol, while name is a string
+register an event-based module handler. run-once and deprecated are booleans, the (provides), etc are
+lists of symbols. rid is also a symbol, while name is a string
  
 * (request register-module-actions (rid (actions))
   (reply register-module-actions <#t/#f>)
