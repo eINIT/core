@@ -78,16 +78,15 @@ char **bsd_network_list_interfaces_ifconfig(int spawn_events)
     char **interfaces = NULL;
     char **new_interfaces = NULL;
     char buffer[BUFFERSIZE * 4];
-    FILE *f = popen("ifconfig -l", "r");
 
-    if (f) {
-        if (fgets(buffer, (BUFFERSIZE * 4), f)) {
-            strtrim(buffer);
-            if (buffer[0]) {
-                interfaces = str2set(' ', buffer);
-            }
+    char **pr = pget(command);
+
+    if (pr) {
+        if (pr[0][0]) {
+            interfaces = str2set(' ', pr[0]);
         }
-        pclose(f);
+
+        efree (pr);
     }
 
     if (spawn_events) {

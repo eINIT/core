@@ -310,6 +310,9 @@ extern "C" {
 
     uint32_t StrSuperFastHash(const char *data, int *len);
 
+    void pput (const char *command, const char *data);
+    char ** pget (const char *command);
+
 #endif                          /* _UTILITY_H */
 
 #ifdef __cplusplus

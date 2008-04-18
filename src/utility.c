@@ -1186,3 +1186,33 @@ void einit_ping_core()
 {
     write(einit_alarm_pipe_write, ".\n", 2);
 }
+
+char ** pget (const char *command)
+{
+    FILE *f = popen(command, "r");
+    char **rv = NULL;
+
+    if (f) {
+        char buffer[BUFFERSIZE];
+        while (fgets(buffer, BUFFERSIZE, f)) {
+            strtrim(buffer);
+
+            if (buffer[0] != '#')
+                rv = (char **) set_noa_add((void **) rv,
+                      (void *) estrdup(buffer));
+        }
+
+        pclose(f);
+    }
+
+    return rv;
+}
+
+void pput (const char *command, const char *data)
+{
+    FILE *f = popen(command, "w");
+    if (f) {
+        fputs(data, f);
+        pclose(f);
+    }
+}

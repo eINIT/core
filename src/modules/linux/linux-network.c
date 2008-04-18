@@ -495,8 +495,11 @@ void linux_network_interface_done(struct einit_event *ev)
             }
 
             if (resolv_conf_data) {
+                resolv_conf_data = set_str_add(resolv_conf_data, "");
+
                 resolv_conf =
                     set2str('\n', (const char **) resolv_conf_data);
+
                 efree(resolv_conf_data);
             }
 
@@ -516,12 +519,7 @@ void linux_network_interface_done(struct einit_event *ev)
                     symlink("resolvconf/run/resolv.conf",
                             "/etc/resolv.conf");
 
-                    FILE *f = popen(buffer, "w");
-                    if (f) {
-                        fputs(resolv_conf, f);
-                        fputs("\n", f);
-                        pclose(f);
-                    }
+                    pput (buffer, resolv_conf);
                 } else {
                     fbprintf(d->feedback, "overwriting old resolv.conf");
                     FILE *f = fopen("/etc/resolv.conf", "w");

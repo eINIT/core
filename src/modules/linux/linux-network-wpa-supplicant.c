@@ -186,29 +186,26 @@ char **linux_network_wpa_supplicant_get_as_option_set(char *interface,
     esprintf(command, BUFFERSIZE, "wpa_cli -i%s %s", interface,
              wpa_command);
 
-    FILE *f = popen(command, "r");
+    char **pr = pget(command);
     char **rv = NULL;
 
-    if (f) {
-        char linebuffer[BUFFERSIZE];
-
-        while (fgets(linebuffer, BUFFERSIZE, f)) {
+    if (pr) {
+        int i = 0;
+        for (; pr[i]; i++) {
+            char *linebuffer = pr[i];
             if (linebuffer[0]) {
-                strtrim(linebuffer);
-                if (linebuffer[0]) {
-                    char *s = strchr(linebuffer, '=');
-                    if (s) {
-                        *s = 0;
-                        s++;
+                char *s = strchr(linebuffer, '=');
+                if (s) {
+                    *s = 0;
+                    s++;
 
-                        rv = set_str_add(rv, linebuffer);
-                        rv = set_str_add(rv, s);
-                    }
+                    rv = set_str_add(rv, linebuffer);
+                    rv = set_str_add(rv, s);
                 }
             }
         }
 
-        pclose(f);
+        efree (pr);
     }
 
     return rv;

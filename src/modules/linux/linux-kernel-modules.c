@@ -83,40 +83,12 @@ int linux_kernel_modules_module_configure(struct lmodule *);
 
 char **linux_kernel_modules_get_modprobe_c()
 {
-    char **rv = NULL;
-    FILE *f = popen("modprobe -c", "r");
-
-    if (f) {
-        char buffer[BUFFERSIZE];
-        while (fgets(buffer, BUFFERSIZE, f)) {
-            if (isalnum(buffer[0])
-                || (strtrim(buffer), isalnum(buffer[0])))
-                rv = (char **) set_noa_add((void **) rv,
-                                           (void *) estrdup(buffer));
-        }
-
-        pclose(f);
-    }
-
-    return rv;
+    return ("modprobe -c");
 }
 
 char **linux_kernel_modules_get_modprobe_l()
 {
-    char **rv = NULL;
-    FILE *f = popen("modprobe -l", "r");
-
-    if (f) {
-        char buffer[BUFFERSIZE];
-        while (fgets(buffer, BUFFERSIZE, f)) {
-            rv = (char **) set_noa_add((void **) rv,
-                                       (void *) estrdup(buffer));
-        }
-
-        pclose(f);
-    }
-
-    return rv;
+    return ("modprobe -l");
 }
 
 void linux_kernel_modules_free_modprobe(char **r)
