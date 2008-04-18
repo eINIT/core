@@ -22,7 +22,7 @@ def buildBundle(target, name, modules_original, e):
  if f:
   f.write ('/* this file has partially been written by the build system */' + "\n" +
            '#define module_bundle_name "Bundle (' + name + ')"' + "\n" +
-           '#define module_bundle_rid "' + name + '"' + "\n\n")
+           '#define module_bundle_rid "bundle-' + name + '"' + "\n\n")
 
   o = open ('templates/bundle.c')
   if o:
