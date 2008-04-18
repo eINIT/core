@@ -50,6 +50,10 @@
 #define MIN_CHUNK_SIZE      1024
 #define DEFAULT_BUFFER_SIZE (MIN_CHUNK_SIZE * 4)
 
+#define MAX_SYMBOL_SIZE 128
+#define MAX_NUMBER_SIZE 32
+#define MAX_STRING_SIZE 4096
+
 enum einit_sexp_read_type { esr_string, esr_number, esr_symbol };
 
 static const struct einit_sexp sexp_nil_v = {.type = es_nil };
@@ -67,83 +71,124 @@ const struct einit_sexp *const sexp_end_of_list = &sexp_end_of_list_v;
 const struct einit_sexp *const sexp_empty_list = &sexp_empty_list_v;
 const struct einit_sexp *const sexp_bad = &sexp_bad_v;
 
-static struct einit_sexp *einit_parse_sexp_in_buffer_with_buffer(char
-                                                                 *buffer, int
-                                                                 *index,
-                                                                 int stop,
-                                                                 enum
-                                                                 einit_sexp_read_type
-                                                                 buffertype)
+static struct einit_sexp *einit_parse_string_in_buffer(char *buffer, int *index,
+                                                       int stop)
 {
     unsigned char sc_quote = 0;
-    char *stbuffer = emalloc(stop - (*index));
+    char stbuffer[MAX_STRING_SIZE];
     int sb_pos = 0;
 
-//    fprintf (stderr, "parsing string\n");
 
     for (; (*index) < stop; (*index)++) {
-        if (buffertype == esr_string) {
-            if (sc_quote) {
+        if (sc_quote) {
+            if (sb_pos < (MAX_STRING_SIZE - 1))
+            {
                 stbuffer[sb_pos] = buffer[*index];
                 sb_pos++;
-                sc_quote ^= sc_quote;
-
-                continue;
             }
+            sc_quote ^= sc_quote;
 
-            switch (buffer[*index]) {
-            case '\\':
-                sc_quote ^= sc_quote;
-                break;
-            case '"':
-                stbuffer[sb_pos] = 0;
+            continue;
+        }
 
-                struct einit_sexp *rv = einit_sexp_create(es_string);
-                rv->string = str_stabilise(stbuffer);
+        switch (buffer[*index]) {
+        case '\\':
+            sc_quote ^= sc_quote;
+            break;
+        case '"':
+            stbuffer[sb_pos] = 0;
 
-                // fprintf (stderr, "got string: %s\n", rv->string);
-                (*index)++;
+            struct einit_sexp *rv = einit_sexp_create(es_string);
+            rv->string = str_stabilise(stbuffer);
 
-                efree(stbuffer);
-                return rv;
-                break;
+            (*index)++;
 
-            default:
-                break;
-            }
-        } else {
-            if ((buffer[*index] == '(') || (buffer[*index] == ')')
-                || !(buffer[*index]) || isspace(buffer[*index])) {
-                stbuffer[sb_pos] = 0;
-                struct einit_sexp *rv;
+            return rv;
+            break;
 
-                switch (buffertype) {
-                case esr_number:
-                    rv = einit_sexp_create(es_integer);
-                    rv->integer = atoi(stbuffer);
-                    break;
+        default:
+            break;
+        }
 
-                case esr_symbol:
-                    rv = einit_sexp_create(es_symbol);
-                    rv->symbol = str_stabilise(stbuffer);
-                    break;
+        if (sb_pos < (MAX_STRING_SIZE - 1))
+        {
+            stbuffer[sb_pos] = buffer[*index];
+            sb_pos++;
+        }
+    }
 
-                default:
-                    break;
+    return NULL;
+}
+
+static struct einit_sexp *einit_parse_symbol_in_buffer(char *buffer, int *index,
+                                                       int stop)
+{
+    char stbuffer[MAX_SYMBOL_SIZE];
+    int sb_pos = 0;
+
+    for (; (*index) < stop; (*index)++) {
+        if ((buffer[*index] == '(') || (buffer[*index] == ')')
+            || !(buffer[*index]) || isspace(buffer[*index])) {
+            stbuffer[sb_pos] = 0;
+            struct einit_sexp *rv;
+
+            if (stbuffer[0] == '#') {
+                switch (stbuffer[1])
+                {
+                    case 't':
+                        return (struct einit_sexp *)sexp_true;
+                    case 'f':
+                        return (struct einit_sexp *)sexp_false;
+                    default:
+                        return (struct einit_sexp *)sexp_nil;
                 }
+            } else {
+                rv = einit_sexp_create(es_symbol);
+                rv->symbol = str_stabilise(stbuffer);
 
-                efree(stbuffer);
                 return rv;
             }
         }
 
-        stbuffer[sb_pos] = buffer[*index];
-        sb_pos++;
+        if (sb_pos < (MAX_SYMBOL_SIZE - 1))
+        {
+            stbuffer[sb_pos] = buffer[*index];
+            sb_pos++;
+        }
     }
 
-    efree(stbuffer);
     return NULL;
 }
+
+
+static struct einit_sexp *einit_parse_number_in_buffer(char *buffer, int *index,
+                                                       int stop)
+{
+    char stbuffer[MAX_NUMBER_SIZE];
+    int sb_pos = 0;
+
+    for (; (*index) < stop; (*index)++) {
+        if ((buffer[*index] == '(') || (buffer[*index] == ')')
+            || !(buffer[*index]) || isspace(buffer[*index])) {
+            stbuffer[sb_pos] = 0;
+            struct einit_sexp *rv;
+
+            rv = einit_sexp_create(es_integer);
+            rv->integer = atoi(stbuffer);
+
+            return rv;
+        }
+
+        if (sb_pos < (MAX_NUMBER_SIZE - 1))
+        {
+            stbuffer[sb_pos] = buffer[*index];
+            sb_pos++;
+        }
+    }
+
+    return NULL;
+}
+
 
 static struct einit_sexp *einit_parse_sexp_in_buffer(char *buffer,
                                                      int *index, int stop)
@@ -155,17 +200,13 @@ static struct einit_sexp *einit_parse_sexp_in_buffer(char *buffer,
     for (; (*index) < stop; (*index)++) {
         if ((buffer[*index]) && !isspace(buffer[*index])) {
             if (isdigit(buffer[*index])) {
-                return einit_parse_sexp_in_buffer_with_buffer(buffer,
-                                                              index, stop,
-                                                              esr_number);
+                return einit_parse_number_in_buffer(buffer, index, stop);
             }
 
             switch (buffer[*index]) {
             case '"':
                 (*index)++;
-                return einit_parse_sexp_in_buffer_with_buffer(buffer,
-                                                              index, stop,
-                                                              esr_string);
+                return einit_parse_string_in_buffer(buffer, index, stop);
 
             case ')':
                 (*index)++;
@@ -194,7 +235,7 @@ static struct einit_sexp *einit_parse_sexp_in_buffer(char *buffer,
                                                        stop);
 
                         if (!tmp) { /* catch incompletely read sexprs */
-                            ccons->secundus = sexp_end_of_list; 
+                            ccons->secundus = (struct einit_sexp *)sexp_end_of_list; 
                             einit_sexp_destroy(rv);
                             return NULL;
                         }
@@ -222,9 +263,7 @@ static struct einit_sexp *einit_parse_sexp_in_buffer(char *buffer,
 
                 break;
             default:
-                return einit_parse_sexp_in_buffer_with_buffer(buffer,
-                                                              index, stop,
-                                                              esr_symbol);
+                return einit_parse_symbol_in_buffer(buffer, index, stop);
             }
         }
 
@@ -525,7 +564,18 @@ static void einit_sexp_to_string_iterator(struct einit_sexp *sexp,
         break;
 
     case es_nil:
-        fputs("BAD SEXPR (es_nil)\n", stderr);
+        *len += 4;
+        *buffer = sexp_chunk_realloc(*buffer, *len, cs);
+
+        (*buffer)[(*pos)] = '#';
+        (*pos)++;
+        (*buffer)[(*pos)] = 'n';
+        (*pos)++;
+        (*buffer)[(*pos)] = 'i';
+        (*pos)++;
+        (*buffer)[(*pos)] = 'l';
+        (*pos)++;
+
         break;
 
     case es_empty_list:
