@@ -597,9 +597,22 @@ void einit_register_module(struct smodule *s)
 char *einit_get_configuration_string(const char *key,
                                      const char *attribute)
 {
+    char *rv = NULL;
     if (!attribute) attribute = "s";
 
-    
+    struct einit_sexp *s =
+            einit_ipc_request("get-configuration", se_cons(se_symbol (key),
+                              se_cons (se_symbol (attribute),
+                              (struct einit_sexp *)sexp_end_of_list)));
+
+    if (s) {
+        if (s->type == es_string)
+        {
+            rv = (char *)s->string;
+        }
+
+        einit_sexp_destroy (s);
+    }
 
     return NULL;
 }

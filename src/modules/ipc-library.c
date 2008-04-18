@@ -156,6 +156,53 @@ void einit_ipc_library_mute_specific_events(struct einit_sexp *sexp, int id,
 void einit_ipc_library_get_configuration(struct einit_sexp *sexp, int id,
                                          struct einit_ipc_connection *cd)
 {
+    struct einit_sexp *primus = se_car(sexp);
+    struct einit_sexp *secundus = se_car(se_cdr(sexp));
+
+    if ((primus->type == es_symbol) && (secundus->type == es_symbol)) {
+        struct cfgnode *n = cfg_getnode (primus->symbol, NULL);
+        char *value = NULL;
+
+        if (n && n->arbattrs) {
+            int i = 0;
+            for (; n->arbattrs[i]; i+=2) {
+                if (strmatch (n->arbattrs[i], secundus->symbol)) {
+                    value = n->arbattrs[i+1];
+                    break;
+                }
+            }
+        }
+
+        if (value) {
+            struct einit_sexp_fd_reader *reader = cd->reader;
+
+            struct einit_sexp *sp = 
+                    se_cons(se_integer (id),
+                    se_cons(se_string(value),
+                            (struct einit_sexp *)sexp_end_of_list));
+
+            char *r = einit_sexp_to_string(sp);
+
+            einit_sexp_destroy(sp);
+
+            fcntl(reader->fd, F_SETFL, 0);
+            write (reader->fd, r, strlen(r));
+            fcntl(reader->fd, F_SETFL, O_NONBLOCK);
+
+            efree (r);
+
+            return;
+        }
+    }
+
+    einit_ipc_reply_simple (id, "#f", cd);
+}
+
+void einit_ipc_library_get_configuration_multi(struct einit_sexp *sexp, int id,
+                                               struct einit_ipc_connection *cd)
+{
+/*    if (sexp->type == es_symbol) {
+}*/
     einit_ipc_library_stub(sexp, id, cd);
 }
 
@@ -341,6 +388,8 @@ int einit_ipc_library_configure(struct lmodule *irr)
                                einit_ipc_library_mute_specific_events);
     einit_ipc_register_handler("get-configuration",
                                einit_ipc_library_get_configuration);
+    einit_ipc_register_handler("get-configuration-multi",
+                               einit_ipc_library_get_configuration_multi);
     einit_ipc_register_handler("get-configuration*",
                                einit_ipc_library_get_configuration_a);
     einit_ipc_register_handler("register-module",

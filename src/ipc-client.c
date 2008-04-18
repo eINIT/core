@@ -322,6 +322,8 @@ struct einit_sexp *einit_ipc_request_sexp_raw(struct einit_sexp *request)
 //    fprintf (stderr, "REQUEST: %s\n", r);
     efree (r);
 
+    einit_sexp_destroy (request);
+
     while (1) {
         int selectres;
         fd_set rfds;
