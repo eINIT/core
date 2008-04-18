@@ -201,9 +201,36 @@ void einit_ipc_library_get_configuration(struct einit_sexp *sexp, int id,
 void einit_ipc_library_get_configuration_multi(struct einit_sexp *sexp, int id,
                                                struct einit_ipc_connection *cd)
 {
-/*    if (sexp->type == es_symbol) {
-}*/
-    einit_ipc_library_stub(sexp, id, cd);
+    if (sexp->type == es_symbol) {
+        struct cfgnode *n = cfg_getnode (sexp->symbol, NULL);
+
+        if (n && n->arbattrs) {
+            struct einit_sexp_fd_reader *reader = cd->reader;
+
+            int i = 0;
+            struct einit_sexp *sp = (struct einit_sexp *)sexp_end_of_list;
+            for (; n->arbattrs[i]; i+=2) {
+                struct einit_sexp *v = se_cons (se_symbol (n->arbattrs[i]),
+                                       se_cons (se_string (n->arbattrs[i+1]),
+                                                (struct einit_sexp *)sexp_end_of_list));
+
+                sp = se_cons (v, sp);
+            }
+
+            char *r = einit_sexp_to_string(sp);
+
+            einit_sexp_destroy(sp);
+
+            fcntl(reader->fd, F_SETFL, 0);
+            write (reader->fd, r, strlen(r));
+            fcntl(reader->fd, F_SETFL, O_NONBLOCK);
+
+            efree (r);
+            return;
+        }
+    }
+
+    einit_ipc_reply_simple (id, "#f", cd);
 }
 
 void einit_ipc_library_get_configuration_a(struct einit_sexp *sexp, int id,

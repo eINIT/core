@@ -614,7 +614,7 @@ char *einit_get_configuration_string(const char *key,
         einit_sexp_destroy (s);
     }
 
-    return NULL;
+    return rv;
 }
 
 signed int einit_get_configuration_integer(const char *key,
@@ -643,7 +643,28 @@ char einit_get_configuration_boolean(const char *key,
 
 char **einit_get_configuration_attributes(const char *key)
 {
-    return NULL;
+    struct einit_sexp *s = einit_ipc_request ("get-configuration-multi",
+                                              se_symbol(key));
+    char **rv = NULL;
+
+    if (s) {
+        struct einit_sexp *p = s;
+        while (p->type == es_cons) {
+            struct einit_sexp *primus = se_car(se_car(p));
+            struct einit_sexp *secundus = se_car(se_cdr(se_car(p)));
+
+            if ((primus->type == es_symbol) && (secundus->type == es_string)) {
+                rv = set_str_add_stable (rv, (char*)primus->symbol);
+                rv = set_str_add_stable (rv, (char*)secundus->string);
+            }
+
+            p = p->secundus;
+        }
+
+        einit_sexp_destroy (s);
+    }
+
+    return rv;
 }
 
 char ***einit_get_configuration_prefix(const char *prefix)
