@@ -288,10 +288,10 @@ struct itree *itreefind(struct itree *tree, signed long key,
     do {
         if (key == tree->key) {
             if (base == tree_find_first) {
-                // itree_splay (tree);
+                itree_splay (tree);
                 return tree;
             } else if (tree->equal) {
-                // itree_splay (tree->equal);
+                itree_splay (tree->equal);
                 return tree->equal;
             } else
                 return NULL;
