@@ -3,12 +3,8 @@
  <core>
   <settings>
    <configuration>
-    <multi-node-variables allow="^(core-((commands-include-(file|directory))|settings-modules))|configuration-(storage-fstab-(node|node-order))$" />
+    <multi-node-variables allow="^(core-((commands-include-(file|directory))))|configuration-(storage-fstab-(node|node-order))$" />
    </configuration>
-
-<!-- example: use this to disable the compatibility modules -->
-<!-- <modules id="primus" path="/lib/einit/modules" pattern-allow=".*\.so" pattern-disallow="^compatibility.*" /> -->
-   <modules id="primus" path="/lib/einit/modules" pattern-allow=".*\.so" />
 
    <configuration-path s="/etc/einit/" />
   </settings>

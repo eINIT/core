@@ -42,10 +42,6 @@ Core = element core {
     element configuration {
       element multi-node-variables { attribute allow { text } }?
     }? &
-    element modules {
-      IDAttribute,
-      PathAttributes
-    }? &
     element configuration-path {
       StringAttribute
     }? &
