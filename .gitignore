@@ -29,6 +29,7 @@ src/einit-feedback-evas
 src/einit-sysvd
 src/einit-bootchartd
 src/einit-test
+src/einit-wtf
 
 src/modules/*bundle*
 

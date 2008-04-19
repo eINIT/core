@@ -246,50 +246,7 @@ int main(int argc, char **argv, char **env)
             c = set_str_add(c, "--sandbox");
 
         if (c_wtf) {
-            int argcx = o_sandbox ? 2 : 1;
-            char *argvx[3];
-
-            argvx[0] = "einit";
-            argvx[1] = o_sandbox ? "-ps" : NULL;
-            argvx[2] = NULL;
-
-            if (einit_connect_spawn(&argcx, argvx)) {
-                argvx[0] = "issues";
-                argvx[1] = NULL;
-
-                char **issues = /* FIXME */ NULL;
-
-                if (issues) {
-                    int count = setcount((const void **) issues);
-                    int i = 0;
-
-                    if (count > 1)
-                        fprintf(stdout, "Found %i issues:\n", count);
-                    else
-                        fputs("Found one issue:\n", stdout);
-
-                    while (issues[i]) {
-                        fprintf(stdout, " * %s:\n", issues[i]);
-
-                        argvx[1] = issues[i];
-
-                        char *r = /* FIXME */ NULL;
-                        if (r) {
-                            fprintf(stdout, " >> %s\n", r);
-                        }
-
-                        i++;
-                    }
-                } else {
-                    fprintf(stdout, "No issues found.\n");
-                }
-
-                fflush(stdout);
-
-                einit_disconnect();
-            } else {
-                perror("Could not connect to eINIT");
-            }
+            execve(EINIT_LIB_BASE "/bin/einit-wtf", c, env);
 
             return 0;
         } else {

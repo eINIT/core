@@ -53,6 +53,7 @@ einitLogD = env.Program ('einit-log', CodeEinitLogD, LIBS=['einit'], LIBPATH=['.
 einitSysVD = env.Program ('einit-sysvd', CodeEinitSysVD, LIBS=['einit'], LIBPATH=['.'])
 einitBootChartD = env.Program ('einit-bootchartd', CodeEinitBootChartD, LIBS=['einit'], LIBPATH=['.'])
 
+env.Install (InstallDirLibBin, env.Program ('einit-wtf', ['tools/einit-wtf.c'], LIBS=['einit'], LIBPATH=['.']))
 env.Install (InstallDirLibBin, env.Program ('einit-test',  ['tools/einit-test.c'], LIBS=['einit'], LIBPATH=['.']))
 
 if uname == 'linux':
