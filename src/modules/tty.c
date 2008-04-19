@@ -47,7 +47,6 @@
 #include <einit/bitch.h>
 #include <einit/event.h>
 #include <string.h>
-#include <einit-modules/process.h>
 #include <einit-modules/exec.h>
 #include <sys/types.h>
 #include <sys/wait.h>

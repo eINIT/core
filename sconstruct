@@ -79,7 +79,7 @@ uname = "unknown"
 
 f = os.popen ('uname', 'r')
 if f:
- uname = f.readline().strip()
+ uname = f.readline().strip().lower()
  f.close()
 
 AssemblyDir = '#asm/' + arch + '-' + uname.lower() + '-' + libc
@@ -88,9 +88,9 @@ SpecialModules = ['00-configuration-stree', '01-configuration-xml-expat']
 
 Modules = []
 
-ModulesBase = ['fqdn', 'exec', 'mount', 'tty', 'process', 'module-group', 'module-network-v2', 'parse-sh', 'module-checkpoint', 'module-transformations',  'module-logic-v4', 'dispatcher', 'ipc-library', 'module-configuration']
+ModulesBase = ['fqdn', 'exec', 'mount', 'tty', 'module-group', 'module-network-v2', 'parse-sh', 'module-checkpoint', 'module-transformations',  'module-logic-v4', 'dispatcher', 'ipc-library', 'module-configuration']
 
-ModulesLinux = ['linux-mdev', 'linux-static-dev', 'linux-sysconf', 'linux-mount', 'linux-process', 'linux-kernel-modules', 'linux-udev', 'linux-hotplug', 'linux-cpufreq', 'linux-network', 'linux-network-wpa-supplicant', 'linux-network-bridge', 'linux-network-bonding', 'linux-urandom']
+ModulesLinux = ['linux-mdev', 'linux-static-dev', 'linux-sysconf', 'linux-mount', 'linux-kernel-modules', 'linux-udev', 'linux-hotplug', 'linux-cpufreq', 'linux-network', 'linux-network-wpa-supplicant', 'linux-network-bridge', 'linux-network-bonding', 'linux-urandom']
 
 InstallAliases = []
 
@@ -102,7 +102,7 @@ ASMFunctionsAvailable = []
 def checkasm(name):
  global uname, libc, arch
  try:
-  os.stat('asm/' + arch + '-' + uname.lower() + '-' + libc + '/' + name + '.S')
+  os.stat('asm/' + arch + '-' + uname + '-' + libc + '/' + name + '.S')
   return True
  except:
   return False
@@ -111,11 +111,11 @@ for i in ASMFunctions:
  if checkasm(i):
   ASMFunctionsAvailable += [ i ]
 
-if uname == 'Darwin':
+if uname == 'darwin':
  ModulesLinux = []
-if uname == 'FreeBSD':
+if uname == 'freebsd':
  ModulesLinux = []
-if uname == 'Linux':
+if uname == 'linux':
  ModulesBSD = []
 
 env['LIBS'] = []

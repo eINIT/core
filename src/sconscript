@@ -27,18 +27,21 @@ CodeLibEinit = AssemblyFunctions + ['libraries/libeinit.c', 'bitch.c', 'event.c'
 
 linkCore = '-Wl,-export-dynamic'
 
-if uname == 'Darwin':
+if uname == 'darwin':
  linkCore = ''
 
-if uname == 'FreeBSD':
+if uname == 'linux':
+ CodeLibEinit += ['linux/process.c']
+
+if uname == 'freebsd':
  CodeCoreMonitorObjects = [ 'freebsd/einit-monitor.c' ]
 
 coreLibs = ['einit']
 
 einitCore = env.Program ('einit-core', CodeCoreObjects + InternalModuleObjects, LIBS=['einit'], LIBPATH=['.'], CCFLAGS='-DEINIT_CORE', LINKFLAGS=linkCore)
-if uname != 'FreeBSD':
+if uname != 'freebsd':
  einitMonitor = env.Program ('einit-monitor', CodeCoreMonitorObjects)
-if uname == 'FreeBSD':
+if uname == 'freebsd':
  einitMonitor = env.Program ('einit-monitor', CodeCoreMonitorObjects, LIBS=['util'])
 
 lastRites = env.Program ('last-rites', CodeLastRites, LIBS=['einit'], LIBPATH=['.'])
@@ -52,7 +55,7 @@ einitBootChartD = env.Program ('einit-bootchartd', CodeEinitBootChartD, LIBS=['e
 
 env.Install (InstallDirLibBin, env.Program ('einit-test',  ['tools/einit-test.c'], LIBS=['einit'], LIBPATH=['.']))
 
-if uname == 'Linux':
+if uname == 'linux':
  libEinit = env.SharedLibrary ('einit', CodeLibEinit, SHLINKFLAGS='-shared -Wl,-soname,libeinit.so.3.0.0')
 else:
  libEinit = env.SharedLibrary ('einit', CodeLibEinit)

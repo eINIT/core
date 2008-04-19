@@ -52,7 +52,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/wait.h>
 
 #include <einit/exec.h>
-#include <einit-modules/process.h>
+#include <einit/process.h>
 
 #if defined(__linux__)
 #include <sys/prctl.h>
@@ -528,7 +528,7 @@ void module_xml_v2_core_event_handler_action_execute_step (char *task, char *rid
     goto handle_nocode;
    }
 
-   if (!pidexists(pid)) { /* goody the pid's dead already, go scram */
+   if (!process_alive_p(pid)) { /* goody the pid's dead already, go scram */
     goto handle_nocode;
    }
 
@@ -658,7 +658,6 @@ void module_xml_v2_einit_process_died (struct einit_event *ev) {
 
 int module_xml_v2_configure (struct lmodule *pa) {
  module_init (pa);
- process_configure(pa);
 
  event_listen (einit_core_update_modules, module_xml_v2_scanmodules);
 

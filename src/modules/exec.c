@@ -51,7 +51,6 @@
 #include <errno.h>
 #include <signal.h>
 #include <einit-modules/exec.h>
-#include <einit-modules/process.h>
 #include <ctype.h>
 #include <sys/stat.h>
 
@@ -59,6 +58,8 @@
 
 #include <regex.h>
 #include <time.h>
+
+#include <einit/process.h>
 
 #ifdef __linux__
 #include <sys/syscall.h>
@@ -874,7 +875,7 @@ int start_daemon_f(struct dexecinfo *shellcmd, struct einit_event *status)
         efree(pidfile);
         pidfile = NULL;
 
-        if (pidexists(pid)) {
+        if (process_alive_p(pid)) {
             fbprintf(status,
                      "Module's PID-file already exists and is valid.");
 

@@ -61,7 +61,6 @@
 
 #include <fcntl.h>
 
-#include <einit-modules/process.h>
 #include <einit-modules/exec.h>
 
 #ifdef __linux__
@@ -2104,8 +2103,12 @@ int mount_umount(char *mountpoint, struct device_data *dd,
                  struct mountpoint_data *mp, struct einit_event *status)
 {
 
+    if (shutting_down) {
+        /* skip umounting when shutting down, last-rites does that */
+
+        return status_ok;
+    }
     int retval = status_failed;
-    char step = 0;
 
     /*
      * make sure that, before we try to umount, we do some special pruning 
@@ -2115,34 +2118,10 @@ int mount_umount(char *mountpoint, struct device_data *dd,
         mount_do_special_root_umount(status);
     }
 
-    while ((step <= 4) && !(retval & status_ok)) {
-        retval =
-            mount_try_umount(mountpoint, mp->fs, step, dd, mp, status);
-        step++;
+    retval =
+        mount_try_umount(mountpoint, mp->fs, 4, dd, mp, status);
 
-        if (!(retval & status_ok)) {
-            struct pc_conditional pcc = {.match = "cwd-below",.para =
-                    mountpoint,.match_options = einit_pmo_additive
-            }, pcf = {
-            .match = "files-below",.para = mountpoint,.match_options =
-                    einit_pmo_additive}, *pcl[3] = {
-            &pcc, &pcf, NULL};
-
-            if (step <= 3) {
-                fbprintf(status,
-                         "umount() failed, killing some proceses and waiting for three seconds");
-
-                pekill(pcl);
-
-                {
-                    int n = 3;
-                    while ((n = sleep(n)));
-                }
-            }
-        } else {
-            return status_ok;
-        }
-    }
+    return retval;
 
     fbprintf(status, "none of the functions worked, giving up.");
 
