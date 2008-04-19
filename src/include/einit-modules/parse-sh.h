@@ -59,34 +59,10 @@ extern "C" {
         pa_new_context_fork = 0x4
     };
 
-#if (! defined(einit_modules_parse_sh)) || (einit_modules_parse_sh == 'm') || (einit_modules_parse_sh == 'n')
+    int parse_sh(const char *data,
+                 void (*callback) (const char **, uint8_t, void *), void *ud);
 
-    typedef int (*sh_parser) (const char *,
-                              void (*)(const char **,
-                                       enum einit_sh_parser_pa, void *),
-                              void *);
-
-    sh_parser f_parse_sh;
-
-#define parse_sh_ud(data, callback, user) ((f_parse_sh || (f_parse_sh = function_find_one("einit-parse-sh", 1, NULL))) ? f_parse_sh(data, callback, user) : -1)
-
-#define parse_sh(data, callback) parse_sh_ud(data, callback, NULL)
-
-#define parse_sh_configure(mod) f_parse_sh = NULL;
-
-#else
-
-    int parse_sh_f (const char *,
-                  void (*)(const char **,
-                        enum einit_sh_parser_pa, void *),
-                        void *);
-
-#define parse_sh_configure(mod) ;
-
-#define parse_sh(data, callback) parse_sh_ud(data, callback, NULL)
-#define parse_sh_ud(data, callback, user) parse_sh_f(data, callback, user)
-
-#endif
+#define parse_sh_ud(data, callback, user) parse_sh(data, callback, user)
 
 #endif
 
