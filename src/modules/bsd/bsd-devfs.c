@@ -59,8 +59,6 @@
 
 int bsd_devfs_configure(struct lmodule *);
 
-#if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
-
 const struct smodule bsd_devfs_self = {
     .eiversion = EINIT_VERSION,
     .eibuild = BUILDNUMBER,
@@ -77,8 +75,6 @@ const struct smodule bsd_devfs_self = {
 };
 
 module_register(bsd_devfs_self);
-
-#endif
 
 char bsd_devfs_enabled = 0;
 

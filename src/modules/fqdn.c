@@ -53,8 +53,6 @@
 
 int einit_fqdn_configure(struct lmodule *);
 
-#if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
-
 const struct smodule einit_fqdn_self = {
     .eiversion = EINIT_VERSION,
     .eibuild = BUILDNUMBER,
@@ -71,8 +69,6 @@ const struct smodule einit_fqdn_self = {
 };
 
 module_register(einit_fqdn_self);
-
-#endif
 
 void einit_fqdn_set()
 {

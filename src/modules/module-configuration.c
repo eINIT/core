@@ -67,8 +67,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 int module_xml_v2_configure (struct lmodule *);
 
-#if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
-
 const struct smodule module_xml_v2_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
@@ -86,8 +84,6 @@ const struct smodule module_xml_v2_self = {
 };
 
 module_register(module_xml_v2_self);
-
-#endif
 
 #define MODULES_PREFIX "services-virtual-module-"
 #define MODULES_PREFIX_LENGTH (sizeof(MODULES_PREFIX) -1)

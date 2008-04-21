@@ -62,7 +62,6 @@
 
 int linux_mount_configure(struct lmodule *);
 
-#if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
 /*
  * module definitions 
  */
@@ -82,8 +81,6 @@ const struct smodule module_linux_mount_self = {
 };
 
 module_register(module_linux_mount_self);
-
-#endif
 
 /*
  * function declarations 

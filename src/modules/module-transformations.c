@@ -58,8 +58,6 @@
 
 int einit_module_transformations_configure(struct lmodule *);
 
-#if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
-
 const struct smodule einit_module_transformations_self = {
     .eiversion = EINIT_VERSION,
     .eibuild = BUILDNUMBER,
@@ -76,8 +74,6 @@ const struct smodule einit_module_transformations_self = {
 };
 
 module_register(einit_module_transformations_self);
-
-#endif
 
 struct stree *service_aliases = NULL;
 

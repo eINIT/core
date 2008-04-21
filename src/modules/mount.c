@@ -85,10 +85,6 @@
 
 int einit_mount_configure(struct lmodule *);
 
-#if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
-/*
- * module definitions 
- */
 const struct smodule einit_mount_self = {
     .eiversion = EINIT_VERSION,
     .eibuild = BUILDNUMBER,
@@ -105,8 +101,6 @@ const struct smodule einit_mount_self = {
 };
 
 module_register(einit_mount_self);
-
-#endif
 
 /*
  * new mounter code 

@@ -59,8 +59,6 @@
 
 int linux_hotplug_configure(struct lmodule *);
 
-#if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
-
 const struct smodule linux_hotplug_self = {
     .eiversion = EINIT_VERSION,
     .eibuild = BUILDNUMBER,
@@ -77,8 +75,6 @@ const struct smodule linux_hotplug_self = {
 };
 
 module_register(linux_hotplug_self);
-
-#endif
 
 #define FIRMWARE_DIR "/lib/firmware"
 #define SYS_DIR "/sys"

@@ -68,8 +68,6 @@
 
 int einit_exec_configure(struct lmodule *);
 
-#if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
-
 const struct smodule einit_exec_self = {
     .eiversion = EINIT_VERSION,
     .eibuild = BUILDNUMBER,
@@ -86,8 +84,6 @@ const struct smodule einit_exec_self = {
 };
 
 module_register(einit_exec_self);
-
-#endif
 
 /*
  * variables 

@@ -71,7 +71,6 @@ void einit_config_xml_expat_event_handler_core_update_configuration(struct
                                                                     einit_event
                                                                     *);
 
-#if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
 const struct smodule einit_configuration_xml_expat_self = {
     .eiversion = EINIT_VERSION,
     .eibuild = BUILDNUMBER,
@@ -88,8 +87,6 @@ const struct smodule einit_configuration_xml_expat_self = {
 };
 
 module_register(einit_configuration_xml_expat_self);
-
-#endif
 
 struct cfgnode *curmode = NULL;
 

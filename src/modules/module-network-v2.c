@@ -58,8 +58,6 @@
 
 int einit_module_network_v2_configure(struct lmodule *);
 
-#if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
-
 const struct smodule einit_module_network_v2_self = {
     .eiversion = EINIT_VERSION,
     .eibuild = BUILDNUMBER,
@@ -76,8 +74,6 @@ const struct smodule einit_module_network_v2_self = {
 };
 
 module_register(einit_module_network_v2_self);
-
-#endif
 
 #if defined(__FreeBSD) || defined(__APPLE__)
 char *bsd_network_suffixes[] = { "bsd", "generic", NULL };

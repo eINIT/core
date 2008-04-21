@@ -49,7 +49,6 @@
 
 int checkpoint_configure(struct lmodule *);
 
-#if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
 const struct smodule einit_checkpoint_self = {
     .eiversion = EINIT_VERSION,
     .eibuild = BUILDNUMBER,
@@ -66,8 +65,6 @@ const struct smodule einit_checkpoint_self = {
 };
 
 module_register(einit_checkpoint_self);
-
-#endif
 
 /*
  * use letter names from the NATO phonetic alphabet to name checkpoints 

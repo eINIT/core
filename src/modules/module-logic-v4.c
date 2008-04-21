@@ -49,7 +49,6 @@
 
 int einit_module_logic_v4_configure(struct lmodule *);
 
-#if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
 const struct smodule einit_module_logic_v4_self = {
     .eiversion = EINIT_VERSION,
     .eibuild = BUILDNUMBER,
@@ -66,8 +65,6 @@ const struct smodule einit_module_logic_v4_self = {
 };
 
 module_register(einit_module_logic_v4_self);
-
-#endif
 
 struct service_callback {
     char **enable;

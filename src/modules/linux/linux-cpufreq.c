@@ -54,8 +54,6 @@
 
 int linux_cpufreq_configure(struct lmodule *);
 
-#if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
-
 const struct smodule linux_cpufreq_self = {
     .eiversion = EINIT_VERSION,
     .eibuild = BUILDNUMBER,
@@ -72,8 +70,6 @@ const struct smodule linux_cpufreq_self = {
 };
 
 module_register(linux_cpufreq_self);
-
-#endif
 
 void linux_cpufreq_set_governor_data(char *gd, int cpus)
 {

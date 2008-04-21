@@ -59,7 +59,6 @@
 
 int linux_kernel_modules_configure(struct lmodule *);
 
-#if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
 const struct smodule einit_linux_kernel_modules_self = {
     .eiversion = EINIT_VERSION,
     .eibuild = BUILDNUMBER,
@@ -76,8 +75,6 @@ const struct smodule einit_linux_kernel_modules_self = {
 };
 
 module_register(einit_linux_kernel_modules_self);
-
-#endif
 
 int linux_kernel_modules_module_configure(struct lmodule *);
 

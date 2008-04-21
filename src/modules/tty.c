@@ -86,8 +86,6 @@ struct ttyst {
 
 int einit_tty_configure(struct lmodule *);
 
-#if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
-
 const struct smodule einit_tty_self = {
     .eiversion = EINIT_VERSION,
     .eibuild = BUILDNUMBER,
@@ -104,8 +102,6 @@ const struct smodule einit_tty_self = {
 };
 
 module_register(einit_tty_self);
-
-#endif
 
 struct ttyst *ttys = NULL;
 char einit_tty_feedback_blocked = 0;

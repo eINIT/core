@@ -29,8 +29,6 @@
 
 int linux_urandom_configure(struct lmodule *);
 
-#if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
-
 char *linux_urandom_provides[] = { "urandom", NULL };
 
 /*
@@ -53,8 +51,6 @@ struct smodule linux_urandom_self = {
 };
 
 module_register(linux_urandom_self);
-
-#endif
 
 void linux_urandom_mini_dd(const char *from, const char *to, ssize_t s)
 {

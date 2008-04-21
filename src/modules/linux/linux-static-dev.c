@@ -68,8 +68,6 @@
 
 int linux_static_dev_configure(struct lmodule *);
 
-#if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
-
 const struct smodule linux_static_dev_self = {
     .eiversion = EINIT_VERSION,
     .eibuild = BUILDNUMBER,
@@ -86,8 +84,6 @@ const struct smodule linux_static_dev_self = {
 };
 
 module_register(linux_static_dev_self);
-
-#endif
 
 char linux_static_dev_enabled = 0;
 

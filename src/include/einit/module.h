@@ -413,22 +413,7 @@ extern "C" {
 
     extern const struct smodule **coremodules[MAXMODULES];
 
-#if defined(EINIT_MODULE)
-
-    struct lmodule *thismodule;
-
-#ifndef __cplusplus
-    const struct smodule *self;
-#endif
-
-#define module_register(smod) const struct smodule *self = &smod
-#define module_init(lmod) thismodule = lmod;
-
-#endif
-
-#if defined(EINIT_CORE) && defined(thismodule) && defined(self)
-
-#define EINIT_MODULE_HEADER
+#if defined(thismodule) && defined(self)
 
     struct lmodule *thismodule;
     const struct smodule *self;

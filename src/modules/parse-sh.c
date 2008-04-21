@@ -61,7 +61,6 @@
 
 int einit_parse_sh_configure(struct lmodule *);
 
-#if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
 const struct smodule einit_parse_sh_self = {
     .eiversion = EINIT_VERSION,
     .eibuild = BUILDNUMBER,
@@ -78,8 +77,6 @@ const struct smodule einit_parse_sh_self = {
 };
 
 module_register(einit_parse_sh_self);
-
-#endif
 
 // parse sh-style files and call back for each line
 int parse_sh(const char *data,

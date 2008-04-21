@@ -67,8 +67,6 @@
 
 int linux_mdev_configure(struct lmodule *);
 
-#if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
-
 const struct smodule linux_mdev_self = {
     .eiversion = EINIT_VERSION,
     .eibuild = BUILDNUMBER,
@@ -85,8 +83,6 @@ const struct smodule linux_mdev_self = {
 };
 
 module_register(linux_mdev_self);
-
-#endif
 
 #define NETLINK_BUFFER 1024*1024*64
 

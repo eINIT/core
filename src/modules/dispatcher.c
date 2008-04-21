@@ -58,8 +58,6 @@
 
 int dispatcher_configure(struct lmodule *);
 
-#if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
-
 struct smodule dispatcher_self = {
     .eiversion = EINIT_VERSION,
     .eibuild = BUILDNUMBER,
@@ -76,8 +74,6 @@ struct smodule dispatcher_self = {
 };
 
 module_register(dispatcher_self);
-
-#endif
 
 char dispatcher_psplash = 0;
 char dispatcher_usplash = 0;

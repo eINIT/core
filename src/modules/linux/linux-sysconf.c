@@ -68,8 +68,6 @@
 
 int linux_sysconf_configure(struct lmodule *);
 
-#if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
-
 char *linux_sysconf_provides[] = { "sysv-cleanups", NULL };
 char *linux_sysconf_before[] = { "^displaymanager$", NULL };
 char *linux_sysconf_after[] = { "^fs-(root|var|var-run|var-log)$", NULL };
@@ -90,8 +88,6 @@ const struct smodule module_linux_sysconf_self = {
 };
 
 module_register(module_linux_sysconf_self);
-
-#endif
 
 char linux_sysconf_block_chvt = 0;
 

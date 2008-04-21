@@ -54,8 +54,6 @@
 
 int module_group_configure(struct lmodule *);
 
-#if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
-
 const struct smodule module_group_self = {
     .eiversion = EINIT_VERSION,
     .eibuild = BUILDNUMBER,
@@ -72,8 +70,6 @@ const struct smodule module_group_self = {
 };
 
 module_register(module_group_self);
-
-#endif
 
 #define MODULES_PREFIX "services-alias-"
 #define MODULES_PREFIX_SIZE (sizeof (MODULES_PREFIX) -1)

@@ -4,7 +4,7 @@ InternalModuleObjects = ['#build/core/module-configuration.c'] + ExpatObjects
 
 def buildInternalModule(name, location, e):
  tm = name.replace('-', '_')
- return e.Object(location + '/' + name + '.c', CCFLAGS = '-DEINIT_CORE -Dthismodule=_' + tm + '_thismodule -Dself=_' + tm + '_self')
+ return e.Object(location + '/' + name + '.c', CCFLAGS = '-Dthismodule=_' + tm + '_thismodule -Dself=_' + tm + '_self')
 
 def buildInternalModuleA(name, e):
  if name in ModulesLinux:

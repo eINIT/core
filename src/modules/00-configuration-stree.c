@@ -57,7 +57,6 @@
 
 int einit_configuration_stree_configure(struct lmodule *);
 
-#if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
 const struct smodule einit_configuration_stree_self = {
     .eiversion = EINIT_VERSION,
     .eibuild = BUILDNUMBER,
@@ -74,8 +73,6 @@ const struct smodule einit_configuration_stree_self = {
 };
 
 module_register(einit_configuration_stree_self);
-
-#endif
 
 struct {
     void **chunks;

@@ -56,8 +56,6 @@
 
 int linux_network_configure(struct lmodule *);
 
-#if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
-
 const struct smodule linux_network_self = {
     .eiversion = EINIT_VERSION,
     .eibuild = BUILDNUMBER,
@@ -74,8 +72,6 @@ const struct smodule linux_network_self = {
 };
 
 module_register(linux_network_self);
-
-#endif
 
 char **linux_network_interfaces = NULL;
 
@@ -167,57 +163,6 @@ int linux_network_get_link_speed(char *interface)
 
     return rv;
 }
-
-/*
- * reminder:
- * 
- * einit_network_interface_construct = einit_event_subsystem_network |
- * 0x001, einit_network_interface_configure =
- * einit_event_subsystem_network | 0x002, einit_network_interface_update = 
- * einit_event_subsystem_network | 0x003,
- * 
- * einit_network_interface_prepare = einit_event_subsystem_network |
- * 0x011, einit_network_verify_carrier = einit_event_subsystem_network |
- * 0x012, einit_network_kill_carrier = einit_event_subsystem_network |
- * 0x013, einit_network_address_automatic = einit_event_subsystem_network
- * | 0x014, einit_network_address_static = einit_event_subsystem_network | 
- * 0x015, einit_network_interface_done = einit_event_subsystem_network |
- * 0x016,
- * 
- * einit_network_interface_cancel = einit_event_subsystem_network | 0x020,
- * 
- * struct network_functions { int (*have_options) (char *); struct cfgnode 
- * * (*get_option) (char *, char *); struct stree * (*get_all_addresses)
- * (char *); };
- * 
- * enum interface_action { interface_nop = 0, interface_up,
- * interface_down, interface_refresh_ip };
- * 
- * struct network_event_data { struct network_functions *functions; struct 
- * lmodule *module; struct smodule *static_descriptor; enum
- * interface_flags flags; int status; enum interface_action action; struct 
- * einit_event *feedback; }; 
- */
-
-/*
- * void linux_network_interface_configure (struct einit_event *ev) {
- * struct network_event_data *d = ev->para;
- * 
- * struct stree *st = d->functions->get_all_addresses(ev->string);
- * 
- * if (st) { struct stree *cur = streelinear_prepare (st);
- * 
- * while (cur) { char **v = cur->value; int y = 0;
- * 
- * for (; v[y]; y+=2) { if (strmatch (v[y], "address")) { fprintf (stderr, 
- * "configured %s address for interfaces %s: %s\n", cur->key, ev->string,
- * v[y+1]); } }
- * 
- * cur = streenext (cur); }
- * 
- * streefree (st); } else { fprintf (stderr, "no addresses for interface
- * %s?\n", ev->string); } } 
- */
 
 void linux_network_interface_construct(struct einit_event *ev)
 {

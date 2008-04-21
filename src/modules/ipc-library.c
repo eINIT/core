@@ -58,8 +58,6 @@
 
 int einit_ipc_library_configure(struct lmodule *);
 
-#if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
-
 const struct smodule einit_ipc_library_self = {
     .eiversion = EINIT_VERSION,
     .eibuild = BUILDNUMBER,
@@ -76,8 +74,6 @@ const struct smodule einit_ipc_library_self = {
 };
 
 module_register(einit_ipc_library_self);
-
-#endif
 
 void einit_ipc_reply_simple(int id, char *s, struct einit_ipc_connection *cd)
 {
