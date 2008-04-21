@@ -200,7 +200,8 @@ char einit_ipx_sexp_handle_fd(struct einit_sexp_fd_reader *rd)
                         snprintf(buffer, BUFFERSIZE,
                                  "(%i bad-request)",
                                  sexp->secundus->secundus->primus->integer);
-                        write(rd->fd, buffer, strlen(buffer));
+
+                        einit_ipc_write (buffer, rd);
                     }
                 }
             } else if (strmatch(sexp->primus->symbol, "event")) {
@@ -329,33 +330,7 @@ void einit_ipc_update_event_listeners ()
 
         if (c->current_event >= 0) {
             for (; einit_event_backlog[c->current_event]; c->current_event++) {
-                int len = strlen (einit_event_backlog[c->current_event]), r;
-
-/*                if (coremode & einit_mode_sandbox) {
-                    fprintf (stderr, "%s\n", einit_event_backlog[c->current_event]);
-                }*/
-
-                /*
-                 * we're escaping the non-blocking mode for sheer ease-of-use
-                 */
-
-                fcntl(reader->fd, F_SETFL, 0);
-
-                r = write (reader->fd,
-                           einit_event_backlog[c->current_event],
-                           len);
-
-                fcntl(reader->fd, F_SETFL, O_NONBLOCK);
-
-                /*
-                 * in case something bad happens, just break out
-                 */
-
-                if ((r < 0) || (r == 0)) break;
-                if (r < len) {
-                    fprintf (stderr, "TOOT TOOT! tried to write %d bytes,"
-                                     " but only wrote %d bytes\n", len, r);
-                }
+                einit_ipc_write (einit_event_backlog[c->current_event], reader);
             }
         }
 

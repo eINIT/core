@@ -86,6 +86,8 @@ extern "C" {
     char einit_ipc_run_server(char *socket);
     void einit_ipc_connect_client(int fd);
 
+    void einit_ipc_write(char *s, struct einit_sexp_fd_reader *rd);
+
 #endif
 
 #ifdef __cplusplus

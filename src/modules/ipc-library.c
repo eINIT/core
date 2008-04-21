@@ -77,24 +77,11 @@ module_register(einit_ipc_library_self);
 
 void einit_ipc_reply_simple(int id, char *s, struct einit_ipc_connection *cd)
 {
-    struct einit_sexp_fd_reader *reader = cd->reader;
     char buffer[BUFFERSIZE];
 
     snprintf (buffer, BUFFERSIZE, "(%i %s)", id, s);
 
-    int len = strlen(buffer);
-
-    fcntl(reader->fd, F_SETFL, 0);
-    int r = write (reader->fd, buffer, len);
-    fcntl(reader->fd, F_SETFL, O_NONBLOCK);
-
-    if ((r < 0) || (r == 0)) {
-        fprintf (stderr, "COULDN'T WRITE REPLY!\n");
-    }
-
-    if (r < len) {
-        fprintf (stderr, "SHORT WRITE!\n");
-    }
+    einit_ipc_write (buffer, cd->reader);
 }
 
 void einit_ipc_library_stub(struct einit_sexp *sexp, int id,
@@ -171,8 +158,6 @@ void einit_ipc_library_get_configuration(struct einit_sexp *sexp, int id,
         }
 
         if (value) {
-            struct einit_sexp_fd_reader *reader = cd->reader;
-
             struct einit_sexp *sp = 
                     se_cons(se_integer (id),
                     se_cons(se_string(value),
@@ -182,9 +167,7 @@ void einit_ipc_library_get_configuration(struct einit_sexp *sexp, int id,
 
             einit_sexp_destroy(sp);
 
-            fcntl(reader->fd, F_SETFL, 0);
-            write (reader->fd, r, strlen(r));
-            fcntl(reader->fd, F_SETFL, O_NONBLOCK);
+            einit_ipc_write (r, cd->reader);
 
             efree (r);
 
@@ -221,7 +204,6 @@ void einit_ipc_library_get_configuration_multi(struct einit_sexp *sexp, int id,
                                                struct einit_ipc_connection *cd)
 {
     if (sexp->type == es_symbol) {
-        struct einit_sexp_fd_reader *reader = cd->reader;
         struct cfgnode *n = cfg_getnode (sexp->symbol, NULL);
 
         struct einit_sexp *sp = cfgnode2sexp(n);
@@ -232,9 +214,7 @@ void einit_ipc_library_get_configuration_multi(struct einit_sexp *sexp, int id,
 
         einit_sexp_destroy(sp);
 
-        fcntl(reader->fd, F_SETFL, 0);
-        write (reader->fd, r, strlen(r));
-        fcntl(reader->fd, F_SETFL, O_NONBLOCK);
+        einit_ipc_write (r, cd->reader);
 
         efree (r);
         return;
@@ -247,7 +227,6 @@ void einit_ipc_library_get_configuration_a(struct einit_sexp *sexp, int id,
                                            struct einit_ipc_connection *cd)
 {
     if (sexp->type == es_symbol) {
-        struct einit_sexp_fd_reader *reader = cd->reader;
         struct stree *st = cfg_prefix (sexp->symbol);
 
         if (st) {
@@ -271,9 +250,7 @@ void einit_ipc_library_get_configuration_a(struct einit_sexp *sexp, int id,
 
             einit_sexp_destroy(sp);
 
-            fcntl(reader->fd, F_SETFL, 0);
-            write (reader->fd, r, strlen(r));
-            fcntl(reader->fd, F_SETFL, O_NONBLOCK);
+            einit_ipc_write (r, cd->reader);
 
             efree (r);
 
@@ -307,8 +284,6 @@ void einit_ipc_library_register_module_actions(struct einit_sexp *sexp, int id,
 void einit_ipc_library_list(struct einit_sexp *sexp, int id,
                             struct einit_ipc_connection *cd)
 {
-    struct einit_sexp_fd_reader *reader = cd->reader;
-
     if (sexp->type == es_symbol) {
         char **l = NULL;
 
@@ -329,9 +304,7 @@ void einit_ipc_library_list(struct einit_sexp *sexp, int id,
 
                 snprintf (buffer, size, "(%i (%s))", id, m);
 
-                fcntl(reader->fd, F_SETFL, 0);
-                write (reader->fd, buffer, strlen(buffer));
-                fcntl(reader->fd, F_SETFL, O_NONBLOCK);
+                einit_ipc_write (buffer, cd->reader);
 
                 return;
             }
@@ -350,8 +323,6 @@ void einit_ipc_library_list(struct einit_sexp *sexp, int id,
 void einit_ipc_library_get_module(struct einit_sexp *sexp, int id,
                                   struct einit_ipc_connection *cd)
 {
-    struct einit_sexp_fd_reader *reader = cd->reader;
-
     if (sexp->type == es_symbol) {
         struct lmodule *lm = mod_lookup_rid (sexp->symbol);
 
@@ -383,9 +354,7 @@ void einit_ipc_library_get_module(struct einit_sexp *sexp, int id,
 
         einit_sexp_destroy(sp);
 
-        fcntl(reader->fd, F_SETFL, 0);
-        write (reader->fd, r, strlen(r));
-        fcntl(reader->fd, F_SETFL, O_NONBLOCK);
+        einit_ipc_write (r, cd->reader);
 
         efree (r);
     } else {

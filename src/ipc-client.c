@@ -54,6 +54,8 @@
 
 #include <sys/select.h>
 
+#include <errno.h>
+
 struct itree *einit_ipc_replies = NULL;
 
 struct einit_sexp_fd_reader *einit_ipc_client_rd = NULL;
@@ -365,3 +367,22 @@ struct einit_sexp *einit_ipc_request(const char *rq, struct einit_sexp *payload)
     return einit_ipc_request_sexp_raw(req);
 }
 
+void einit_ipc_write(char *s, struct einit_sexp_fd_reader *rd)
+{
+    int len = strlen(s);
+
+    fcntl(rd->fd, F_SETFL, 0);
+    int r = write (rd->fd, s, len);
+    fcntl(rd->fd, F_SETFL, O_NONBLOCK);
+
+    if ((r < 0) || (r == 0)) {
+        fprintf (stderr, "COULDN'T WRITE: %s\n", s);
+        perror ("error");
+        if ((r == 0) || (errno == EAGAIN) || (errno == EINTR)) {
+            einit_ipc_write(s, rd);
+        }
+    } else if (r < len) {
+        fprintf (stderr, "SHORT WRITE!\n");
+        einit_ipc_write(s + len, rd);
+    }
+}
