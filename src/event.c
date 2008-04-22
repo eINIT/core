@@ -547,27 +547,27 @@ char *event_code_to_string(const uint32_t code)
 
     switch (code & EVENT_SUBSYSTEM_MASK) {
     case einit_event_subsystem_core:
-        return "core/{unknown}";
+        return "core/unknown";
     case einit_event_subsystem_mount:
-        return "mount/{unknown}";
+        return "mount/unknown";
     case einit_event_subsystem_feedback:
-        return "feedback/{unknown}";
+        return "feedback/unknown";
     case einit_event_subsystem_power:
-        return "power/{unknown}";
+        return "power/unknown";
     case einit_event_subsystem_timer:
-        return "timer/{unknown}";
+        return "timer/unknown";
 
     case einit_event_subsystem_network:
-        return "network/{unknown}";
+        return "network/unknown";
     case einit_event_subsystem_process:
-        return "process/{unknown}";
+        return "process/unknown";
     case einit_event_subsystem_boot:
-        return "boot/{unknown}";
+        return "boot/unknown";
     case einit_event_subsystem_hotplug:
-        return "hotplug/{unknown}";
+        return "hotplug/unknown";
 
     case einit_event_subsystem_laptop:
-        return "laptop/{unknown}";
+        return "laptop/unknown";
 
     case einit_event_subsystem_any:
         return "any";
