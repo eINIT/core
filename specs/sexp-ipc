@@ -92,6 +92,12 @@ value is either the string that was fetched, or #f
   (tag ((key (attribute value) (attribute value) <etc>)) (key (attribute value) (attribute value) <etc>))))
 retrieve loads of config data by means of a common prefix. prefix is a symbol
  
+* (request set-configuration!* ((key (attribute value) (attribute value))))
+* (request set-configuration! (key (attribute value) (attribute value)))
+  (tag #t/#f)
+set configuration variables. use set-configuration* to set multiple keys.
+keys and attributes need to be symbols, values need to be strings
+
 --- modules
  
 * (request register-module tag (rid "name" (provides) (requires) (before) (after) (uses) run-once deprecated))
