@@ -67,8 +67,6 @@
  */
 #include <asm/ioctls.h>
 #include <linux/vt.h>
-
-#include <sys/syscall.h>
 #endif
 
 #define EXPECTED_EIV 1
@@ -200,17 +198,10 @@ int einit_tty_texec(struct cfgnode *node)
                 fcntl(cpipes[0], F_SETFD, FD_CLOEXEC);
                 fcntl(cpipes[1], F_SETFD, FD_CLOEXEC);
 
-#ifdef __linux__
-                if ((cpid =
-                     syscall(__NR_clone, SIGCHLD, 0, NULL, NULL,
-                             NULL)) == 0)
-#else
               retry_fork:
-                if ((cpid = fork()) < 0) {
+                if ((cpid = efork()) < 0) {
                     goto retry_fork;
-                } else if (cpid == 0)
-#endif
-                {
+                } else if (cpid == 0) {
                     close(cpipes[0]);
 
                     /*
@@ -222,19 +213,7 @@ int einit_tty_texec(struct cfgnode *node)
                      * process can pick these processes up 
                      */
 
-#ifdef __linux__
-                    pid_t cfork = syscall(__NR_clone, SIGCHLD, 0, NULL, NULL, NULL);    /* i 
-                                                                                         * was 
-                                                                                         * wrong 
-                                                                                         * about 
-                                                                                         * using 
-                                                                                         * the 
-                                                                                         * real 
-                                                                                         * fork 
-                                                                                         */
-#else
-                    pid_t cfork = fork();
-#endif
+                    pid_t cfork = efork();
 
                     switch (cfork) {
                     case -1:
@@ -531,7 +510,7 @@ int einit_tty_configure(struct lmodule *this)
 {
     module_init(this);
 
-    if (coremode & einit_mode_sandbox) {
+    if (coremode & (einit_mode_sandbox | einit_mode_ipconly)) {
         return 0;
     }
 

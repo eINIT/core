@@ -486,6 +486,9 @@ int einit_main_loop(char early_bootup)
     einit_add_fd_handler_function(einit_raw_ipc_handle);
 
     if (early_bootup) {
+        event_listen(einit_boot_root_device_ok,
+                     core_event_einit_boot_root_device_ok);
+
         fprintf(stderr, "running early bootup code...\n");
 
         struct einit_event eml = evstaticinit(einit_boot_early);
@@ -745,14 +748,6 @@ int main(int argc, char **argv, char **environ)
     update_event.para = mlist;
     event_emit(&update_event, 0);
     evstaticdestroy(update_event);
-
-    if (doboot) {
-        /*
-         * actual init code 
-         */
-        event_listen(einit_boot_root_device_ok,
-                     core_event_einit_boot_root_device_ok);
-    }
 
      return einit_main_loop(doboot);
 }
