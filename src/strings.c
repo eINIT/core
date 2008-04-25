@@ -39,6 +39,7 @@
 #include <einit/utility.h>
 #include <einit/bitch.h>
 #include <einit/configuration.h>
+#include <einit/btree.h>
 
 
 #undef get16bits
@@ -133,7 +134,7 @@ uint32_t StrSuperFastHash(const char *data, int *len)
     return hash;
 }
 
-struct itree *einit_stable_strings = NULL;
+struct btree *einit_stable_strings = NULL;
 
 #undef DEBUG
 
@@ -150,22 +151,12 @@ const char *str_stabilise_l(const char *s, uint32_t * h, int *l)
     uint32_t hash;
     char *nv = NULL;
 
-#ifdef DEBUG
-    static int bad_lookups = 0;
-    static int good_lookups = 0;
-    static int prefail_lookups = 0;
-    static int strings = 0;
-#endif
-
-    struct itree *i = 0;
+    struct btree *i = 0;
 
     // if (pi % 8) {
     /*
      * this means we'd be unaligned 
      */
-#ifdef DEBUG
-    prefail_lookups++;
-#endif
 
     nv = estrdup(s);
 
@@ -174,55 +165,11 @@ const char *str_stabilise_l(const char *s, uint32_t * h, int *l)
      * } else { hash = StrSuperFastHash(s, &len); }
      */
 
-#ifdef DEBUG
-    fprintf(stderr, "hash result: %i, len %i\n", hash, len);
-#endif
-
-    i = einit_stable_strings ? itreefind(einit_stable_strings, hash,
-                                         tree_find_first) : NULL;
-#if 0
-    while (i) {
-        if (i->value == s) {
-#ifdef DEBUG
-            good_lookups++;
-
-            fprintf(stderr,
-                    "stabilisation result: %i bad, %i good, %i prefail, strings %i\n",
-                    bad_lookups, good_lookups, prefail_lookups, strings);
-#endif
-
-            break;
-        }
-        if (strmatch(s, i->value)) {
-#ifdef DEBUG
-            good_lookups++;
-
-            fprintf(stderr,
-                    "stabilisation result: %i bad, %i good, %i prefail, strings %i\n",
-                    bad_lookups, good_lookups, prefail_lookups, strings);
-#endif
-
-            break;
-        } else {
-#ifdef DEBUG
-            bad_lookups++;
-#endif
-            printf("BAD LOOKUP: %s<>%s, hash: %i\n", s, i->value, hash);
-        }
-
-        i = itreefind(i, hash, tree_find_next);
-    }
-#endif
+    i = einit_stable_strings ? btreefind(einit_stable_strings, hash) : NULL;
 
     if (i) {
         if (nv)
             efree(nv);
-
-#ifdef DEBUG
-        fprintf(stderr,
-                "stabilisation result: %i bad, %i good, %i prefail, strings %i\n",
-                bad_lookups, good_lookups, prefail_lookups, strings);
-#endif
 
         goto ret;
     }
@@ -237,15 +184,8 @@ const char *str_stabilise_l(const char *s, uint32_t * h, int *l)
     /*
      * we don't really care if we accidentally duplicate the string 
      */
-    i = itreeadd(einit_stable_strings, hash, nv, tree_value_noalloc);
+    i = btreeadd(einit_stable_strings, hash, nv, tree_value_noalloc);
     einit_stable_strings = i;
-
-#ifdef DEBUG
-    strings++;
-    fprintf(stderr,
-            "stabilisation result: %i bad, %i good, %i prefail, strings %i\n",
-            bad_lookups, good_lookups, prefail_lookups, strings);
-#endif
 
   ret:
 

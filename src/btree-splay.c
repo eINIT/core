@@ -1,8 +1,8 @@
 /*
- *  itree-trinary-splay.c
+ *  btree-splay.c
  *  einit
  *
- *  Created by Magnus Deininger on 04/12/2007.
+ *  Forked by Magnus Deininger from itree-trinary-splay.c on 25/04/2008.
  *  Copyright 2007-2008 Magnus Deininger. All rights reserved.
  *
  */
@@ -37,16 +37,16 @@
  */
 
 #include <einit/utility.h>
-#include <einit/itree.h>
+#include <einit/btree.h>
 #include <string.h>
 #include <stddef.h>
 
-struct itree *itree_rotate_left(struct itree *tree)
+struct btree *btree_rotate_left(struct btree *tree)
 {
     // fprintf (stderr, "left rotation:");
     // fflush (stderr);
     if (tree->right) {
-        struct itree *u, *v, *w;
+        struct btree *u, *v, *w;
 
         u = tree->right;
         v = tree->left;
@@ -85,12 +85,12 @@ struct itree *itree_rotate_left(struct itree *tree)
     return tree;
 }
 
-struct itree *itree_rotate_right(struct itree *tree)
+struct btree *btree_rotate_right(struct btree *tree)
 {
     // fprintf (stderr, "right rotation:");
     // fflush (stderr);
     if (tree->left) {
-        struct itree *u, *v, *w;
+        struct btree *u, *v, *w;
 
         u = tree->left;
         v = tree->right;
@@ -129,44 +129,42 @@ struct itree *itree_rotate_right(struct itree *tree)
     return tree;
 }
 
-struct itree *itree_splay(struct itree *tree)
+struct btree *btree_splay(struct btree *tree)
 {
-    struct itree *rt = tree;
+    struct btree *rt = tree;
 
     while (tree->parent) {
-        if (tree->parent->equal == tree) {
-            tree = tree->parent;
-        } else if (tree->parent->left == tree) {
+        if (tree->parent->left == tree) {
 #if 1
             if (tree->parent->parent) {
                 if (tree->parent->parent->left == tree->parent) {
-                    tree = itree_rotate_right(tree->parent);
-                    tree = itree_rotate_right(tree->parent);
+                    tree = btree_rotate_right(tree->parent);
+                    tree = btree_rotate_right(tree->parent);
                 } else {
-                    tree = itree_rotate_right(tree->parent);
-                    tree = itree_rotate_left(tree->parent);
+                    tree = btree_rotate_right(tree->parent);
+                    tree = btree_rotate_left(tree->parent);
                 }
             } else {
-                tree = itree_rotate_right(tree->parent);
+                tree = btree_rotate_right(tree->parent);
             }
 #else
-            tree = itree_rotate_right(tree->parent);
+            tree = btree_rotate_right(tree->parent);
 #endif
         } else if (tree->parent->right == tree) {
 #if 1
             if (tree->parent->parent) {
                 if (tree->parent->parent->left == tree->parent) {
-                    tree = itree_rotate_left(tree->parent);
-                    tree = itree_rotate_right(tree->parent);
+                    tree = btree_rotate_left(tree->parent);
+                    tree = btree_rotate_right(tree->parent);
                 } else {
-                    tree = itree_rotate_left(tree->parent);
-                    tree = itree_rotate_left(tree->parent);
+                    tree = btree_rotate_left(tree->parent);
+                    tree = btree_rotate_left(tree->parent);
                 }
             } else {
-                tree = itree_rotate_left(tree->parent);
+                tree = btree_rotate_left(tree->parent);
             }
 #else
-            tree = itree_rotate_left(tree->parent);
+            tree = btree_rotate_left(tree->parent);
 #endif
         } else {
             fprintf(stderr, "BAD TREE!\n");
@@ -178,31 +176,23 @@ struct itree *itree_splay(struct itree *tree)
     return rt;
 }
 
-struct itree *itreeadd(struct itree *tree, signed long key, void *value,
+struct btree *btreeadd(struct btree *tree, signed long key, void *value,
                        ssize_t size)
 {
-    size_t lsize = sizeof(struct itree);
-    struct itree *newnode;
+    size_t lsize = sizeof(struct btree);
+    struct btree *newnode;
     size_t ssize = 0;
 
     switch (size) {
     case tree_value_noalloc:
-        lsize = sizeof(struct itree);
+        lsize = sizeof(struct btree);
         break;
     case tree_value_string:
         ssize = strlen(value) + 1;
-        lsize =
-            /*
-             * sizeof (struct itree) 
-             */ offsetof(struct itree,
-                         data) + ssize;
+        lsize = offsetof(struct btree, data) + ssize;
         break;
     default:
-        lsize =
-            /*
-             * sizeof (struct itree) 
-             */ offsetof(struct itree,
-                         data) + size;
+        lsize = offsetof(struct btree, data) + size;
         break;
     }
 
@@ -211,53 +201,25 @@ struct itree *itreeadd(struct itree *tree, signed long key, void *value,
 
     switch (size) {
     case tree_value_noalloc:
-        // memcpy (newnode->value, value, sizeof (void *));
         newnode->value = value;
         break;
     case tree_value_string:
-        // newnode->value = ((char *)newnode) + sizeof (struct itree);
         memcpy(newnode->data, value, ssize);
         break;
     default:
-        // newnode->value = ((char *)newnode) + sizeof (struct itree);
         memcpy(newnode->data, value, size);
         break;
     }
 
     newnode->left = NULL;
     newnode->right = NULL;
-    newnode->equal = NULL;
     newnode->parent = NULL;
 
     if (tree)
-        tree = itreeroot(tree);
+        tree = btreeroot(tree);
 
     while (tree) {
-        if (key == tree->key) {
-            tree->parent = newnode;
-            newnode->equal = tree;
-
-            if (tree->left) {
-                newnode->left = tree->left;
-                tree->left = NULL;
-                newnode->left->parent = newnode;
-            }
-            if (tree->right) {
-                newnode->right = tree->right;
-                tree->right = NULL;
-                newnode->right->parent = newnode;
-            }
-            if (newnode->parent) {
-                if (newnode->parent->left == tree) {
-                    newnode->parent->left = newnode;
-                }
-                if (newnode->parent->right == tree) {
-                    newnode->parent->right = newnode;
-                }
-            }
-
-            return newnode;
-        } else if (key < tree->key) {
+        if (key < tree->key) {
             newnode->parent = tree;
             tree = tree->left;
         } else {                /* if (key > tree->key) */
@@ -279,26 +241,17 @@ struct itree *itreeadd(struct itree *tree, signed long key, void *value,
     return newnode;
 }
 
-struct itree *itreefind(struct itree *tree, signed long key,
-                        enum tree_search_base base)
+struct btree *btreefind(struct btree *tree, signed long key)
 {
-    if (base == tree_find_first)
-        tree = itreeroot(tree);
+    tree = btreeroot(tree);
 
     do {
         if (key == tree->key) {
-            if (base == tree_find_first) {
-                itree_splay (tree);
-                return tree;
-            } else if (tree->equal) {
-                itree_splay (tree->equal);
-                return tree->equal;
-            } else
-                return NULL;
+            btree_splay (tree);
+            return tree;
         } else if (key < tree->key) {
             tree = tree->left;
         } else {                /* if (key > tree->key) */
-
             tree = tree->right;
         }
     } while (tree);
@@ -306,36 +259,26 @@ struct itree *itreefind(struct itree *tree, signed long key,
     return NULL;
 }
 
-struct itree *itreedel(struct itree *tree)
+struct btree *btreedel(struct btree *tree)
 {
-    struct itree *t;
+    struct btree *t;
 
     while (tree->left || tree->right) {
         if (tree->right) {
-            itree_rotate_left(tree);
+            btree_rotate_left(tree);
         } else {
-            itree_rotate_right(tree);
+            btree_rotate_right(tree);
         }
     }
 
     if (tree->parent) {
         if (tree->parent->left == tree) {
-            if (tree->equal) {
-                tree->parent->left = tree->equal;
-                tree->equal->parent = tree->parent;
-            } else {
-                tree->parent->left = NULL;
-            }
+            tree->parent->left = NULL;
         } else {
-            if (tree->equal) {
-                tree->parent->right = tree->equal;
-                tree->equal->parent = tree->parent;
-            } else {
-                tree->parent->right = NULL;
-            }
+            tree->parent->right = NULL;
         }
 
-        t = itreeroot(tree);
+        t = btreeroot(tree);
         efree(tree);
         return t;
     }
@@ -345,40 +288,19 @@ struct itree *itreedel(struct itree *tree)
     return NULL;
 }
 
-struct itree *itreedel_by_key(struct itree *tree, signed long key)
-{
-    // struct itree *it = itreefind (tree, tree->key, tree_find_first);
-
-#if 0
-    while (it) {
-        struct itree *n = it->equal;
-        if (n->parent) {
-            tree = itreeroot(n);
-        } else {
-
-        }
-        tree = itreedel(n);
-        it =;
-    }
-#endif
-
-    return tree;
-}
-
-struct itree *itreeroot(struct itree *tree)
+struct btree *btreeroot(struct btree *tree)
 {
     if (tree->parent)
-        return itreeroot(tree->parent);
+        return btreeroot(tree->parent);
 
     return tree;
 }
 
-void itreefree(struct itree *tree, void (*free_node) (void *))
+void btreefree(struct btree *tree, void (*free_node) (void *))
 {
     if (tree) {
-        itreefree(tree->left, free_node);
-        itreefree(tree->right, free_node);
-        itreefree(tree->equal, free_node);
+        btreefree(tree->left, free_node);
+        btreefree(tree->right, free_node);
 
         if (free_node)
             free_node(tree->value);
@@ -386,30 +308,28 @@ void itreefree(struct itree *tree, void (*free_node) (void *))
     }
 }
 
-void itreefree_all(struct itree *tree, void (*free_node) (void *))
+void btreefree_all(struct btree *tree, void (*free_node) (void *))
 {
     if (tree);
-    tree = itreeroot(tree);
-    itreefree(tree, free_node);
+    tree = btreeroot(tree);
+    btreefree(tree, free_node);
 }
 
-void itreemap_sub(struct itree *tree, void (*f) (struct itree *, void *),
+void btreemap_sub(struct btree *tree, void (*f) (struct btree *, void *),
                   void *t)
 {
     if (tree->left)
-        itreemap_sub(tree->left, f, t);
+        btreemap_sub(tree->left, f, t);
     if (tree->right)
-        itreemap_sub(tree->right, f, t);
+        btreemap_sub(tree->right, f, t);
 
     f(tree, t);
-    if (tree->equal)
-        itreemap_sub(tree->equal, f, t);
 }
 
-void itreemap(struct itree *tree, void (*f) (struct itree *, void *),
+void btreemap(struct btree *tree, void (*f) (struct btree *, void *),
               void *t)
 {
-    tree = itreeroot(tree);
+    tree = btreeroot(tree);
 
-    itreemap_sub(tree, f, t);
+    btreemap_sub(tree, f, t);
 }

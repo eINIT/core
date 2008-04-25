@@ -119,11 +119,11 @@ pid_t einit_ipc_client_pid = 0;
 
 char einit_connect(int *argc, char **argv)
 {
-    const char *einit_ipc_address = DEFAULT_EINIT_ADDRESS;
+    const char *einit_ipc_address = NULL;
     int einit_ipc_socket = -1;
-    char *envvar = getenv("EINIT_ADDRESS");
+    char *envvar;
     char priv = 0;
-    if (envvar)
+    if ((envvar = getenv("EINIT_ADDRESS")))
         einit_ipc_address = envvar;
 
     if (argc && argv) {

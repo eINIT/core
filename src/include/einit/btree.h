@@ -1,8 +1,8 @@
 /*
- *  itree-trinary-splay.h
+ *  btree.h
  *  einit
  *
- *  Created by Magnus Deininger on 04/12/2007.
+ *  Forked from itree.h by Magnus Deininger on 25/04/2008.
  *  Copyright 2007-2008 Magnus Deininger. All rights reserved.
  *
  */
@@ -36,19 +36,14 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
  */
 
-#ifndef EINIT_ITREE_TRINARY_SPLAY_H
-#define EINIT_ITREE_TRINARY_SPLAY_H
-
-enum tree_search_base {
-    tree_find_first = 0x1,
-    tree_find_next = 0x2
-};
+#ifndef EINIT_BTREE_SPLAY_H
+#define EINIT_BTREE_SPLAY_H
 
 #define tree_value_string 0
 #define tree_value_noalloc -1
 
-struct itree {
-    struct itree *left, *right, *equal, *parent;
+struct btree {
+    struct btree *left, *right, *parent;
     signed long key;
     union {
         void *value;
@@ -56,21 +51,19 @@ struct itree {
     };
 };
 
-struct itree *itreeadd(struct itree *tree, signed long key, void *value,
+struct btree *btreeadd(struct btree *tree, signed long key, void *value,
                        ssize_t size);
-struct itree *itreefind(struct itree *tree, signed long key,
-                        enum tree_search_base base);
-struct itree *itreedel(struct itree *tree);
-struct itree *itreedel_by_key(struct itree *tree, signed long key);
-struct itree *itreeroot(struct itree *tree);
+struct btree *btreefind(struct btree *tree, signed long key);
+struct btree *btreedel(struct btree *tree);
+struct btree *btreeroot(struct btree *tree);
 
-void itreemap(struct itree *tree, void (*f) (struct itree *, void *),
+void btreemap(struct btree *tree, void (*f) (struct btree *, void *),
               void *t);
 
-void itreefree(struct itree *tree, void (*free_node) (void *));
-void itreefree_all(struct itree *tree, void (*free_node) (void *));
+void btreefree(struct btree *tree, void (*free_node) (void *));
+void btreefree_all(struct btree *tree, void (*free_node) (void *));
 
-#define itreefree_simple(tree) itreefree (tree, efree);
-#define itreefree_simple_all(tree) itreefree_all (tree, efree);
+#define btreefree_simple(tree) btreefree (tree, efree);
+#define btreefree_simple_all(tree) btreefree_all (tree, efree);
 
 #endif
