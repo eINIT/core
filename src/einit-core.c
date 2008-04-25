@@ -726,11 +726,6 @@ int main(int argc, char **argv, char **environ)
     }
 
     /*
-     * struct einit_event ev = evstaticinit(einit_core_update_modules);
-     * event_emit (&ev, 0); evstaticdestroy (ev);
-     */
-
-    /*
      * give the module-logic code and others a chance at processing the current list 
      */
     struct einit_event update_event =

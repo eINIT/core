@@ -68,6 +68,7 @@ extern "C" {
                                                        struct einit_ipc_connection *));
 
     char einit_ipc_connect(const char *address);
+    char einit_ipc_connect_socket(int fd);
     char einit_ipc_loop();
 
     void einit_ipc_loop_infinite();

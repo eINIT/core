@@ -276,6 +276,13 @@ void einit_ipc_loop_infinite()
     }
 }
 
+char einit_ipc_connect_socket(int fd)
+{
+    einit_ipc_client_rd = einit_create_sexp_fd_reader(fd);
+
+    return (einit_ipc_client_rd != NULL);
+}
+
 char einit_ipc_connect(const char *address)
 {
     int fd = socket(PF_UNIX, SOCK_STREAM, 0);
@@ -296,9 +303,7 @@ char einit_ipc_connect(const char *address)
         return 0;
     }
 
-    einit_ipc_client_rd = einit_create_sexp_fd_reader(fd);
-
-    return (einit_ipc_client_rd != NULL);
+    return einit_ipc_connect_socket (fd);
 }
 
 int einit_ipc_get_fd()

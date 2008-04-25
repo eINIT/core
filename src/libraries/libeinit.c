@@ -115,11 +115,12 @@ void einit_switch_mode(const char *mode)
  * client
  */
 
-const char *einit_ipc_address = DEFAULT_EINIT_ADDRESS;
 pid_t einit_ipc_client_pid = 0;
 
 char einit_connect(int *argc, char **argv)
 {
+    const char *einit_ipc_address = DEFAULT_EINIT_ADDRESS;
+    int einit_ipc_socket = -1;
     char *envvar = getenv("EINIT_ADDRESS");
     char priv = 0;
     if (envvar)
@@ -137,6 +138,9 @@ char einit_connect(int *argc, char **argv)
                     if ((++i) < (*argc))
                         einit_ipc_address = argv[i];
                     break;
+                case '-':
+                    if (strmatch (argv[i], "--socket") && ((++i) < (*argc)))
+                        einit_ipc_socket = parse_integer (argv[i]);
                 }
         }
     }
@@ -145,7 +149,9 @@ char einit_connect(int *argc, char **argv)
         einit_ipc_address = DEFAULT_EINIT_ADDRESS;
 
     // einit_ipc_9p_fd = ixp_dial (einit_ipc_address);
-    if (priv) {
+    if (einit_ipc_socket > 0) {
+        return einit_ipc_connect_socket(einit_ipc_socket);
+    } else if (priv) {
         return einit_connect_spawn(argc, argv);
     } else {
         return einit_ipc_connect(einit_ipc_address);
@@ -169,10 +175,13 @@ char einit_connect_spawn(int *argc, char **argv)
         }
     }
 
-    char address[BUFFERSIZE];
-    struct stat st;
+    int ipcsocket[2];
 
-    snprintf(address, BUFFERSIZE, "/tmp/einit.%i", getpid());
+    socketpair (AF_UNIX, SOCK_STREAM, 0, ipcsocket);
+
+    char socketstring[32];
+
+    snprintf(socketstring, BUFFERSIZE, "%i", ipcsocket[0]);
 
     // int fd = 0;
 
@@ -181,7 +190,6 @@ char einit_connect_spawn(int *argc, char **argv)
     switch (einit_ipc_client_pid) {
     case -1:
         return 0;
-        break;
     case 0:
         /*
          * fd = open ("/dev/null", O_RDWR); if (fd) { close (0); close
@@ -191,21 +199,16 @@ char einit_connect_spawn(int *argc, char **argv)
          * 
          * close (fd); }
          */
+        close (ipcsocket[1]);
 
-        execl(EINIT_LIB_BASE "/bin/einit-core", "einit-core", "--ipc",
-              address, (sandbox ? "--sandbox" : NULL), NULL);
+        execl(EINIT_LIB_BASE "/bin/einit-core", "einit-core", "--socket",
+              socketstring, (sandbox ? "--sandbox" : NULL), NULL);
 
         exit(EXIT_FAILURE);
-        break;
     default:
-        while (stat(address, &st))
-            usleep(100);
+        close (ipcsocket[0]);
 
-        char rv = einit_ipc_connect(address);
-
-        unlink(address);
-        return rv;
-        break;
+        return einit_ipc_connect_socket(ipcsocket[1]);
     }
 }
 
