@@ -539,7 +539,7 @@ int main(int argc, char **argv, char **environ)
     char suppress_version = 0;
     int alarm_pipe[2];
     char *ipc_socket = NULL;
-    int ipc_socket_fd = 0;
+    int ipc_socket_fd = -1;
     char doboot = 1;
 
 #if defined(__linux__) && defined(PR_SET_NAME)
@@ -742,17 +742,17 @@ int main(int argc, char **argv, char **environ)
     event_emit(&update_event, 0);
     evstaticdestroy(update_event);
 
-    if (ipc_socket_fd) {
+    if (ipc_socket_fd >= 0) {
         einit_ipc_connect_client(ipc_socket_fd);
     }
 
-    if (!ipc_socket) {
+    if (doboot) {
         /*
          * actual init code 
          */
         event_listen(einit_boot_root_device_ok,
                      core_event_einit_boot_root_device_ok);
-    } else {
+    } else if (ipc_socket) {
         einit_ipc_run_server (ipc_socket);
     }
 

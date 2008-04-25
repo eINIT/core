@@ -165,13 +165,11 @@ char einit_connect_spawn(int *argc, char **argv)
     if (argc && argv) {
         int i = 0;
         for (i = 1; i < *argc; i++) {
-            if (argv[i][0] == '-')
-                switch (argv[i][1]) {
-                case 'p':
-                    if (argv[i][2] == 's')
-                        sandbox = 1;
-                    break;
-                }
+            if ((argv[i][0] == '-') && (argv[i][1] == 'p') && (argv[i][2] == 's'))
+            {
+                sandbox = 1;
+                break;
+            }
         }
     }
 
@@ -183,7 +181,7 @@ char einit_connect_spawn(int *argc, char **argv)
 
     snprintf(socketstring, BUFFERSIZE, "%i", ipcsocket[0]);
 
-    // int fd = 0;
+    int fd = 0;
 
     einit_ipc_client_pid = fork();
 
@@ -191,15 +189,21 @@ char einit_connect_spawn(int *argc, char **argv)
     case -1:
         return 0;
     case 0:
-        /*
-         * fd = open ("/dev/null", O_RDWR); if (fd) { close (0); close
-         * (1); close (2);
-         * 
-         * dup2 (fd, 0); dup2 (fd, 1); dup2 (fd, 2);
-         * 
-         * close (fd); }
-         */
+        fd = open ("/dev/null", O_RDWR);
         close (ipcsocket[1]);
+
+        if (fd) {
+            int i = 0;
+            for (; i < 3; i++)
+            {
+                if (ipcsocket[0] != i)
+                {
+                    close (i);
+                    dup2 (fd, i);
+                }
+            }
+            close (fd);
+        }
 
         execl(EINIT_LIB_BASE "/bin/einit-core", "einit-core", "--ipc-socket",
               socketstring, (sandbox ? "--sandbox" : NULL), NULL);
