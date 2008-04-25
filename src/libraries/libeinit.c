@@ -201,7 +201,7 @@ char einit_connect_spawn(int *argc, char **argv)
          */
         close (ipcsocket[1]);
 
-        execl(EINIT_LIB_BASE "/bin/einit-core", "einit-core", "--socket",
+        execl(EINIT_LIB_BASE "/bin/einit-core", "einit-core", "--ipc-socket",
               socketstring, (sandbox ? "--sandbox" : NULL), NULL);
 
         exit(EXIT_FAILURE);

@@ -540,6 +540,7 @@ int main(int argc, char **argv, char **environ)
     int alarm_pipe[2];
     char *ipc_socket = NULL;
     int ipc_socket_fd = 0;
+    char doboot = 1;
 
 #if defined(__linux__) && defined(PR_SET_NAME)
     prctl(PR_SET_NAME, "einit [core]", 0, 0, 0);
@@ -603,9 +604,14 @@ int main(int argc, char **argv, char **environ)
                 } else if (strmatch(argv[i], "--ipc")) {
                     ipc_socket = argv[i+1];
                     i++;
+                    doboot = 0;
                 } else if (strmatch(argv[i], "--socket") && argv[i+1]) {
                     ipc_socket_fd = parse_integer(argv[i+1]);
                     i++;
+                } else if (strmatch(argv[i], "--ipc-socket") && argv[i+1]) {
+                    ipc_socket_fd = parse_integer(argv[i+1]);
+                    i++;
+                    doboot = 0;
                 }
 
                 break;
@@ -749,5 +755,5 @@ int main(int argc, char **argv, char **environ)
         einit_ipc_run_server (ipc_socket);
     }
 
-     return einit_main_loop((coremode & einit_mode_ipconly) ? 0 : 1);
+     return einit_main_loop(doboot);
 }
