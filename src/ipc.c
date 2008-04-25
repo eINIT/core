@@ -230,12 +230,11 @@ int einit_ipc_sexp_prepare(fd_set * rfds)
 {
     int r = 0;
 
-    if (einit_ipc_sexp_fd < 0)
-        return 0;
-
-    FD_SET(einit_ipc_sexp_fd, rfds);
-    if (r < einit_ipc_sexp_fd)
-        r = einit_ipc_sexp_fd;
+    if (einit_ipc_sexp_fd >= 0) {
+        FD_SET(einit_ipc_sexp_fd, rfds);
+        if (r < einit_ipc_sexp_fd)
+            r = einit_ipc_sexp_fd;
+    }
 
     struct einit_ipc_connection *c = einit_ipc_connections;
 
@@ -255,11 +254,10 @@ int einit_ipc_sexp_prepare(fd_set * rfds)
 
 void einit_ipc_sexp_handle(fd_set * rfds)
 {
-    if (einit_ipc_sexp_fd < 0)
-        return;
-
-    if (FD_ISSET(einit_ipc_sexp_fd, rfds))
-        einit_ipx_sexp_handle_connect();
+    if (einit_ipc_sexp_fd >= 0) {
+        if (FD_ISSET(einit_ipc_sexp_fd, rfds))
+            einit_ipx_sexp_handle_connect();
+    }
 
     struct einit_ipc_connection *c = einit_ipc_connections;
 
@@ -364,7 +362,7 @@ void einit_ipc_generic_event_handler(struct einit_event *ev)
 
         event_ignore(einit_event_subsystem_any, einit_ipc_generic_event_handler);
 
-        if (einit_ipc_sexp_fd > 0) {
+        if (einit_ipc_sexp_fd >= 0) {
             close(einit_ipc_sexp_fd);
             einit_ipc_sexp_fd = -1;
         }
