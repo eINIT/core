@@ -605,6 +605,7 @@ int main(int argc, char **argv, char **environ)
                     ipc_socket = argv[i+1];
                     i++;
                     doboot = 0;
+                    coremode |= einit_mode_ipconly;
                 } else if (strmatch(argv[i], "--socket") && argv[i+1]) {
                     ipc_socket_fd = parse_integer(argv[i+1]);
                     i++;
@@ -612,6 +613,7 @@ int main(int argc, char **argv, char **environ)
                     ipc_socket_fd = parse_integer(argv[i+1]);
                     i++;
                     doboot = 0;
+                    coremode |= einit_mode_ipconly;
                 }
 
                 break;
@@ -751,7 +753,6 @@ int main(int argc, char **argv, char **environ)
         event_listen(einit_boot_root_device_ok,
                      core_event_einit_boot_root_device_ok);
     } else {
-        coremode |= einit_mode_ipconly;
         einit_ipc_run_server (ipc_socket);
     }
 

@@ -208,7 +208,7 @@ char einit_connect_spawn(int *argc, char **argv)
     default:
         close (ipcsocket[0]);
 
-        return einit_ipc_connect_socket(ipcsocket[1]);
+        return einit_ipc_connect_socket(ipcsocket[1] ? 1 : 0);
     }
 }
 
