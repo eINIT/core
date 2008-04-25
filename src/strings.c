@@ -140,7 +140,7 @@ struct vtree *einit_stable_strings_reverse = NULL;
 
 #undef DEBUG
 
-const char *str_stabilise_l(const char *s, uint32_t * h, int *l)
+const char *str_stabilise(const char *s)
 {
     if (!s)
         return NULL;
@@ -178,7 +178,8 @@ const char *str_stabilise_l(const char *s, uint32_t * h, int *l)
         if (nv)
             efree(nv);
 
-        goto ret;
+
+        return i->value;
     }
 
     /*
@@ -197,19 +198,7 @@ const char *str_stabilise_l(const char *s, uint32_t * h, int *l)
 
     einit_stable_strings = i;
 
-  ret:
-
-    if (h)
-        *h = hash;
-    if (l)
-        *l = len;
-
     return i->value;
-}
-
-const char *str_stabilise(const char *s)
-{
-    return str_stabilise_l(s, NULL, NULL);
 }
 
 char **set_str_dup_stable(char **s)

@@ -53,9 +53,7 @@ struct stree *streeadd(const struct stree *stree, const char *key,
     if (!key)
         return NULL;
 
-    uint32_t keyhash = 0;
-    int keylen = 0;
-    char *stablekey = (char *) str_stabilise_l(key, &keyhash, &keylen);
+    char *stablekey = str_stabilise(key);
 
     // fprintf (stderr, "key: %s, hash: %i\n", key, keyhash);
 
@@ -93,7 +91,7 @@ struct stree *streeadd(const struct stree *stree, const char *key,
     newnode->luggage = (void *) luggage;
 
     newnode->treenode =
-        itreeadd(stree ? stree->treenode : NULL, keyhash, newnode,
+        itreeadd(stree ? stree->treenode : NULL, (long)stablekey, newnode,
                  tree_value_noalloc);
 
     return newnode;
@@ -117,12 +115,11 @@ struct stree *streefind(const struct stree *stree, const char *key,
 {
     if (!key || !stree)
         return NULL;
-    uint32_t keyhash;
-    int keylen;
+
+    char *stablekey = str_stabilise(key);
 
     struct itree *it = stree->treenode;
 
-    str_stabilise_l(key, &keyhash, &keylen);
     /*
      * switch (options) { case tree_find_next: keyhash =
      * stree->treenode->key; break; default: str_stabilise_l (key,
@@ -130,7 +127,7 @@ struct stree *streefind(const struct stree *stree, const char *key,
      * break; } 
      */
 
-    if ((it = itreefind(it, keyhash, options)))
+    if ((it = itreefind(it, (long)stablekey, options)))
         return it->value;
 
     return NULL;
