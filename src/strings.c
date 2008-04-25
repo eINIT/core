@@ -149,7 +149,7 @@ const char *str_stabilise(const char *s)
                                  * since it can fuck things up hard */
 
     if (einit_stable_strings_reverse &&
-        vtreefind(einit_stable_strings_reverse, s)) {
+        vtreefind(einit_stable_strings_reverse, (long)s)) {
         return s;
     }
 
@@ -194,7 +194,7 @@ const char *str_stabilise(const char *s)
      */
     i = btreeadd(einit_stable_strings, hash, nv, tree_value_noalloc);
 
-    vtreeadd(einit_stable_strings_reverse, nv);
+    einit_stable_strings_reverse = vtreeadd(einit_stable_strings_reverse, (long)nv);
 
     einit_stable_strings = i;
 
