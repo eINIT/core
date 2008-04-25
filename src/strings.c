@@ -40,6 +40,7 @@
 #include <einit/bitch.h>
 #include <einit/configuration.h>
 #include <einit/btree.h>
+#include <einit/vtree.h>
 
 
 #undef get16bits
@@ -135,6 +136,7 @@ uint32_t StrSuperFastHash(const char *data, int *len)
 }
 
 struct btree *einit_stable_strings = NULL;
+struct vtree *einit_stable_strings_reverse = NULL;
 
 #undef DEBUG
 
@@ -145,6 +147,11 @@ const char *str_stabilise_l(const char *s, uint32_t * h, int *l)
     if (!s[0])
         return "";              /* use a real static string for this one
                                  * since it can fuck things up hard */
+
+    if (einit_stable_strings_reverse &&
+        vtreefind(einit_stable_strings_reverse, s)) {
+        return s;
+    }
 
     // uintptr_t pi = (uintptr_t)s;
     int len;
@@ -185,6 +192,9 @@ const char *str_stabilise_l(const char *s, uint32_t * h, int *l)
      * we don't really care if we accidentally duplicate the string 
      */
     i = btreeadd(einit_stable_strings, hash, nv, tree_value_noalloc);
+
+    vtreeadd(einit_stable_strings_reverse, nv);
+
     einit_stable_strings = i;
 
   ret:

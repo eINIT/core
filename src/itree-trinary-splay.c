@@ -393,8 +393,8 @@ void itreefree_all(struct itree *tree, void (*free_node) (void *))
     itreefree(tree, free_node);
 }
 
-void itreemap_sub(struct itree *tree, void (*f) (struct itree *, void *),
-                  void *t)
+static void itreemap_sub(struct itree *tree, void (*f) (struct itree *, void *),
+                         void *t)
 {
     if (tree->left)
         itreemap_sub(tree->left, f, t);

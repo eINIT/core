@@ -1,8 +1,8 @@
 /*
- *  btree-splay.c
+ *  vtree-splay.c
  *  einit
  *
- *  Forked by Magnus Deininger from itree-trinary-splay.c on 25/04/2008.
+ *  Forked by Magnus Deininger from btree-splay.c on 26/04/2008.
  *  Copyright 2007-2008 Magnus Deininger. All rights reserved.
  *
  */
@@ -37,14 +37,14 @@
  */
 
 #include <einit/utility.h>
-#include <einit/btree.h>
+#include <einit/vtree.h>
 #include <string.h>
 #include <stddef.h>
 
-struct btree *btree_rotate_left(struct btree *tree)
+struct vtree *vtree_rotate_left(struct vtree *tree)
 {
     if (tree->right) {
-        struct btree *u, *v, *w;
+        struct vtree *u, *v, *w;
 
         u = tree->right;
         v = tree->left;
@@ -72,10 +72,10 @@ struct btree *btree_rotate_left(struct btree *tree)
     return tree;
 }
 
-struct btree *btree_rotate_right(struct btree *tree)
+struct vtree *vtree_rotate_right(struct vtree *tree)
 {
     if (tree->left) {
-        struct btree *u, *v, *w;
+        struct vtree *u, *v, *w;
 
         u = tree->left;
         v = tree->right;
@@ -103,42 +103,42 @@ struct btree *btree_rotate_right(struct btree *tree)
     return tree;
 }
 
-struct btree *btree_splay(struct btree *tree)
+struct vtree *vtree_splay(struct vtree *tree)
 {
-    struct btree *rt = tree;
+    struct vtree *rt = tree;
 
     while (tree->parent) {
         if (tree->parent->left == tree) {
 #if 1
             if (tree->parent->parent) {
                 if (tree->parent->parent->left == tree->parent) {
-                    tree = btree_rotate_right(tree->parent);
-                    tree = btree_rotate_right(tree->parent);
+                    tree = vtree_rotate_right(tree->parent);
+                    tree = vtree_rotate_right(tree->parent);
                 } else {
-                    tree = btree_rotate_right(tree->parent);
-                    tree = btree_rotate_left(tree->parent);
+                    tree = vtree_rotate_right(tree->parent);
+                    tree = vtree_rotate_left(tree->parent);
                 }
             } else {
-                tree = btree_rotate_right(tree->parent);
+                tree = vtree_rotate_right(tree->parent);
             }
 #else
-            tree = btree_rotate_right(tree->parent);
+            tree = vtree_rotate_right(tree->parent);
 #endif
         } else if (tree->parent->right == tree) {
 #if 1
             if (tree->parent->parent) {
                 if (tree->parent->parent->left == tree->parent) {
-                    tree = btree_rotate_left(tree->parent);
-                    tree = btree_rotate_right(tree->parent);
+                    tree = vtree_rotate_left(tree->parent);
+                    tree = vtree_rotate_right(tree->parent);
                 } else {
-                    tree = btree_rotate_left(tree->parent);
-                    tree = btree_rotate_left(tree->parent);
+                    tree = vtree_rotate_left(tree->parent);
+                    tree = vtree_rotate_left(tree->parent);
                 }
             } else {
-                tree = btree_rotate_left(tree->parent);
+                tree = vtree_rotate_left(tree->parent);
             }
 #else
-            tree = btree_rotate_left(tree->parent);
+            tree = vtree_rotate_left(tree->parent);
 #endif
         } else {
             fprintf(stderr, "BAD TREE!\n");
@@ -150,47 +150,19 @@ struct btree *btree_splay(struct btree *tree)
     return rt;
 }
 
-struct btree *btreeadd(struct btree *tree, signed long key, void *value,
-                       ssize_t size)
+struct vtree *vtreeadd(struct vtree *tree, signed long key)
 {
-    size_t lsize = sizeof(struct btree);
-    struct btree *newnode;
-    size_t ssize = 0;
+    struct vtree *newnode;
 
-    switch (size) {
-    case tree_value_noalloc:
-        lsize = sizeof(struct btree);
-        break;
-    case tree_value_string:
-        ssize = strlen(value) + 1;
-        lsize = offsetof(struct btree, data) + ssize;
-        break;
-    default:
-        lsize = offsetof(struct btree, data) + size;
-        break;
-    }
-
-    newnode = emalloc(lsize);
+    newnode = emalloc(sizeof(struct vtree));
     newnode->key = key;
-
-    switch (size) {
-    case tree_value_noalloc:
-        newnode->value = value;
-        break;
-    case tree_value_string:
-        memcpy(newnode->data, value, ssize);
-        break;
-    default:
-        memcpy(newnode->data, value, size);
-        break;
-    }
 
     newnode->left = NULL;
     newnode->right = NULL;
     newnode->parent = NULL;
 
     if (tree)
-        tree = btreeroot(tree);
+        tree = vtreeroot(tree);
 
     while (tree) {
         if (key < tree->key) {
@@ -215,13 +187,13 @@ struct btree *btreeadd(struct btree *tree, signed long key, void *value,
     return newnode;
 }
 
-struct btree *btreefind(struct btree *tree, signed long key)
+struct vtree *vtreefind(struct vtree *tree, signed long key)
 {
-    tree = btreeroot(tree);
+    tree = vtreeroot(tree);
 
     do {
         if (key == tree->key) {
-            btree_splay (tree);
+            vtree_splay (tree);
             return tree;
         } else if (key < tree->key) {
             tree = tree->left;
@@ -233,15 +205,15 @@ struct btree *btreefind(struct btree *tree, signed long key)
     return NULL;
 }
 
-struct btree *btreedel(struct btree *tree)
+struct vtree *vtreedel(struct vtree *tree)
 {
-    struct btree *t;
+    struct vtree *t;
 
     while (tree->left || tree->right) {
         if (tree->right) {
-            btree_rotate_left(tree);
+            vtree_rotate_left(tree);
         } else {
-            btree_rotate_right(tree);
+            vtree_rotate_right(tree);
         }
     }
 
@@ -252,7 +224,7 @@ struct btree *btreedel(struct btree *tree)
             tree->parent->right = NULL;
         }
 
-        t = btreeroot(tree);
+        t = vtreeroot(tree);
         efree(tree);
         return t;
     }
@@ -262,29 +234,26 @@ struct btree *btreedel(struct btree *tree)
     return NULL;
 }
 
-struct btree *btreeroot(struct btree *tree)
+struct vtree *vtreeroot(struct vtree *tree)
 {
     if (tree->parent)
-        return btreeroot(tree->parent);
+        return vtreeroot(tree->parent);
 
     return tree;
 }
 
-void btreefree(struct btree *tree, void (*free_node) (void *))
+void vtreefree(struct vtree *tree)
 {
     if (tree) {
-        btreefree(tree->left, free_node);
-        btreefree(tree->right, free_node);
-
-        if (free_node)
-            free_node(tree->value);
+        vtreefree(tree->left);
+        vtreefree(tree->right);
         efree(tree);
     }
 }
 
-void btreefree_all(struct btree *tree, void (*free_node) (void *))
+void vtreefree_all(struct vtree *tree)
 {
     if (tree);
-    tree = btreeroot(tree);
-    btreefree(tree, free_node);
+    tree = vtreeroot(tree);
+    vtreefree(tree);
 }

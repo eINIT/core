@@ -1,8 +1,8 @@
 /*
- *  btree.h
+ *  vtree.h
  *  einit
  *
- *  Forked from itree.h by Magnus Deininger on 25/04/2008.
+ *  Forked from btree.h by Magnus Deininger on 26/04/2008.
  *  Copyright 2007-2008 Magnus Deininger. All rights reserved.
  *
  */
@@ -36,30 +36,23 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
  */
 
-#ifndef EINIT_BTREE_SPLAY_H
-#define EINIT_BTREE_SPLAY_H
+#ifndef EINIT_VTREE_SPLAY_H
+#define EINIT_VTREE_SPLAY_H
 
-#include <einit/itree.h>
-
-struct btree {
-    struct btree *left, *right, *parent;
+struct vtree {
+    struct vtree *left, *right, *parent;
     signed long key;
-    union {
-        void *value;
-        char data[0];           /* yeah, this hack is old and dirty... */
-    };
 };
 
-struct btree *btreeadd(struct btree *tree, signed long key, void *value,
-                       ssize_t size);
-struct btree *btreefind(struct btree *tree, signed long key);
-struct btree *btreedel(struct btree *tree);
-struct btree *btreeroot(struct btree *tree);
+struct vtree *vtreeadd(struct vtree *tree, signed long key);
+struct vtree *vtreefind(struct vtree *tree, signed long key);
+struct vtree *vtreedel(struct vtree *tree);
+struct vtree *vtreeroot(struct vtree *tree);
 
-void btreefree(struct btree *tree, void (*free_node) (void *));
-void btreefree_all(struct btree *tree, void (*free_node) (void *));
+void vtreefree(struct vtree *tree);
+void vtreefree_all(struct vtree *tree);
 
-#define btreefree_simple(tree) btreefree (tree, efree);
-#define btreefree_simple_all(tree) btreefree_all (tree, efree);
+#define vtreefree_simple(tree) vtreefree (tree, efree);
+#define vtreefree_simple_all(tree) vtreefree_all (tree, efree);
 
 #endif
