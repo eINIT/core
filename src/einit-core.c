@@ -538,8 +538,6 @@ int main(int argc, char **argv, char **environ)
     // char crash_threshold = 5;
     char suppress_version = 0;
     int alarm_pipe[2];
-    char *ipc_socket = NULL;
-    int ipc_socket_fd = -1;
     char doboot = 1;
 
 #if defined(__linux__) && defined(PR_SET_NAME)
@@ -602,15 +600,21 @@ int main(int argc, char **argv, char **environ)
 
                     coremode |= einit_mode_sandbox;
                 } else if (strmatch(argv[i], "--ipc")) {
-                    ipc_socket = argv[i+1];
+#if defined(__linux__) && defined(PR_SET_NAME)
+                    prctl(PR_SET_NAME, "einit [ipc]", 0, 0, 0);
+#endif
+                    einit_ipc_run_server (argv[i+1]);
                     i++;
                     doboot = 0;
                     coremode |= einit_mode_ipconly;
                 } else if (strmatch(argv[i], "--socket") && argv[i+1]) {
-                    ipc_socket_fd = parse_integer(argv[i+1]);
+                    einit_ipc_connect_client(parse_integer(argv[i+1]));
                     i++;
                 } else if (strmatch(argv[i], "--ipc-socket") && argv[i+1]) {
-                    ipc_socket_fd = parse_integer(argv[i+1]);
+#if defined(__linux__) && defined(PR_SET_NAME)
+                    prctl(PR_SET_NAME, "einit [ipc]", 0, 0, 0);
+#endif
+                    einit_ipc_connect_client(parse_integer(argv[i+1]));
                     i++;
                     doboot = 0;
                     coremode |= einit_mode_ipconly;
@@ -742,18 +746,12 @@ int main(int argc, char **argv, char **environ)
     event_emit(&update_event, 0);
     evstaticdestroy(update_event);
 
-    if (ipc_socket_fd >= 0) {
-        einit_ipc_connect_client(ipc_socket_fd);
-    }
-
     if (doboot) {
         /*
          * actual init code 
          */
         event_listen(einit_boot_root_device_ok,
                      core_event_einit_boot_root_device_ok);
-    } else if (ipc_socket) {
-        einit_ipc_run_server (ipc_socket);
     }
 
      return einit_main_loop(doboot);
