@@ -383,6 +383,9 @@ void einit_ipc_setup()
     event_listen(einit_ipc_disable, einit_ipc_sexp_power_event_handler);
 
     event_listen(einit_event_subsystem_any, einit_ipc_generic_event_handler);
+
+    einit_add_fd_prepare_function(einit_ipc_sexp_prepare);
+    einit_add_fd_handler_function(einit_ipc_sexp_handle);
 }
 
 char einit_ipc_run_server(char *address)
@@ -430,9 +433,6 @@ char einit_ipc_run_server(char *address)
 
     chown(address, 0, g);
     chmod(address, smode);
-
-    einit_add_fd_prepare_function(einit_ipc_sexp_prepare);
-    einit_add_fd_handler_function(einit_ipc_sexp_handle);
 
     return 1;
 }
