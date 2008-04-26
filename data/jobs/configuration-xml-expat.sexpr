@@ -1,0 +1,2 @@
+(job xml-expat "eINIT Configuration (.xml, using expat)"
+  (run-on core-initialisation))
