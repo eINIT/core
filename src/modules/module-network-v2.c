@@ -859,7 +859,7 @@ void einit_module_network_v2_scanmodules(struct einit_event *ev)
 int einit_module_network_v2_do_dhcp(struct network_event_data *d,
                                     char *client, char *interface)
 {
-    fbprintf(d->feedback, "trying dhcp client: %s", client);
+    fprintf(stdout, "trying dhcp client: %s\n", client);
     int rv = status_failed;
 
     struct cfgnode **st = cfg_match ("subsystem-network-dhcp-client");
@@ -912,8 +912,8 @@ int einit_module_network_v2_do_dhcp(struct network_event_data *d,
                                     efree(need_binaries);
                                     efree(vars);
 
-                                    fbprintf(d->feedback,
-                                             "dhcp client not available: %s",
+                                    fprintf(stdout,
+                                             "dhcp client not available: %s\n",
                                              client);
 
                                     if (pidfile)
@@ -934,13 +934,13 @@ int einit_module_network_v2_do_dhcp(struct network_event_data *d,
                         rv = pexec(command, NULL, 0, 0, NULL, NULL, NULL,
                                    d->feedback);
                         if (rv == status_ok) {
-                            fbprintf(d->feedback, "dhcp client OK: %s",
+                            fprintf(stdout, "dhcp client OK: %s\n",
                                      client);
 
                             if ((d->action == interface_down) && pidfile)
                                 unlink(pidfile);
                         } else if (rv == status_failed) {
-                            fbprintf(d->feedback, "dhcp client failed: %s",
+                            fprintf(stdout, "dhcp client failed: %s\n",
                                      client);
                         }
                     }
@@ -1026,8 +1026,8 @@ void einit_module_network_v2_address_automatic(struct einit_event *ev)
                         d->status = status_failed;
                     }
                 } else {
-                    fbprintf(d->feedback,
-                             "dhcp requested, but no clients to try");
+                    fprintf(stdout,
+                             "dhcp requested, but no clients to try\n");
 
                     d->status = status_failed;
                 }

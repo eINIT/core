@@ -184,8 +184,8 @@ void linux_network_wpa_supplicant_verify_carrier(struct einit_event *ev)
         int not_ok = 1;
         int retries = 30;       /* 30 sec timeout... should be enough */
 
-        fbprintf(d->feedback,
-                 "making sure wpa_supplicant associated properly");
+        fprintf(stdout,
+                 "making sure wpa_supplicant associated properly\n");
 
         while (not_ok && (retries > 0)) {
             if ((wpa_options =
@@ -206,7 +206,7 @@ void linux_network_wpa_supplicant_verify_carrier(struct einit_event *ev)
 
             if (not_ok) {
                 if (!(retries % 5))
-                    fbprintf(d->feedback, "uh-oh!");
+                    fprintf(stdout, "uh-oh!\n");
 
                 retries--;
                 sleep(1);
@@ -214,7 +214,7 @@ void linux_network_wpa_supplicant_verify_carrier(struct einit_event *ev)
         }
 
         if (not_ok) {           /* things didn't go smoothly... */
-            fbprintf(d->feedback, "can't seem to associate, giving up");
+            fprintf(stdout, "can't seem to associate, giving up\n");
 
             d->status = status_failed;
         }

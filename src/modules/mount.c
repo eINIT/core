@@ -296,7 +296,7 @@ unsigned char read_filesystem_flags_from_configuration(void *na)
 void mount_add_filesystem(char *name, char *options, char **requires,
                           char *after, char *before)
 {
-    fprintf (stderr, "mount_add_filesystem_options(%s)=%s\n", name, options);
+//    fprintf (stderr, "mount_add_filesystem_options(%s)=%s\n", name, options);
 
     char **t = str2set(':', options);
     uintptr_t flags = 0, i = 0;
@@ -354,7 +354,7 @@ uintptr_t mount_get_filesystem_options(char *name)
             ret = d->capabilities;
     }
 
-    fprintf (stderr, "mount_get_filesystem_options(%s)=%i\n", name, ret);
+//    fprintf (stderr, "mount_get_filesystem_options(%s)=%i\n", name, ret);
 
     return ret;
 }
@@ -1999,7 +1999,7 @@ int mount_try_mount(char *mountpoint, char *fs, struct device_data *dd,
 
     efree(fnames);
 
-    fbprintf(status, "none of the functions worked, giving up.");
+    fprintf(stdout, "none of the functions worked, giving up.\n");
 
     return status_failed;
 }
@@ -2076,19 +2076,14 @@ int mount_mount(char *mountpoint, struct device_data *dd,
 
 void mount_do_special_root_umount(struct einit_event *status)
 {
-    fbprintf(status,
-             "unlinking /etc/mtab and replacing it by a symlink to /proc/mounts");
+    fprintf(stdout,
+             "unlinking /etc/mtab and replacing it by a symlink to /proc/mounts\n");
     unlink("/etc/mtab");
     symlink("/proc/mounts", "/etc/mtab");
     errno = 0;
 
-    fbprintf(status, "pruning /tmp");
+    fprintf(stdout, "pruning /tmp\n");
     unlink_recursive("/tmp/", 0);
-
-    /*
-     * fbprintf (status, "unlinking all files in /var/tmp");
-     * unlink_recursive("/var/tmp", 0);
-     */
 }
 
 int mount_umount(char *mountpoint, struct device_data *dd,
@@ -2115,7 +2110,7 @@ int mount_umount(char *mountpoint, struct device_data *dd,
 
     return retval;
 
-    fbprintf(status, "none of the functions worked, giving up.");
+    fprintf(stdout, "none of the functions worked, giving up.\n");
 
     return status_failed;
 }
@@ -2126,7 +2121,7 @@ int mount_fsck(char *fs, char *device, struct einit_event *status)
         || (fs
             && (mount_get_filesystem_options(fs) &
                 filesystem_capability_no_fsck))) {
-        fbprintf(status, "fastboot // no fsck for this fs");
+        fprintf(stdout, "fastboot // no fsck for this fs\n");
         return status_ok;
     }
 
@@ -2173,7 +2168,7 @@ int mount_fsck(char *fs, char *device, struct einit_event *status)
 
         efree(d);
     } else {
-        fbprintf(status, "WARNING: no fsck command known");
+        fprintf(stdout, "WARNING: no fsck command known\n");
     }
 
     return status_ok;
@@ -2185,7 +2180,7 @@ int mount_do_mount_generic(char *mountpoint, char *fs,
                            struct einit_event *status)
 {
 
-    fbprintf(status, "mounting %s (fs=%s)", dd->device, fs);
+    fprintf(stdout, "mounting %s (fs=%s)\n", dd->device, fs);
     // notice (1, "mounting %s on %s (fs=%s)", dd->device, mountpoint,
     // fs);
 
@@ -2202,22 +2197,22 @@ int mount_do_mount_generic(char *mountpoint, char *fs,
 #endif
         {
             status->flag++;
-            fbprintf(status, "mounting has failed (error=%s)",
+            fprintf(stdout, "mounting has failed (error=%s)\n",
                      strerror(errno));
 #ifdef MS_REMOUNT
             if (errno == EBUSY) {
               attempt_remount:
-                fbprintf(status,
-                         "attempting to remount instead of mounting");
+                      fprintf(stdout,
+                         "attempting to remount instead of mounting\n");
 
                 if (mount
                     (dd->device, mountpoint, fs,
                      MS_REMOUNT | mp->mountflags, mp->flatoptions) == -1) {
-                    fbprintf(status, "remounting has failed (error=%s)",
+                     fprintf(stdout, "remounting has failed (error=%s)\n",
                              strerror(errno));
                     goto mount_panic;
                 } else
-                    fbprintf(status, "remounted");
+                    fprintf(stdout, "remounted\n");
             } else
 #else
           attempt_remount:
@@ -2253,7 +2248,7 @@ int mount_do_umount_generic(char *mountpoint, char *fs, char step,
                             struct einit_event *status)
 {
 
-    fbprintf(status, "unmounting %s (fs=%s, attempt#%i)", dd->device, fs,
+    fprintf(stdout, "unmounting %s (fs=%s, attempt#%i)\n", dd->device, fs,
              step);
     // notice (1, "unmounting %s from %s (fs=%s, attempt #%i)",
     // dd->device, mountpoint, fs, step);
@@ -2266,14 +2261,14 @@ int mount_do_umount_generic(char *mountpoint, char *fs, char step,
     {
         goto umount_ok;
     } else {
-        fbprintf(status, "#%i: umount() failed: %s", step,
+        fprintf(stdout, "#%i: umount() failed: %s\n", step,
                  strerror(errno));
 #ifdef __linux__
         if (step >= 2) {
             if (umount2(mountpoint, MNT_FORCE) != -1) {
                 goto umount_ok;
             } else {
-                fbprintf(status, "#%i: umount() failed: %s", step,
+                fprintf(stdout, "#%i: umount() failed: %s\n", step,
                          strerror(errno));
                 errno = 0;
             }
@@ -2282,19 +2277,19 @@ int mount_do_umount_generic(char *mountpoint, char *fs, char step,
                 if (mount
                     (dd->device, mountpoint, mp->fs,
                      MS_REMOUNT | MS_RDONLY, NULL) == -1) {
-                    fbprintf(status, "#%i: remounting r/o failed: %s",
+                    fprintf(stdout, "#%i: remounting r/o failed: %s\n",
                              step, strerror(errno));
                     errno = 0;
                     goto umount_fail;
                 } else {
                     if (umount2(mountpoint, MNT_DETACH) == -1) {
-                        fbprintf(status,
-                                 "#%i: remounted r/o but detaching failed: %s",
+                        fprintf(stdout,
+                                 "#%i: remounted r/o but detaching failed: %s\n",
                                  step, strerror(errno));
                         errno = 0;
                         goto umount_ok;
                     } else {
-                        fbprintf(status, "#%i: remounted r/o and detached",
+                        fprintf(stdout, "#%i: remounted r/o and detached\n",
                                  step);
                         goto umount_ok;
                     }
@@ -2370,13 +2365,13 @@ int emount(char *mountpoint, struct einit_event *status)
 
             return ret;
         } else {
-            fbprintf(status, "can't find details for this mountpoint.");
+            fprintf(stdout, "can't find details for this mountpoint.\n");
 
             return status_failed;
         }
     }
 
-    fbprintf(status, "can't find data for this mountpoint.");
+    fprintf(stdout, "can't find data for this mountpoint.\n");
 
     return status_failed;
 }
@@ -2434,8 +2429,8 @@ int eumount(char *mountpoint, struct einit_event *status)
 
                 if (shutting_down) {
                     if (r == status_failed) {
-                        fbprintf(status,
-                                 "we're shutting down, last-rites will fix it later");
+                        fprintf(stdout,
+                                 "we're shutting down, last-rites will fix it later\n");
                         return status_ok;
                     }
                 }
@@ -2443,13 +2438,13 @@ int eumount(char *mountpoint, struct einit_event *status)
                 return r;
             }
         } else {
-            fbprintf(status, "can't find details.");
+            fprintf(stdout, "can't find details.\n");
 
             return status_failed;
         }
     }
 
-    fbprintf(status, "can't find data.");
+    fprintf(stdout, "can't find data.\n");
 
     return status_failed;
 }

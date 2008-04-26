@@ -184,7 +184,7 @@ void linux_network_bonding_verify_carrier(struct einit_event *ev)
             /*
              * make sure the bonding driver is loaded... if not, bail 
              */
-            fbprintf(d->feedback, "bridging driver not detected");
+            fprintf(stdout, "bridging driver not detected\n");
             d->status = status_failed;
             return;
         }
@@ -228,7 +228,7 @@ void linux_network_bonding_verify_carrier(struct einit_event *ev)
                     if (pexec
                         (buffer, NULL, 0, 0, NULL, NULL, NULL,
                          d->feedback) == status_failed) {
-                        fbprintf(d->feedback, "command failed: %s",
+                             fprintf(stdout, "command failed: %s\n",
                                  buffer);
                         d->status = status_failed;
                     }
@@ -267,8 +267,8 @@ void linux_network_bonding_verify_carrier(struct einit_event *ev)
                                         (buffer, NULL, 0, 0, NULL, NULL,
                                          NULL,
                                          d->feedback) == status_failed) {
-                                        fbprintf(d->feedback,
-                                                 "command failed: %s",
+                                         fprintf(stdout,
+                                                 "command failed: %s\n",
                                                  buffer);
                                     }
                                 }

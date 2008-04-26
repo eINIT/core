@@ -201,7 +201,7 @@ int linux_mount_do_mount_real(char *mountpoint, char *fs,
                               struct mountpoint_data *mp,
                               struct einit_event *status)
 {
-    fbprintf(status, "mounting %s (fs=%s; using /bin/mount)", dd->device,
+    fprintf(stdout, "mounting %s (fs=%s; using /bin/mount)\n", dd->device,
              fs);
 
     char *fsdata = NULL;
@@ -259,7 +259,7 @@ int linux_mount_do_mount_ntfs_3g(char *mountpoint, char *fs,
                                  struct mountpoint_data *mp,
                                  struct einit_event *status)
 {
-    fbprintf(status, "mounting %s (fs=%s; using ntfs-3g command)",
+    fprintf(stdout, "mounting %s (fs=%s; using ntfs-3g command)\n",
              dd->device, fs);
 
     char *fsdata = NULL;
@@ -317,11 +317,11 @@ int linux_mount_do_mount_swap(char *mountpoint, char *fs,
                               struct mountpoint_data *mp,
                               struct einit_event *status)
 {
-    fbprintf(status, "using %s as swap (using swapon()-syscall)",
+    fprintf(stdout, "using %s as swap (using swapon()-syscall)\n",
              dd->device);
 
     if (swapon(dd->device, 0) == -1) {
-        fbprintf(status, "error while calling swapon(): %s",
+        fprintf(stdout, "error while calling swapon(): %s\n",
                  strerror(errno));
 
         return status_failed;
@@ -335,11 +335,11 @@ int linux_mount_do_umount_swap(char *mountpoint, char *fs, char step,
                                struct mountpoint_data *mp,
                                struct einit_event *status)
 {
-    fbprintf(status, "disabling swapspace at %s (using swapoff()-syscall)",
+    fprintf(stdout, "disabling swapspace at %s (using swapoff()-syscall)\n",
              dd->device);
 
     if (swapoff(dd->device) == -1) {
-        fbprintf(status, "error while calling swapoff(): %s",
+        fprintf(stdout, "error while calling swapoff(): %s\n",
                  strerror(errno));
 
         return status_failed;
