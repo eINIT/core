@@ -1,4 +1,4 @@
-Import(['env', 'InstallDirSbin', 'InstallDirLib', 'InstallDirLibBin', 'InternalModules', 'InstallDirInclude', 'AssemblyDir', 'ASMFunctionsAvailable', 'uname', 'InternalModuleObjects'])
+Import(['env', 'InstallDirSbin', 'InstallDirLib', 'InstallDirLibBin', 'InternalModules', 'InstallDirInclude', 'AssemblyDir', 'ASMFunctionsAvailable', 'uname', 'InternalModuleObjects', 'coreStatic'])
 
 import glob
 
@@ -32,43 +32,44 @@ if uname == 'linux':
 
 if uname == 'freebsd':
  CodeCoreMonitorObjects = [ 'freebsd/einit-monitor.c' ]
-
-coreLibs = ['einit']
-
-einitCore = env.Program ('einit-core', CodeCoreObjects + InternalModuleObjects, LIBS=['einit'], LIBPATH=['.'])
-if uname != 'freebsd':
- einitMonitor = env.Program ('einit-monitor', CodeCoreMonitorObjects)
-if uname == 'freebsd':
  einitMonitor = env.Program ('einit-monitor', CodeCoreMonitorObjects, LIBS=['util'])
-
-lastRites = env.Program ('last-rites', CodeLastRites, LIBS=['einit'], LIBPATH=['.'])
-einitHelper = env.Program ('einit-helper', CodeEinitHelper, LIBS=['einit'], LIBPATH=['.'])
-
-einitFeedbackD = env.Program ('einit-feedback', CodeEinitFeedbackD, LIBS=['einit', 'curses'], LIBPATH=['.'])
-einitLogD = env.Program ('einit-log', CodeEinitLogD, LIBS=['einit'], LIBPATH=['.'])
-
-einitSysVD = env.Program ('einit-sysvd', CodeEinitSysVD, LIBS=['einit'], LIBPATH=['.'])
-einitBootChartD = env.Program ('einit-bootchartd', CodeEinitBootChartD, LIBS=['einit'], LIBPATH=['.'])
-
-env.Install (InstallDirLibBin, env.Program ('einit-wtf', ['tools/einit-wtf.c'], LIBS=['einit'], LIBPATH=['.']))
-env.Install (InstallDirLibBin, env.Program ('einit-test',  ['tools/einit-test.c'], LIBS=['einit'], LIBPATH=['.']))
+else:
+ einitMonitor = env.Program ('einit-monitor', CodeCoreMonitorObjects)
 
 if uname == 'linux':
- libEinit = env.SharedLibrary ('einit', CodeLibEinit, SHLINKFLAGS='-shared -Wl,-soname,libeinit.so.3.0.0')
+ env.Install (InstallDirLib, env.SharedLibrary ('einit', CodeLibEinit, SHLINKFLAGS='-shared -Wl,-soname,libeinit.so.3.0.0'))
 else:
- libEinit = env.SharedLibrary ('einit', CodeLibEinit)
+ env.Install (InstallDirLib, env.SharedLibrary ('einit', CodeLibEinit))
 
-env.Install (InstallDirLibBin, einitCore)
-env.Install (InstallDirLibBin, einitHelper)
-env.Install (InstallDirLibBin, lastRites)
-env.Install (InstallDirLibBin, einitFeedbackD)
+env.Install (InstallDirLib, env.StaticLibrary ('einit', CodeLibEinit))
 
-env.Install (InstallDirLibBin, einitLogD)
-env.Install (InstallDirLibBin, einitBootChartD)
+cenv = env.Clone()
+cenv.Append (LIBPATH = ['.'])
+cenv.Append (LIBS=['einit'])
+
+ccenv = cenv.Clone();
+
+if coreStatic:
+ ccenv.Append (CCFLAGS = '-static')
+ ccenv.Append (LINKFLAGS = '-static')
+
+ccenv.Install (InstallDirLibBin, ccenv.Program ('einit-core', CodeCoreObjects + InternalModuleObjects))
+
+cenv.Install (InstallDirLibBin, cenv.Program ('einit-wtf', ['tools/einit-wtf.c']))
+cenv.Install (InstallDirLibBin, cenv.Program ('einit-test',  ['tools/einit-test.c']))
+
+cenv.Install (InstallDirLibBin, cenv.Program ('einit-helper', CodeEinitHelper))
+cenv.Install (InstallDirLibBin, cenv.Program ('last-rites', CodeLastRites))
+
+cenv.Install (InstallDirLibBin, cenv.Program ('einit-log', CodeEinitLogD))
+cenv.Install (InstallDirLibBin, cenv.Program ('einit-bootchartd', CodeEinitBootChartD))
 
 env.InstallAs (InstallDirSbin + '/einit', einitMonitor)
-env.Install (InstallDirLib, libEinit)
-env.Install (InstallDirSbin, einitSysVD)
+cenv.Install (InstallDirSbin, cenv.Program ('einit-sysvd', CodeEinitSysVD))
 
-env.Install (InstallDirInclude + '/einit', glob.glob ('include/einit/*'))
-env.Install (InstallDirInclude + '/einit-modules', glob.glob ('include/einit-modules/*'))
+cenv.Install (InstallDirInclude + '/einit', glob.glob ('include/einit/*'))
+cenv.Install (InstallDirInclude + '/einit-modules', glob.glob ('include/einit-modules/*'))
+
+cursesEnv = cenv.Clone()
+cursesEnv.Append (LIBS = ['curses'])
+cursesEnv.Install (InstallDirLibBin, cursesEnv.Program ('einit-feedback', CodeEinitFeedbackD))

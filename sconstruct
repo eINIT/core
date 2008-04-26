@@ -127,6 +127,7 @@ Mkdir ('build/headers/einit-modules')
 Mkdir ('build/core')
 
 buildnumber = 0
+coreStatic = True;
 
 f = open ('buildnumber', 'r')
 if f:
@@ -279,7 +280,7 @@ env.EConfiguration('build/headers/einit/configuration.h', 'core')
 env.EConfiguration('build/headers/einit-modules/configuration.h', 'modules')
 env.EConfiguration('build/core/module-configuration.c', 'module-configuration')
 
-Export(['env',
+Export(['env', 'coreStatic',
         'RuntimeDirSbin', 'RuntimeDirEtc', 'RuntimeDirLib', 'RuntimeDirLibBin', 'RuntimeDirLibEinit',
         'InstallDirSbin', 'InstallDirEtc', 'InstallDirLib', 'InstallDirLibBin', 'InstallDirLibEinit',
         'SpecialModules', 'Modules', 'ModulesBase', 'ModulesLinux', 'InternalModules',

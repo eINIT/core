@@ -4,7 +4,7 @@ files = [ 'xmlparse.c', 'xmlrole.c', 'xmltok.c', 'xmltok_impl.c', 'xmltok_ns.c' 
 objects = []
 
 for i in files:
- objects += env.SharedObject (i, CPPPATH=['.'])
+ objects += env.Object (i, CPPPATH=['.'])
 
 ExpatObjects = objects;
 
