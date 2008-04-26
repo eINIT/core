@@ -49,6 +49,8 @@ enum test_result {
     test_skipped
 };
 
+char verbose = 0;
+
 enum test_result test_file_with_rnv (char *file)
 {
     char buffer[BUFFERSIZE];
@@ -70,8 +72,10 @@ enum test_result test_file_with_rnv (char *file)
         return test_failed;
     }
 
-    fprintf (stdout, "%s ", file);
-    fflush (stdout);
+    if (verbose) {
+        fprintf (stdout, "%s ", file);
+        fflush (stdout);
+    }
 
     return test_passed;
 }
@@ -159,6 +163,15 @@ int main(int argc, char **argv)
 {
     if (!einit_connect_spawn(&argc, argv)) {
         return 0;
+    }
+
+    int i = 0;
+    for (i = 1; i < argc; i++) {
+        if (argv[i][0] == '-')
+            switch (argv[i][1]) {
+                case 'v':
+                    verbose = 1;
+            }
     }
 
     run_test ("checking config files against schema", test_rnv);
