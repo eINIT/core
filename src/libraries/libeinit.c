@@ -75,14 +75,6 @@
  * dammit, what's wrong with macos!? 
  */
 
-struct exported_function *cfg_addnode_fs = NULL;
-struct exported_function *cfg_findnode_fs = NULL;
-struct exported_function *cfg_getstring_fs = NULL;
-struct exported_function *cfg_getnode_fs = NULL;
-struct exported_function *cfg_getpath_fs = NULL;
-struct exported_function *cfg_prefix_fs = NULL;
-struct exported_function *cfg_callback_prefix_fs = NULL;
-
 char einit_new_node = 0;
 struct utsname osinfo = { };
 #endif
@@ -93,7 +85,6 @@ char **einit_argv = NULL;
 
 struct stree *exported_functions = NULL;
 
-struct cfgnode *cmode = NULL, *amode = NULL;
 enum einit_mode coremode = einit_mode_init;
 
 void einit_power_down()

@@ -96,14 +96,22 @@ struct stree *module_xml_v2_modules = NULL;
 struct cfgnode *module_xml_v2_module_get_node (char *name, char *action) {
  if (name && action) {
   char buffer[BUFFERSIZE];
-  struct cfgnode *node = NULL;
 
   esprintf (buffer, BUFFERSIZE, MODULES_EXECUTE_NODE_TEMPLATE, name);
 
-  while ((node = cfg_findnode (buffer, 0, node))) {
-   if (node->idattr && strmatch (node->idattr, action)) {
-    return node;
-   }
+  struct stree *st = cfg_match (buffer);
+  struct stree *cur = streelinear_prepare(st);
+  if (st) {
+      while (cur) {
+          struct cfgnode *node = cur->value;
+
+          if (node->idattr && strmatch (node->idattr, action)) {
+              return node;
+          }
+
+          cur = streenext(cur);
+      }
+      streefree(st);
   }
  }
 
@@ -116,7 +124,7 @@ struct cfgnode *module_xml_v2_module_get_attributive_node (char *name, char *att
 
   esprintf (buffer, BUFFERSIZE, MODULES_ARBITRARY_NODE_TEMPLATE, name, attribute);
 
-  return cfg_getnode (buffer, NULL);
+  return cfg_getnode (buffer);
  }
 
  return NULL;
@@ -583,11 +591,11 @@ void module_xml_v2_core_event_handler_action_execute_step (char *task, char *rid
    if (options) {
     char **opts = str2set (':', options);
 
-    if (inset (opts, "keep-stdin", SET_TYPE_STRING)) {
+    if (inset ((const void **)opts, "keep-stdin", SET_TYPE_STRING)) {
      xd->options |= einit_exec_keep_stdin;
     }
 
-    if (inset (opts, "no-pipe", SET_TYPE_STRING)) {
+    if (inset ((const void **)opts, "no-pipe", SET_TYPE_STRING)) {
      xd->options |= einit_exec_no_pipe;
     }
 

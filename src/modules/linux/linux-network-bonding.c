@@ -132,7 +132,6 @@ void linux_network_bonding_interface_construct(struct einit_event *ev)
 
                 newnode.id = (char *)
                     str_stabilise("configuration-kernel-modules-bonding");
-                newnode.type = einit_node_regular;
 
                 newnode.arbattrs =
                     set_str_add_stable(newnode.arbattrs, (void *) "id");

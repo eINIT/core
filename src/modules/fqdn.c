@@ -73,9 +73,9 @@ module_register(einit_fqdn_self);
 void einit_fqdn_set()
 {
     char *hname, *dname;
-    if ((hname = cfg_getstring("configuration-network-hostname", NULL)))
+    if ((hname = cfg_getstring("configuration-network-hostname")))
         sethostname(hname, strlen(hname));
-    if ((dname = cfg_getstring("configuration-network-domainname", NULL)))
+    if ((dname = cfg_getstring("configuration-network-domainname")))
         setdomainname(dname, strlen(dname));
     notice(4, "hostname set to: %s.%s", hname, dname);
 }

@@ -281,7 +281,7 @@ void einit_ipc_sexp_handle(fd_set * rfds)
 
 char einit_ipx_sexp_prepare_fd()
 {
-    char *address = cfg_getstring("einit-subsystem-ipc/socket", NULL);
+    char *address = cfg_getstring("einit-subsystem-ipc/socket");
     if (!address)
         address = "/dev/einit";
 
@@ -419,8 +419,8 @@ char einit_ipc_run_server(char *address)
     fcntl(einit_ipc_sexp_fd, F_SETFL, O_NONBLOCK);
     fcntl(einit_ipc_sexp_fd, F_SETFD, FD_CLOEXEC);
 
-    char *group = cfg_getstring("subsystem-ipc-9p/group", NULL);
-    char *chmod_i = cfg_getstring("subsystem-ipc-9p/chmod", NULL);
+    char *group = cfg_getstring("subsystem-ipc/group");
+    char *chmod_i = cfg_getstring("subsystem-ipc/chmod");
 
     if (!group)
         group = "einit";

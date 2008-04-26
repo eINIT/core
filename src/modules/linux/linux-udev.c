@@ -187,7 +187,7 @@ void linux_udev_post_udevtrigger(struct einit_exec_data *xd)
 void linux_udev_post_execute(struct einit_exec_data *xd)
 {
     struct stat st;
-    struct cfgnode *n = cfg_getnode("configuration-system-coldplug", NULL);
+    struct cfgnode *n = cfg_getnode("configuration-system-coldplug");
     /*
      * again, i should check for an appropriate kernel version... 
      */
@@ -323,7 +323,7 @@ int linux_udev_configure(struct lmodule *pa)
 {
     module_init(pa);
 
-    char *dm = cfg_getstring("configuration-system-device-manager", NULL);
+    char *dm = cfg_getstring("configuration-system-device-manager");
 
     if (strcmp(dm, "udev")) {
         return status_configure_failed | status_not_in_use;

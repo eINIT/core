@@ -110,7 +110,7 @@ int einit_module_network_v2_have_options(char *interface)
 
     esprintf(buffer, BUFFERSIZE, INTERFACES_PREFIX "-%s", interface);
 
-    return cfg_getnode(buffer, NULL) ? 1 : 0;
+    return cfg_getnode(buffer) ? 1 : 0;
 }
 
 struct cfgnode *einit_module_network_v2_get_option_default_r(char *r,
@@ -121,7 +121,7 @@ struct cfgnode *einit_module_network_v2_get_option_default_r(char *r,
     esprintf(buffer, BUFFERSIZE, INTERFACE_DEFAULTS_PREFIX "-%s-%s", r,
              option);
 
-    return cfg_getnode(buffer, NULL);
+    return cfg_getnode(buffer);
 }
 
 struct cfgnode *einit_module_network_v2_get_option_global(char *option)
@@ -130,13 +130,13 @@ struct cfgnode *einit_module_network_v2_get_option_global(char *option)
 
     esprintf(buffer, BUFFERSIZE, GLOBAL_DEFAULTS_PREFIX "-%s", option);
 
-    return cfg_getnode(buffer, NULL);
+    return cfg_getnode(buffer);
 }
 
 struct cfgnode *einit_module_network_v2_get_option_default(char *interface,
                                                            char *option)
 {
-    char *u = cfg_getstring(INTERFACE_DEFAULTS_PREFIX, NULL);
+    char *u = cfg_getstring(INTERFACE_DEFAULTS_PREFIX);
 
     if (u) {
         char **set = str2set(':', u);
@@ -148,7 +148,7 @@ struct cfgnode *einit_module_network_v2_get_option_default(char *interface,
             esprintf(buffer, BUFFERSIZE, INTERFACE_DEFAULTS_PREFIX "-%s",
                      set[i]);
 
-            n = cfg_getnode(buffer, NULL);
+            n = cfg_getnode(buffer);
 
             if (n && (!n->idattr || !eregcomp(&r, n->idattr))) {
                 if (!n->idattr
@@ -186,7 +186,7 @@ struct cfgnode *einit_module_network_v2_get_option(char *interface,
     esprintf(buffer, BUFFERSIZE, INTERFACES_PREFIX "-%s-%s", interface,
              option);
 
-    if ((node = cfg_getnode(buffer, NULL)))
+    if ((node = cfg_getnode(buffer)))
         return node;
     else if ((node =
               einit_module_network_v2_get_option_default(interface,
@@ -207,8 +207,17 @@ struct cfgnode **einit_module_network_v2_get_multiple_options(char
     esprintf(buffer, BUFFERSIZE, INTERFACES_PREFIX "-%s-%s", interface,
              option);
 
-    while ((node = cfg_findnode(buffer, 0, node))) {
-        rv = (struct cfgnode **) set_noa_add((void **) rv, node);
+    struct stree *st = cfg_match (buffer);
+    struct stree *cur = streelinear_prepare(st);
+    if (st) {
+        while (cur) {
+            struct cfgnode *node = cur->value;
+
+            rv = (struct cfgnode **) set_noa_add((void **) rv, node);
+
+            cur = streenext(cur);
+        }
+        streefree(st);
     }
 
     if (rv)
@@ -792,7 +801,7 @@ void einit_module_network_v2_scanmodules(struct einit_event *ev)
 
         if (au) {
             struct cfgnode *n =
-                cfg_getnode("services-alias-network", NULL);
+                cfg_getnode("services-alias-network");
             if (n && n->arbattrs) {
                 int i = 0;
                 for (; n->arbattrs[i]; i += 2) {
@@ -854,96 +863,104 @@ void einit_module_network_v2_scanmodules(struct einit_event *ev)
 int einit_module_network_v2_do_dhcp(struct network_event_data *d,
                                     char *client, char *interface)
 {
-    struct cfgnode *node = NULL;
     fbprintf(d->feedback, "trying dhcp client: %s", client);
     int rv = status_failed;
 
-    while ((node = cfg_findnode("subsystem-network-dhcp-client", 0, node))) {
-        if (node->idattr && strmatch(node->idattr, client)) {
-            if (node->arbattrs) {
-                char *command = NULL;
-                char **need_binaries = NULL;
-                char *pidfile = NULL;
+    struct stree *st = cfg_match ("subsystem-network-dhcp-client");
+    struct stree *cur = streelinear_prepare(st);
+    if (st) {
+        while (cur) {
+            struct cfgnode *node = cur->value;
+
+            if (node->idattr && strmatch(node->idattr, client)) {
+                if (node->arbattrs) {
+                    char *command = NULL;
+                    char **need_binaries = NULL;
+                    char *pidfile = NULL;
                 // char **environment = straddtoenviron (NULL,
                 // "interface", interface);
-                char **vars = set_str_add(NULL, "interface");
-                vars = set_str_add(vars, interface);
-                int i = 0;
+                    char **vars = set_str_add(NULL, "interface");
+                    vars = set_str_add(vars, interface);
+                    int i = 0;
 
-                for (; node->arbattrs[i]; i += 2) {
-                    if (strmatch(node->arbattrs[i], "need-binaries")) {
-                        need_binaries =
-                            str2set(':', node->arbattrs[i + 1]);
-                    } else if ((d->action == interface_up)
-                               && strmatch(node->arbattrs[i], "up")) {
+                    for (; node->arbattrs[i]; i += 2) {
+                        if (strmatch(node->arbattrs[i], "need-binaries")) {
+                            need_binaries =
+                                    str2set(':', node->arbattrs[i + 1]);
+                        } else if ((d->action == interface_up)
+                                    && strmatch(node->arbattrs[i], "up")) {
                         // command = node->arbattrs[i+1];
-                        command =
-                            apply_variables(node->arbattrs[i + 1],
-                                            (const char **) vars);
-                    } else if ((d->action == interface_down)
-                               && strmatch(node->arbattrs[i], "down")) {
+                                        command =
+                                                apply_variables(node->arbattrs[i + 1],
+                                                (const char **) vars);
+                                    } else if ((d->action == interface_down)
+                                                && strmatch(node->arbattrs[i], "down")) {
                         // command = node->arbattrs[i+1];
-                        command =
-                            apply_variables(node->arbattrs[i + 1],
-                                            (const char **) vars);
-                    } else if (strmatch(node->arbattrs[i], "pid")) {
+                                                    command =
+                                                            apply_variables(node->arbattrs[i + 1],
+                                                            (const char **) vars);
+                                                } else if (strmatch(node->arbattrs[i], "pid")) {
                         // command = node->arbattrs[i+1];
-                        pidfile =
-                            apply_variables(node->arbattrs[i + 1],
-                                            (const char **) vars);
+                                                    pidfile =
+                                                            apply_variables(node->arbattrs[i + 1],
+                                                            (const char **) vars);
+                                                }
                     }
-                }
 
-                if (command) {
-                    if (need_binaries) {
-                        for (i = 0; need_binaries[i]; i++) {
-                            char **w = which(need_binaries[i]);
+                    if (command) {
+                        if (need_binaries) {
+                            for (i = 0; need_binaries[i]; i++) {
+                                char **w = which(need_binaries[i]);
 
-                            if (!w) {
-                                efree(need_binaries);
-                                efree(vars);
+                                if (!w) {
+                                    efree(need_binaries);
+                                    efree(vars);
 
-                                fbprintf(d->feedback,
-                                         "dhcp client not available: %s",
-                                         client);
+                                    fbprintf(d->feedback,
+                                             "dhcp client not available: %s",
+                                             client);
 
-                                if (pidfile)
-                                    efree(pidfile);
+                                    if (pidfile)
+                                        efree(pidfile);
 
-                                return status_failed;
-                            } else {
-                                efree(w);
+                                    return status_failed;
+                                } else {
+                                    efree(w);
+                                }
                             }
+
+                            efree(need_binaries);
                         }
 
-                        efree(need_binaries);
-                    }
-
-                    if ((d->action == interface_up) && pidfile)
-                        unlink(pidfile);
-
-                    rv = pexec(command, NULL, 0, 0, NULL, NULL, NULL,
-                               d->feedback);
-                    if (rv == status_ok) {
-                        fbprintf(d->feedback, "dhcp client OK: %s",
-                                 client);
-
-                        if ((d->action == interface_down) && pidfile)
+                        if ((d->action == interface_up) && pidfile)
                             unlink(pidfile);
-                    } else if (rv == status_failed) {
-                        fbprintf(d->feedback, "dhcp client failed: %s",
-                                 client);
+
+                        rv = pexec(command, NULL, 0, 0, NULL, NULL, NULL,
+                                   d->feedback);
+                        if (rv == status_ok) {
+                            fbprintf(d->feedback, "dhcp client OK: %s",
+                                     client);
+
+                            if ((d->action == interface_down) && pidfile)
+                                unlink(pidfile);
+                        } else if (rv == status_failed) {
+                            fbprintf(d->feedback, "dhcp client failed: %s",
+                                     client);
+                        }
                     }
+
+                    if (pidfile)
+                        efree(pidfile);
+
+                    efree(vars);
                 }
 
-                if (pidfile)
-                    efree(pidfile);
-
-                efree(vars);
+                break;
             }
 
-            break;
+            cur = streenext(cur);
         }
+        streefree(st);
     }
 
     return rv;
@@ -1136,71 +1153,75 @@ void einit_module_network_v2_interface_construct(struct einit_event *ev)
                     int i = 0;
 
                     for (; v[i]; i++) {
-                        struct cfgnode *node = NULL;
+                        struct stree *st = cfg_match ("subsystem-network-dhcp-client");
+                        struct stree *cur = streelinear_prepare(st);
+                        if (st) {
+                            while (cur) {
+                                struct cfgnode *node = cur->value;
 
-                        while ((node =
-                                cfg_findnode
-                                ("subsystem-network-dhcp-client", 0,
-                                 node))) {
-                            if (node->idattr
-                                && strmatch(node->idattr, v[i])) {
-                                if (node->arbattrs) {
-                                    char *pidfile = NULL;
-                                    char **vars =
-                                        set_str_add(NULL, "interface");
-                                    vars = set_str_add(vars, ev->string);
+                                if (node->idattr
+                                    && strmatch(node->idattr, v[i])) {
+                                    if (node->arbattrs) {
+                                        char *pidfile = NULL;
+                                        char **vars =
+                                                set_str_add(NULL, "interface");
+                                        vars = set_str_add(vars, ev->string);
 
-                                    int y = 0;
+                                        int y = 0;
 
-                                    for (; node->arbattrs[y]; y += 2) {
-                                        if (strmatch
-                                            (node->arbattrs[y], "pid")) {
-                                            pidfile =
-                                                apply_variables(node->
-                                                                arbattrs[y
-                                                                         +
-                                                                         1],
-                                                                (const char
-                                                                 **) vars);
-                                        }
-                                    }
-
-                                    if (pidfile) {
-                                        char **fs =
-                                            einit_module_network_v2_add_fs
-                                            (NULL, pidfile);
-
-                                        if (fs) {
-                                            char *a =
-                                                einit_module_network_v2_generate_defer_fs
-                                                (fs);
-
-                                            if (a) {
-                                                if (!inset
-                                                    ((const void **) d->
-                                                     static_descriptor->si.
-                                                     after, a,
-                                                     SET_TYPE_STRING)) {
-
-                                                    d->static_descriptor->
-                                                        si.after =
-                                                        set_str_add(d->
-                                                                    static_descriptor->
-                                                                    si.
-                                                                    after,
-                                                                    a);
+                                        for (; node->arbattrs[y]; y += 2) {
+                                            if (strmatch
+                                                (node->arbattrs[y], "pid")) {
+                                                pidfile =
+                                                        apply_variables(node->
+                                                        arbattrs[y
+                                                        +
+                                                        1],
+                                                        (const char
+                                                                **) vars);
                                                 }
-
-                                                efree(a);
-                                            }
                                         }
 
-                                        efree(pidfile);
+                                        if (pidfile) {
+                                            char **fs =
+                                                    einit_module_network_v2_add_fs
+                                                    (NULL, pidfile);
+
+                                            if (fs) {
+                                                char *a =
+                                                        einit_module_network_v2_generate_defer_fs
+                                                        (fs);
+
+                                                if (a) {
+                                                    if (!inset
+                                                         ((const void **) d->
+                                                         static_descriptor->si.
+                                                         after, a,
+                                                            SET_TYPE_STRING)) {
+
+                                                                d->static_descriptor->
+                                                                        si.after =
+                                                                        set_str_add(d->
+                                                                        static_descriptor->
+                                                                        si.
+                                                                        after,
+                                                                        a);
+                                                            }
+
+                                                            efree(a);
+                                                }
+                                            }
+
+                                            efree(pidfile);
+                                        }
+
+                                        efree(vars);
+                                    }
                                     }
 
-                                    efree(vars);
-                                }
+                                cur = streenext(cur);
                             }
+                            streefree(st);
                         }
                     }
                 }

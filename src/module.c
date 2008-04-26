@@ -108,7 +108,7 @@ struct lmodule *mod_update(struct lmodule *module)
     }
 
     struct einit_event ee = evstaticinit(einit_core_update_module);
-    ee.para = (void *) module;
+    ee.rid = module->module->rid;
     event_emit(&ee, 0);
     evstaticdestroy(ee);
 

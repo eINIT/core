@@ -111,7 +111,7 @@ void linux_sysconf_ctrl_alt_del()
 void linux_sysconf_hwclock()
 {
     char *options =
-        cfg_getstring("configuration-services-hwclock/options", NULL);
+        cfg_getstring("configuration-services-hwclock/options");
     if (!options)
         options = "--utc";
 
@@ -137,7 +137,7 @@ void linux_sysconf_hwclock()
 void linux_sysconf_shutdown_hwclock()
 {
     char *options =
-        cfg_getstring("configuration-services-hwclock/options", NULL);
+        cfg_getstring("configuration-services-hwclock/options");
     if (!options)
         options = "--utc";
 
@@ -168,7 +168,7 @@ void linux_sysconf_shutdown(struct einit_event *ev)
 
 void linux_sysconf_make_timezone_symlink(void)
 {
-    char *zoneinfo = cfg_getstring("configuration-system-timezone", NULL);
+    char *zoneinfo = cfg_getstring("configuration-system-timezone");
     if (zoneinfo) {
         char tmp[BUFFERSIZE];
         esprintf(tmp, BUFFERSIZE, "/usr/share/zoneinfo/%s", zoneinfo);
@@ -195,7 +195,7 @@ void linux_sysconf_service_enabled(struct einit_event *ev)
 void linux_sysconf_fix_ttys()
 {
     struct cfgnode *filenode =
-        cfg_getnode("configuration-feedback-visual-std-io", NULL);
+        cfg_getnode("configuration-feedback-visual-std-io");
 
     if (filenode && filenode->arbattrs) {
         uint32_t i = 0;
@@ -295,7 +295,7 @@ void linux_sysconf_sysctl()
     char *sfilename;
 
     if ((sfilename =
-         cfg_getstring("configuration-services-sysctl/config", NULL))) {
+         cfg_getstring("configuration-services-sysctl/config"))) {
         notice(4, "doing system configuration via %s.", sfilename);
 
         if ((sfile = efopen(sfilename, "r"))) {

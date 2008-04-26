@@ -114,13 +114,10 @@ int linux_kernel_modules_load(char **modules)
     pid_t **pids = NULL;
 
     char *modprobe_command =
-        cfg_getstring("configuration-command-modprobe/with-env", 0);
+        cfg_getstring("configuration-command-modprobe/with-env");
     uint32_t i = 0;
 
-    struct cfgnode *pn =
-        cfg_getnode("configuration-kernel-modules-load-in-parallel", NULL);
-
-    if (pn && pn->flag) {       /* load in parallel */
+    if (cfg_getboolean("configuration-kernel-modules-load-in-parallel")) {       /* load in parallel */
         for (; modules[i]; i++)
             if (strcmp("", modules[i])) {
                 const char *tpldata[] = { "module", modules[i], NULL };
@@ -180,8 +177,7 @@ char **linux_kernel_modules_autoload_d()
 {
     char **rv = NULL;
     char *file =
-        cfg_getstring("configuration-kernel-modules-autoload.d/file",
-                      NULL);
+        cfg_getstring("configuration-kernel-modules-autoload.d/file");
     if (file) {
         char *d = readfile(file);
 
@@ -218,7 +214,7 @@ char **linux_kernel_modules_get_from_node(char *node, char *dwait)
 
     esprintf(buffer, len, MPREFIX "%s", node);
 
-    n = cfg_getnode(buffer, NULL);
+    n = cfg_getnode(buffer);
     if (n) {
         *dwait = !n->flag;
         return str2set(':', n->svalue);
@@ -243,7 +239,7 @@ char **linux_kernel_modules_sound(struct einit_event *status)
     struct stat st;
 
     struct cfgnode *n =
-        cfg_getnode("configuration-services-alsa-oss-emulation", NULL);
+        cfg_getnode("configuration-services-alsa-oss-emulation");
 
     char oss_emulation = n && n->svalue && strcmp(n->svalue, "no");
 

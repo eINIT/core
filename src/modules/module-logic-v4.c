@@ -249,7 +249,7 @@ void mod_sort_service_list_items_by_preference()
             strcat(pnode, "services-prefer-");
             strcat(pnode, cur->key);
 
-            if ((preference = str2set(':', cfg_getstring(pnode, NULL)))) {
+            if ((preference = str2set(':', cfg_getstring(pnode)))) {
                 for (mpx = 0; preference[mpx]; mpx++) {
                     for (mpy = 0; lm[mpy]; mpy++) {
                         if (lm[mpy]->module && lm[mpy]->module->rid
@@ -1573,23 +1573,23 @@ void module_logic_einit_event_handler_core_configuration_update(struct
  * the following three events are used to make the module logics core do
  * something 
  */
-struct cfgnode *module_logic_prepare_mode_switch(char *modename,
-                                                 char ***enable_r,
-                                                 char ***disable_r)
+char *module_logic_prepare_mode_switch(char *modename,
+                                       char ***enable_r,
+                                       char ***disable_r)
 {
     if (!modename)
         return NULL;
 
-    struct cfgnode *mode = cfg_findnode(modename, einit_node_mode, NULL);
-
-    if (!mode) {
+    cfg_set_current_mode (modename);
+    struct cfgnode *modenode = cfg_getnode ("mode");
+    if (!modenode) {
         return NULL;
     }
 
     char **enable = *enable_r, **disable = *disable_r;
 
     char **tmplist;
-    if ((tmplist = str2set(':', cfg_getstring("enable/services", mode)))) {
+    if ((tmplist = str2set(':', cfg_getstring("enable/services")))) {
         int i = 0;
         for (; tmplist[i]; i++) {
             if (!enable
@@ -1602,7 +1602,7 @@ struct cfgnode *module_logic_prepare_mode_switch(char *modename,
         efree(tmplist);
     }
 
-    if ((tmplist = str2set(':', cfg_getstring("disable/services", mode)))) {
+    if ((tmplist = str2set(':', cfg_getstring("disable/services")))) {
         int i = 0;
         for (; tmplist[i]; i++) {
             if (!disable
@@ -1620,23 +1620,13 @@ struct cfgnode *module_logic_prepare_mode_switch(char *modename,
         shutting_down = 1;
     }
 
-    if (mode->arbattrs) {
+    if (modenode->arbattrs) {
         int i = 0;
         char **base = NULL;
 
-        for (; mode->arbattrs[i]; i += 2) {
-            if (strmatch(mode->arbattrs[i], "base")) {
-                base = str2set(':', mode->arbattrs[i + 1]);
-            } else if (strmatch(mode->arbattrs[i], "wait-for-base")
-                       && parse_boolean(mode->arbattrs[i + 1])) {
-                char tmp[BUFFERSIZE];
-
-                esprintf(tmp, BUFFERSIZE, "checkpoint-mode-%s", mode->id);
-
-                if (!enable
-                    || !inset((const void **) enable, tmp,
-                              SET_TYPE_STRING))
-                    enable = set_str_add_stable(enable, tmp);
+        for (; modenode->arbattrs[i]; i += 2) {
+            if (strmatch(modenode->arbattrs[i], "base")) {
+                base = str2set(':', modenode->arbattrs[i + 1]);
             }
         }
 
@@ -1644,6 +1634,7 @@ struct cfgnode *module_logic_prepare_mode_switch(char *modename,
             for (i = 0; base[i]; i++) {
                 module_logic_prepare_mode_switch(base[i], &enable,
                                                  &disable);
+                cfg_set_current_mode (modename);
             }
         }
     }
@@ -1687,7 +1678,7 @@ struct cfgnode *module_logic_prepare_mode_switch(char *modename,
     *enable_r = enable;
     *disable_r = disable;
 
-    return mode;
+    return modename;
 }
 
 void module_logic_idle_actions()
@@ -1714,7 +1705,6 @@ void module_logic_idle_actions()
 
 struct mode_switch_callback_data {
     char *modename;
-    struct cfgnode *mode;
 };
 
 void module_logic_einit_event_handler_core_switch_mode_callback(void *p)
@@ -1726,9 +1716,8 @@ void module_logic_einit_event_handler_core_switch_mode_callback(void *p)
      * waiting on things to be enabled and disabled works just fine if we
      * do it serially... 
      */
-    if (d->mode) {
-        cmode = d->mode;
-        amode = d->mode;
+    if (d->modename) {
+        cfg_set_current_mode (d->modename);
 
         if (strmatch(d->modename, "power-down")) {
             struct einit_event ee =
@@ -1743,8 +1732,7 @@ void module_logic_einit_event_handler_core_switch_mode_callback(void *p)
         }
 
         struct einit_event eex = evstaticinit(einit_core_mode_switch_done);
-        eex.para = (void *) d->mode;
-        eex.string = d->mode->id;
+        eex.string = d->modename;
         event_emit(&eex, 0);
         evstaticdestroy(eex);
     }
@@ -1794,17 +1782,16 @@ void module_logic_einit_event_handler_core_switch_mode(struct einit_event
     if (ev->string) {
         char **enable = NULL, **disable = NULL;
 
-        struct cfgnode *mode =
+        char *mode =
             module_logic_prepare_mode_switch(ev->string, &enable,
                                              &disable);
 
         if (mode) {
-            cmode = mode;
+            cfg_set_current_mode (mode);
 
             struct einit_event eex =
                 evstaticinit(einit_core_mode_switching);
-            eex.para = (void *) mode;
-            eex.string = mode->id;
+            eex.string = mode;
             event_emit(&eex, 0);
             evstaticdestroy(eex);
 
@@ -1857,7 +1844,6 @@ void module_logic_einit_event_handler_core_switch_mode(struct einit_event
             ecalloc(1, sizeof(struct mode_switch_callback_data));
 
         d->modename = (char *) str_stabilise(ev->string);
-        d->mode = mode;
 
         module_logic_call_back(enable, disable,
                                module_logic_einit_event_handler_core_switch_mode_callback,

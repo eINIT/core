@@ -166,7 +166,7 @@ char **einit_create_environment(char **environment, char **variables)
                 name = (char *) str_stabilise(variables[i]);
                 *variablevalue = '/';
 
-                if ((node = cfg_getnode(name, NULL)) && node->arbattrs) {
+                if ((node = cfg_getnode(name)) && node->arbattrs) {
                     size_t bkeylen = strlen(name) + 2, pvlen = 1;
                     char *key = emalloc(bkeylen);
                     char *pvalue = NULL;
@@ -231,7 +231,7 @@ char **einit_create_environment(char **environment, char **variables)
                 /*
                  * else: just add it 
                  */
-                char *variablevalue = cfg_getstring(variables[i], NULL);
+                char *variablevalue = cfg_getstring(variables[i]);
                 if (variablevalue)
                     environment =
                         straddtoenviron(environment, variables[i],

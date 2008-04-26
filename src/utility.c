@@ -1109,18 +1109,6 @@ char *after_string_from_files(char **files)
         return NULL;
 }
 
-void update_local_environment()
-{
-    struct cfgnode *node = NULL;
-
-    while ((node =
-            cfg_findnode("configuration-environment-global", 0, node))) {
-        if (node->idattr && node->svalue) {
-            setenv(node->idattr, node->svalue, 1);
-        }
-    }
-}
-
 pid_t efork()
 {
     pid_t child;

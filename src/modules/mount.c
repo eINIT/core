@@ -252,34 +252,43 @@ char *generate_legacy_mtab()
 
 unsigned char read_filesystem_flags_from_configuration(void *na)
 {
-    struct cfgnode *node = NULL;
     uint32_t i;
     char *id, *flags, *before, *after, **requires;
-    while ((node = cfg_findnode("information-filesystem-type", 0, node))) {
-        if (node->arbattrs) {
-            id = NULL;
-            flags = NULL;
-            before = NULL;
-            after = NULL;
-            requires = NULL;
-            for (i = 0; node->arbattrs[i]; i += 2) {
-                if (strmatch(node->arbattrs[i], "id"))
-                    id = node->arbattrs[i + 1];
-                else if (strmatch(node->arbattrs[i], "flags"))
-                    flags = node->arbattrs[i + 1];
-                else if (strmatch(node->arbattrs[i], "before"))
-                    before = node->arbattrs[i + 1];
-                else if (strmatch(node->arbattrs[i], "after"))
-                    after = node->arbattrs[i + 1];
-                else if (strmatch(node->arbattrs[i], "requires")) {
-                    char **t = str2set(':', node->arbattrs[i + 1]);
-                    requires = set_str_dup_stable(t);
-                    efree(t);
+
+    struct stree *st = cfg_match ("information-filesystem-type");
+    struct stree *cur = streelinear_prepare(st);
+    if (st) {
+        while (cur) {
+            struct cfgnode *node = cur->value;
+
+            if (node->arbattrs) {
+                id = NULL;
+                flags = NULL;
+                before = NULL;
+                after = NULL;
+                requires = NULL;
+                for (i = 0; node->arbattrs[i]; i += 2) {
+                    if (strmatch(node->arbattrs[i], "id"))
+                        id = node->arbattrs[i + 1];
+                    else if (strmatch(node->arbattrs[i], "flags"))
+                        flags = node->arbattrs[i + 1];
+                    else if (strmatch(node->arbattrs[i], "before"))
+                        before = node->arbattrs[i + 1];
+                    else if (strmatch(node->arbattrs[i], "after"))
+                        after = node->arbattrs[i + 1];
+                    else if (strmatch(node->arbattrs[i], "requires")) {
+                        char **t = str2set(':', node->arbattrs[i + 1]);
+                        requires = set_str_dup_stable(t);
+                        efree(t);
+                    }
                 }
+                if (id && (flags || requires || after || before))
+                    mount_add_filesystem(id, flags, requires, after, before);
             }
-            if (id && (flags || requires || after || before))
-                mount_add_filesystem(id, flags, requires, after, before);
+
+            cur = streenext(cur);
         }
+        streefree(st);
     }
     return 0;
 }
@@ -391,8 +400,7 @@ char *mount_get_filesystem_before(char *name)
 char **mount_get_device_files()
 {
     struct cfgnode *node =
-        cfg_getnode("configuration-storage-block-devices-constraints",
-                    NULL);
+        cfg_getnode("configuration-storage-block-devices-constraints");
 
     if (node) {
         char **devices = readdirfilter(node, "/dev/", NULL, NULL, 1);
@@ -729,11 +737,15 @@ struct stree *read_fsspec_file(char *file)
 
 void mount_update_fstab_nodes()
 {
-    struct cfgnode *node = NULL;
     uint32_t i;
-    while ((node =
-            cfg_findnode("configuration-storage-fstab-node", 0, node))) {
-        char *mountpoint = NULL, *device = NULL, *fs = NULL, **options =
+
+    struct stree *st = cfg_match ("configuration-storage-fstab-node");
+    struct stree *cur = streelinear_prepare(st);
+    if (st) {
+        while (cur) {
+            struct cfgnode *node = cur->value;
+
+                    char *mountpoint = NULL, *device = NULL, *fs = NULL, **options =
             NULL, *before_mount = NULL, *after_mount =
             NULL, *before_umount = NULL, *after_umount = NULL, *manager =
             NULL, **variables = NULL, **requires = NULL, *after =
@@ -803,14 +815,17 @@ void mount_update_fstab_nodes()
             // mountflags, before_mount, after_mount, before_umount,
             // after_umount, manager, 1, variables);
         }
+
+            cur = streenext(cur);
+        }
+
+        streefree(st);
     }
 }
 
 void mount_update_fstab_nodes_from_fstab()
 {
-    struct cfgnode *node =
-        cfg_getnode("configuration-storage-fstab-use-legacy-fstab", NULL);
-    if (node && node->flag) {
+    if (cfg_getboolean("configuration-storage-fstab-use-legacy-fstab")) {
         struct stree *workstree = read_fsspec_file("/etc/fstab");
         struct stree *cur;
 
@@ -1180,29 +1195,7 @@ void einit_mount_scanmodules_mountpoints()
         char **before = NULL;
         char **requires = NULL;
         struct lmodule *lm = NULL;
-        struct cfgnode *tcnode =
-            cfg_findnode("configuration-storage-fstab-node-order", 0,
-                         NULL);
         char special_order = 0;
-
-        while (tcnode) {
-            if (strmatch(s->key, tcnode->idattr)) {
-                uint32_t n = 0;
-
-                for (; tcnode->arbattrs[n]; n += 2) {
-                    if (strmatch(tcnode->arbattrs[n], "after")
-                        && tcnode->arbattrs[n + 1][0]) {
-                        after = str2set(':', tcnode->arbattrs[n + 1]);
-                    }
-                }
-
-                special_order = 1;
-            }
-
-            tcnode =
-                cfg_findnode("configuration-storage-fstab-node-order", 0,
-                             tcnode);
-        }
 
         if (strmatch(s->key, "/"))
             special_order = 1;
@@ -1638,7 +1631,7 @@ void einit_mount_scanmodules(struct einit_event *ev)
 
             if (fs) {
                 struct cfgnode *n =
-                    cfg_getnode("services-alias-mount-critical", NULL);
+                    cfg_getnode("services-alias-mount-critical");
                 if (n && n->arbattrs) {
                     int i = 0;
                     for (; n->arbattrs[i]; i += 2) {
@@ -2048,7 +2041,7 @@ int mount_mount(char *mountpoint, struct device_data *dd,
     if (strmatch(mp->fs, "auto")) {
         char *t =
             cfg_getstring
-            ("configuration-storage-filesystem-guessing-order", NULL);
+            ("configuration-storage-filesystem-guessing-order");
 
         if (t) {
             char **guesses = str2set(':', t);
@@ -2132,17 +2125,24 @@ int mount_fsck(char *fs, char *device, struct einit_event *status)
         return status_ok;
     }
 
-    struct cfgnode *node = NULL;
     char *mount_fsck_template = NULL;
 
-    while ((node =
-            cfg_findnode("configuration-storage-fsck-command", 0, node))) {
-        if (fs && node->idattr && strmatch(node->idattr, fs)) {
-            mount_fsck_template = node->svalue;
-        } else if (!mount_fsck_template && node->idattr
-                   && strmatch(node->idattr, "generic")) {
-            mount_fsck_template = node->svalue;
+    struct stree *st = cfg_match ("configuration-storage-fsck-command");
+    struct stree *cur = streelinear_prepare(st);
+    if (st) {
+        while (cur) {
+            struct cfgnode *node = cur->value;
+
+            if (fs && node->idattr && strmatch(node->idattr, fs)) {
+                mount_fsck_template = node->svalue;
+            } else if (!mount_fsck_template && node->idattr
+                        && strmatch(node->idattr, "generic")) {
+                mount_fsck_template = node->svalue;
+            }
+
+            cur = streenext(cur);
         }
+        streefree(st);
     }
 
     if (mount_fsck_template) {
@@ -2456,7 +2456,7 @@ void einit_mount_update_configuration()
     read_filesystem_flags_from_configuration(NULL);
 
     if ((node =
-         cfg_findnode("configuration-storage-update-steps", 0, NULL))
+         cfg_getnode("configuration-storage-update-steps"))
         && node->svalue) {
         char **tmp = str2set(':', node->svalue);
         uint32_t c = 0;
@@ -2471,22 +2471,22 @@ void einit_mount_update_configuration()
     }
 
     if ((node =
-         cfg_findnode("configuration-storage-mountpoints-critical", 0,
-                      NULL)) && node->svalue) {
+         cfg_getnode("configuration-storage-mountpoints-critical")) &&
+         node->svalue) {
         if (mount_critical)
             efree(mount_critical);
         mount_critical = str2set(':', node->svalue);
     }
 
     if ((node =
-         cfg_findnode("configuration-storage-mountpoints-no-umount", 0,
-                      NULL)) && node->svalue) {
+         cfg_getnode("configuration-storage-mountpoints-no-umount")) &&
+         node->svalue) {
         if (mount_dont_umount)
             efree(mount_dont_umount);
         mount_dont_umount = str2set(':', node->svalue);
     }
 
-    if ((node = cfg_getnode("configuration-storage-maintain-mtab", NULL))
+    if ((node = cfg_getnode("configuration-storage-maintain-mtab"))
         && node->flag && node->svalue) {
         mount_options |= mount_maintain_mtab;
         mount_mtab_file = node->svalue;

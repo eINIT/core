@@ -116,7 +116,6 @@ void linux_network_wpa_supplicant_interface_construct(struct einit_event
             esprintf(buffer, BUFFERSIZE, "configuration-wpa-supplicant-%s",
                      ev->string);
             newnode.id = (char *) str_stabilise(buffer);
-            newnode.type = einit_node_regular;
 
             esprintf(buffer, BUFFERSIZE, "wpa-supplicant-%s", ev->string);
             newnode.arbattrs =
@@ -257,7 +256,7 @@ int linux_network_wpa_supplicant_module_configure(struct lmodule *this)
 
     esprintf(buffer, BUFFERSIZE, MPREFIX "%s", this->module->rid + 21);
 
-    struct cfgnode *node = cfg_getnode(buffer, NULL);
+    struct cfgnode *node = cfg_getnode(buffer);
 
     if (node) {
         struct dexecinfo *interface_daemon =

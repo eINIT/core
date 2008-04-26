@@ -88,8 +88,7 @@ void linux_hotplug_hotplug_event_handler(struct einit_event *ev)
         int i = 0;
         struct cfgnode *node =
             cfg_getnode
-            ("configuration-system-hotplug-support-legacy-hotplug-scripts",
-             NULL);
+            ("configuration-system-hotplug-support-legacy-hotplug-scripts");
 
         for (; ev->stringset[i]; i += 2) {
             if (strmatch(ev->stringset[i], "SUBSYSTEM")) {
@@ -268,7 +267,7 @@ int linux_hotplug_configure(struct lmodule *tm)
 {
     module_init(tm);
 
-    char *dm = cfg_getstring("configuration-system-device-manager", NULL);
+    char *dm = cfg_getstring("configuration-system-device-manager");
 
     /*
      * this module won't work unless we're using either mdev, edev or a

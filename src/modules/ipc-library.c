@@ -144,7 +144,7 @@ void einit_ipc_library_get_configuration(struct einit_sexp *sexp, int id,
     struct einit_sexp *secundus = se_car(se_cdr(sexp));
 
     if ((primus->type == es_symbol) && (secundus->type == es_symbol)) {
-        struct cfgnode *n = cfg_getnode (primus->symbol, NULL);
+        struct cfgnode *n = cfg_getnode (primus->symbol);
         char *value = NULL;
 
         if (n && n->arbattrs) {
@@ -204,7 +204,7 @@ void einit_ipc_library_get_configuration_multi(struct einit_sexp *sexp, int id,
                                                struct einit_ipc_connection *cd)
 {
     if (sexp->type == es_symbol) {
-        struct cfgnode *n = cfg_getnode (sexp->symbol, NULL);
+        struct cfgnode *n = cfg_getnode (sexp->symbol);
 
         struct einit_sexp *sp = cfgnode2sexp(n);
 

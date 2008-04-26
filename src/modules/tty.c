@@ -391,7 +391,7 @@ void einit_tty_enable_vector(char **enab_ttys)
                 memcpy(tmpnodeid, "configuration-tty-", 19);
                 strcat(tmpnodeid, enab_ttys[i]);
 
-                node = cfg_getnode(tmpnodeid, NULL);
+                node = cfg_getnode(tmpnodeid);
                 if (node && node->arbattrs) {
                     einit_tty_texec(node);
                 } else {
@@ -407,14 +407,14 @@ void einit_tty_update()
     char **enab_ttys = NULL;
     int i = 0;
     char sysv_semantics =
-        parse_boolean(cfg_getstring("ttys/sysv-style", NULL));
+        parse_boolean(cfg_getstring("ttys/sysv-style"));
 
     if (!einit_tty_feedback_blocked)
-        enab_ttys = str2set(':', cfg_getstring("feedback-ttys", NULL));
+        enab_ttys = str2set(':', cfg_getstring("feedback-ttys"));
 
     if (!(sysv_semantics && einit_tty_in_switch)) {
         char **tmp_ttys = NULL;
-        tmp_ttys = str2set(':', cfg_getstring("ttys", NULL));
+        tmp_ttys = str2set(':', cfg_getstring("ttys"));
 
         if (tmp_ttys && !strmatch(tmp_ttys[0], "none")) {
             int i = 0;
@@ -468,7 +468,6 @@ void einit_tty_update()
         memset(&newnode, 0, sizeof(struct cfgnode));
 
         newnode.id = (char *) str_stabilise("enabled-ttys");
-        newnode.type = einit_node_regular;
 
         newnode.arbattrs =
             set_str_add_stable(newnode.arbattrs, (void *) "ids");

@@ -13,7 +13,7 @@ CodeBTree = ['btree-splay.c']
 CodeVTree = ['vtree-splay.c']
 CodeSTree = ['tree-itree.c']
 
-CodeCoreObjects = ['einit-core.c', 'module.c', 'ipc.c']
+CodeCoreObjects = ['einit-core.c', 'module.c', 'ipc.c', 'exec.c']
 CodeCoreMonitorObjects = ['einit-monitor.c']
 
 CodeLastRites = ['last-rites.c']
@@ -25,7 +25,7 @@ CodeEinitLogD = ['einit-log.c']
 CodeEinitSysVD = ['tools/einit-sysvd.c']
 CodeEinitBootChartD = ['tools/einit-bootchartd.c']
 
-CodeLibEinit = AssemblyFunctions + ['libraries/libeinit.c', 'bitch.c', 'event.c', 'utility.c', 'exec.c', 'strings.c', 'sexp.c', 'ipc-client.c'] + CodeSet + CodeSTree + CodeBTree + CodeITree + CodeVTree
+CodeLibEinit = AssemblyFunctions + ['libraries/libeinit.c', 'bitch.c', 'event.c', 'utility.c', 'strings.c', 'sexp.c', 'ipc-client.c'] + CodeSet + CodeSTree + CodeBTree + CodeITree + CodeVTree
 
 if uname == 'linux':
  CodeLibEinit += ['linux/process.c']

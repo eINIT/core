@@ -183,18 +183,6 @@ Services = element services {
   element prefer {
    element * { StringAttribute }*
   } ? &
-
-  element override {
-   element module { IDAttribute, ModuleDependenciesOptional, ModuleDependenciesRequired? } *
-  } ? &
-
-  element transform {
-   IDAttribute,
-   attribute module-id { text },
-   attribute in { text },
-   attribute out { text },
-   attribute strip-from { text }?
-  }*
 }
 
 Special = element special {
@@ -254,8 +242,6 @@ Subsystems = element subsystem {
 Mode = element mode {
   IDAttribute &
   attribute base { text }? &
-  attribute wait-for-base { text }? &
-  attribute cooldown { text }? &
 
   element enable { attribute services { List_of_services } & attribute critical { text }? }? &
   element disable { attribute services { List_of_services } }? &
@@ -309,11 +295,6 @@ FSTab =
     attribute after { text }?
   }* &
   element use-legacy-fstab { BooleanAttribute }? &
-  element node-order {
-    IDAttribute,
-    attribute after { text }?,
-    attribute before { text }?
-  }*
 
 Information =
   element information {

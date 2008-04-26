@@ -113,7 +113,7 @@ void linux_static_dev_boot_event_handler(struct einit_event *ev)
     FILE *he = fopen("/proc/sys/kernel/hotplug", "w");
     if (he) {
         char *hotplug_handler =
-            cfg_getstring("configuration-system-hotplug-handler", NULL);
+            cfg_getstring("configuration-system-hotplug-handler");
 
         if (hotplug_handler) {
             fputs(hotplug_handler, he);
@@ -143,7 +143,7 @@ int linux_static_dev_configure(struct lmodule *pa)
 {
     module_init(pa);
 
-    char *dm = cfg_getstring("configuration-system-device-manager", NULL);
+    char *dm = cfg_getstring("configuration-system-device-manager");
 
     if (!dm || strcmp(dm, "static")) {
         return status_configure_failed | status_not_in_use;

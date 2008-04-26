@@ -175,7 +175,7 @@ char **check_variables_f(const char *id, const char **variables,
 
         struct cfgnode *n;
 
-        if (!(n = cfg_getnode(x[0], NULL))) {
+        if (!(n = cfg_getnode(x[0]))) {
             node_found = 0;
         } else if (x[1] && n->arbattrs) {
             regex_t pattern;
@@ -189,7 +189,7 @@ char **check_variables_f(const char *id, const char **variables,
 
                 eregfree(&pattern);
             }
-        } else if (cfg_getstring(x[0], NULL)) {
+        } else if (cfg_getstring(x[0])) {
             variable_matches++;
         }
 
@@ -226,7 +226,7 @@ char **create_environment_f(char **environment, const char **variables)
                 name = (char *) str_stabilise(variables[i]);
                 *variablevalue = '/';
 
-                if ((node = cfg_getnode(name, NULL)) && node->arbattrs) {
+                if ((node = cfg_getnode(name)) && node->arbattrs) {
                     size_t bkeylen = strlen(name) + 2, pvlen = 1;
                     char *key = emalloc(bkeylen);
                     char *pvalue = NULL;
@@ -291,7 +291,7 @@ char **create_environment_f(char **environment, const char **variables)
                 /*
                  * else: just add it 
                  */
-                char *variablevalue = cfg_getstring(variables[i], NULL);
+                char *variablevalue = cfg_getstring(variables[i]);
                 if (variablevalue)
                     environment =
                         straddtoenviron(environment, variables[i],
@@ -301,7 +301,7 @@ char **create_environment_f(char **environment, const char **variables)
 
     /*
      * if (variables) { int i = 0; for (; variables [i]; i++) { char
-     * *variablevalue = cfg_getstring (variables [i], NULL); if
+     * *variablevalue = cfg_getstring (variables [i]); if
      * (variablevalue) { exec_environment = straddtoenviron
      * (exec_environment, variables [i], variablevalue); } } }
      */
@@ -1157,27 +1157,23 @@ int einit_exec_configure(struct lmodule *irr)
 {
     module_init(irr);
 
-    struct cfgnode *node;
     if (!
         (shell =
          (char **) str2set(' ',
-                           cfg_getstring("configuration-system-shell",
-                                         NULL))))
+                           cfg_getstring("configuration-system-shell"))))
         shell = dshell;
     exec_configure(irr);
 
-    if ((node =
-         cfg_findnode("configuration-system-daemon-spawn-timeout", 0,
-                      NULL)))
-        spawn_timeout = node->value;
-    if ((node =
-         cfg_findnode("configuration-system-daemon-term-timeout-primary",
-                      0, NULL)))
-        kill_timeout_primary = node->value;
-    if ((node =
-         cfg_findnode("configuration-system-daemon-term-timeout-secondary",
-                      0, NULL)))
-        kill_timeout_secondary = node->value;
+    int i = 0;
+
+    if ((i = cfg_getinteger ("configuration-system-daemon-spawn-timeout")))
+        spawn_timeout = i;
+
+    if ((i = cfg_getinteger ("configuration-system-daemon-term-timeout-primary")))
+        kill_timeout_primary = i;
+
+    if ((i = cfg_getinteger ("configuration-system-daemon-term-timeout-secondary")))
+        kill_timeout_secondary = i;
 
     function_register("einit-execute-command", 1, pexec_f);
     function_register("einit-execute-command-in-main-loop", 1, eexec_f);

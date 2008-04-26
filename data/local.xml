@@ -52,15 +52,5 @@
 
   <!-- example alias: localmount is the same as mount-local -->
   <!--  <alias id="localmount" s="mount-local" /> -->
-
-  <!-- example override: on regular systems, einit-tty will only need mount-system, but if you'd like
-       to use quingy and have the terminals controlled using einit-tty, then you will need mount-critical
-       if /usr is on its own partition (due to libquingy)
-
-       please note that this example is outdated, as einit-tty is now transparent -->
-  <!--  <override>
-   <module id="einit-tty" requires="mount-critical" />
-  </override> -->
-
  </services>
 </einit>

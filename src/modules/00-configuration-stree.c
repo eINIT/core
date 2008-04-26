@@ -55,6 +55,8 @@
 
 #include <regex.h>
 
+#define SUPERMODE "global-supermode"
+
 int einit_configuration_stree_configure(struct lmodule *);
 
 const struct smodule einit_configuration_stree_self = {
@@ -74,12 +76,14 @@ const struct smodule einit_configuration_stree_self = {
 
 module_register(einit_configuration_stree_self);
 
+char *cmode = SUPERMODE;
+
 struct {
     void **chunks;
 } cfg_stree_garbage = {
 .chunks = NULL};
 
-struct stree *hconfiguration = NULL;
+struct stree *configuration_by_mode = NULL;
 
 struct stree *einit_configuration_stree_callbacks = NULL;
 
@@ -135,7 +139,7 @@ void cfg_run_callbacks_for_node(struct cfgnode *node)
 
 int cfg_free()
 {
-    struct stree *cur = streelinear_prepare(hconfiguration);
+/*    struct stree *cur = streelinear_prepare(hconfiguration);
     struct cfgnode *node = NULL;
     while (cur) {
         if ((node = (struct cfgnode *) cur->value)) {
@@ -145,7 +149,7 @@ int cfg_free()
         cur = streenext(cur);
     }
     streefree(hconfiguration);
-    hconfiguration = NULL;
+    hconfiguration = NULL;*/
 
     return 1;
 }
@@ -154,11 +158,50 @@ int cfg_free()
 
 regex_t cfg_storage_allowed_duplicates;
 
-int cfg_addnode_f(struct cfgnode *node)
+int cfg_addnode(struct cfgnode *node)
 {
+    char ismode = 0;
+
     if (!node || !node->id) {
         return -1;
     }
+
+    if (!node->modename) node->modename = SUPERMODE;
+
+    if (node->arbattrs) {
+        uint32_t r = 0;
+        for (; node->arbattrs[r]; r += 2) {
+            if (strmatch("id", node->arbattrs[r]))
+                node->idattr = node->arbattrs[r + 1];
+        }
+    }
+
+    if ((ismode = strmatch (node->id, "mode"))) {
+        if (!node->idattr) return -1;
+        node->modename = node->idattr;
+    }
+
+    fprintf (stderr, "adding node %s to mode %s\n", node->id, node->modename);
+
+    struct stree *mtree = NULL;
+
+    if (configuration_by_mode) {
+        mtree = streefind (configuration_by_mode, node->modename, tree_find_first);
+    }
+
+    if (!mtree) {
+        mtree = streeadd(NULL, node->id, node,
+                         sizeof(struct cfgnode), node->arbattrs);
+
+        configuration_by_mode = streeadd(configuration_by_mode, node->modename, mtree,
+                                         sizeof (struct stree), NULL);
+
+        fprintf (stderr, "shortcut-add\n", node->id, node->modename);
+
+        return 0;
+    }
+
+    struct stree *ptree = mtree->value;
 
     if (strmatch
         (node->id, "core-settings-configuration-multi-node-variables")) {
@@ -195,63 +238,22 @@ int cfg_addnode_f(struct cfgnode *node)
         }
     }
 
-    struct stree *cur = hconfiguration;
+    struct stree *cur;
     char doop = 1;
 
-    if (node->arbattrs) {
-        uint32_t r = 0;
-        for (; node->arbattrs[r]; r += 2) {
-            if (strmatch("id", node->arbattrs[r]))
-                node->idattr = node->arbattrs[r + 1];
-        }
-    }
-
-    if (node->type & einit_node_mode) {
-        /*
-         * mode definitions only need to be modified -- it doesn't matter
-         * if there's more than one, but only the first one would be used
-         * anyway. 
-         */
-        if (cur)
-            cur = streefind(cur, node->id, tree_find_first);
-        while (cur) {
-            if (cur->value
-                && !(((struct cfgnode *) cur->value)->
-                     type ^ einit_node_mode)) {
-                /*
-                 * this means we found something that looks like it 
-                 */
-                void *bsl = cur->luggage;
-
-                ((struct cfgnode *) cur->value)->arbattrs = node->arbattrs;
-                cur->luggage = node->arbattrs;
-
-                efree(bsl);
-
-                doop = 0;
-
-                break;
-            }
-            // cur = streenext (cur);
-            cur = streefind(cur, node->id, tree_find_next);
-        }
-    } else {
         /*
          * look for other definitions that are exactly the same, only
          * marginally different or that sport a matching id="" attribute 
          */
 
-        if (cur)
-            cur = streefind(cur, node->id, tree_find_first);
+        if (ptree)
+            cur = streefind(ptree, node->id, tree_find_first);
         while (cur) {
             // this means we found a node wit the same path
             char allow_multi = 0;
             char id_match = 0;
+            struct cfgnode *vnode = cur->value;
 
-            if ((((struct cfgnode *) cur->value)->mode != node->mode)) {
-                cur = streefind(cur, node->id, tree_find_next);
-                continue;
-            }
             // fprintf (stderr, " ** multicheck: %s*\n", node->id);
             if (regexec
                 (&cfg_storage_allowed_duplicates, node->id, 0, NULL,
@@ -264,10 +266,9 @@ int cfg_addnode_f(struct cfgnode *node)
              * else { fprintf (stderr, " ** not multi*\n"); } fflush
              * (stderr);
              */
-            if (cur->value && ((struct cfgnode *) cur->value)->idattr
+            if (cur->value && vnode->idattr
                 && node->idattr
-                && strmatch(((struct cfgnode *) cur->value)->idattr,
-                            node->idattr)) {
+                && strmatch(vnode->idattr, node->idattr)) {
                 id_match = 1;
             }
 
@@ -279,18 +280,15 @@ int cfg_addnode_f(struct cfgnode *node)
                 // fflush (stderr);
 
                 cfg_stree_garbage_add_chunk(cur->luggage);
-                cfg_stree_garbage_add_chunk(((struct cfgnode *) cur->
-                                             value)->arbattrs);
+                cfg_stree_garbage_add_chunk(vnode->arbattrs);
 
-                ((struct cfgnode *) cur->value)->arbattrs = node->arbattrs;
+                vnode->arbattrs = node->arbattrs;
                 cur->luggage = node->arbattrs;
 
-                ((struct cfgnode *) cur->value)->type = node->type;
-                ((struct cfgnode *) cur->value)->mode = node->mode;
-                ((struct cfgnode *) cur->value)->flag = node->flag;
-                ((struct cfgnode *) cur->value)->value = node->value;
-                ((struct cfgnode *) cur->value)->svalue = node->svalue;
-                ((struct cfgnode *) cur->value)->idattr = node->idattr;
+                vnode->flag = node->flag;
+                vnode->value = node->value;
+                vnode->svalue = node->svalue;
+                vnode->idattr = node->idattr;
 
                 doop = 0;
 
@@ -303,151 +301,126 @@ int cfg_addnode_f(struct cfgnode *node)
                 cur = streefind(cur, node->id, tree_find_next);
             // }
         }
-    }
 
     if (doop) {
-        hconfiguration =
-            streeadd(hconfiguration, node->id, node,
-                     sizeof(struct cfgnode), node->arbattrs);
+        ptree = streeadd(ptree, node->id, node,
+                         sizeof(struct cfgnode), node->arbattrs);
 
         einit_new_node = 1;
 
         cfg_run_callbacks_for_node(node);
     }
 
-    /*
-     * hmmm.... 
-     */
-    /*
-     * cfg_stree_garbage_add_chunk (node->arbattrs);
-     */
-    cfg_stree_garbage_add_chunk(node->id);
     return 0;
 }
 
-struct cfgnode *cfg_findnode_f(const char *id,
-                               enum einit_cfg_node_options type,
-                               const struct cfgnode *base)
-{
-    struct stree *cur = hconfiguration;
-    if (!id) {
-        return NULL;
-    }
-
-    if (base) {
-        if (cur)
-            cur = streefind(cur, id, tree_find_first);
-        while (cur) {
-            if (cur->value == base) {
-                cur = streefind(cur, id, tree_find_next);
-                break;
-            }
-            // cur = streenext (cur);
-            cur = streefind(cur, id, tree_find_next);
-        }
-    } else if (cur) {
-        cur = streefind(cur, id, tree_find_first);
-    }
-
-    while (cur) {
-        if (cur->value
-            && (!type
-                || !(((struct cfgnode *) cur->value)->type ^ type))) {
-            return cur->value;
-        }
-        cur = streefind(cur, id, tree_find_next);
-    }
-    return NULL;
-}
-
-// get string (by id)
-char *cfg_getstring_f(const char *id, const struct cfgnode *mode)
-{
+struct cfgnode *cfg_lookup_x (const char *id, const char **vptr) {
     struct cfgnode *node = NULL;
-    char *ret = NULL, **sub;
+    char **sub;
     uint32_t i;
 
     if (!id) {
         return NULL;
     }
-    mode = mode ? mode : cmode;
 
     if (strchr(id, '/')) {
         char f = 0;
         sub = str2set('/', id);
-        if (!sub[1]) {
-            node = cfg_getnode(id, mode);
-            if (node)
-                ret = node->svalue;
 
-            efree(sub);
-            return ret;
-        }
-
-        node = cfg_getnode(sub[0], mode);
-        if (node && node->arbattrs && node->arbattrs[0]) {
-            if (node->arbattrs)
-
-                for (i = 0; node->arbattrs[i]; i += 2) {
-                    if ((f = (strmatch(node->arbattrs[i], sub[1])))) {
-                        ret = node->arbattrs[i + 1];
-                        break;
-                    }
+        node = cfg_getnode(sub[0]);
+        if (node && node->arbattrs) {
+            for (i = 0; node->arbattrs[i]; i += 2) {
+                if ((f = (strmatch(node->arbattrs[i], sub[1])))) {
+                    (*vptr) = (node->arbattrs[i + 1]);
+                    break;
                 }
+            }
         }
 
         efree(sub);
     } else {
-        node = cfg_getnode(id, mode);
-        if (node)
-            ret = node->svalue;
+        return cfg_getnode(id);
     }
 
-    return ret;
+    return node;
+}
+
+char cfg_getboolean(const char *id)
+{
+    const char *vptr = NULL;
+    struct cfgnode *node = cfg_lookup_x(id, &vptr);
+
+    if (vptr) return parse_boolean(vptr);
+    if (node) return node->flag;
+    return 0;
+}
+
+int cfg_getinteger(const char *id)
+{
+    const char *vptr = NULL;
+    struct cfgnode *node = cfg_lookup_x(id, &vptr);
+
+    if (vptr) return parse_integer(vptr);
+    if (node) return node->value;
+    return 0;
+}
+
+// get string (by id)
+char *cfg_getstring(const char *id)
+{
+    const char *vptr = NULL;
+    struct cfgnode *node = cfg_lookup_x(id, &vptr);
+
+    if (vptr) return (char *)vptr;
+    if (node) return node->svalue;
+    return NULL;
 }
 
 // get node (by id)
-struct cfgnode *cfg_getnode_f(const char *id, const struct cfgnode *mode)
+struct cfgnode *cfg_getnode(const char *id)
 {
-    struct cfgnode *node = NULL;
-    struct cfgnode *ret = NULL;
-
-    if (!id) {
+    if (!id || !configuration_by_mode) {
         return NULL;
     }
-    mode = mode ? mode : cmode;
 
-    if (mode) {
-        char *tmpnodename = NULL;
-        tmpnodename = emalloc(6 + strlen(id));
-        *tmpnodename = 0;
+    char *modename = cmode;
+    struct stree *mtree = NULL;
 
-        strcat(tmpnodename, "mode-");
-        strcat(tmpnodename, id);
+    retry:
 
-        while ((node = cfg_findnode(tmpnodename, 0, node))) {
-            if (node->mode == mode) {
-                ret = node;
-                break;
-            }
-        }
+    fprintf (stderr, "cfg_getnode(%s, %s)\n", id, modename);
 
-        efree(tmpnodename);
+    mtree = streefind (configuration_by_mode, modename, tree_find_first);
+
+    if (mtree) {
+        struct stree *x = streefind ((struct stree *)(mtree->value), id, tree_find_first);
+        if (x) return x->value;
     }
 
-    if (!ret && (node = cfg_findnode(id, 0, NULL)))
-        ret = node;
+    if (!strmatch (modename, SUPERMODE)) {
+        modename = SUPERMODE;
+        goto retry;
+    }
 
-    return ret;
+    return NULL;
 }
 
 // return a new stree with a certain prefix applied
-struct stree *cfg_prefix_f(const char *prefix)
+struct stree *cfg_prefix(const char *prefix)
 {
+    if (!configuration_by_mode || !prefix) return NULL;
+
+    char *modename = cmode;
+    struct stree *mtree = NULL;
     struct stree *retval = NULL;
 
-    if (prefix) {
-        struct stree *cur = streelinear_prepare(hconfiguration);
+    retry:
+
+    mtree = streefind (configuration_by_mode, modename, tree_find_first);
+
+    if (mtree) {
+        struct stree *cur = streelinear_prepare((struct stree *)(mtree->value));
+
         while (cur) {
             if (strprefix(cur->key, prefix)) {
                 retval =
@@ -457,6 +430,47 @@ struct stree *cfg_prefix_f(const char *prefix)
             cur = streenext(cur);
         }
     }
+    if (!strmatch (modename, SUPERMODE)) {
+        modename = SUPERMODE;
+        goto retry;
+    }
+
+//    fprintf (stderr, "cfg_prefix(%s)->%i\n", prefix, retval);
+
+    return retval;
+}
+
+// return a new stree with a certain prefix applied
+struct stree *cfg_match(const char *prefix)
+{
+    if (!configuration_by_mode || !prefix) return NULL;
+
+    char *modename = cmode;
+    struct stree *mtree = NULL;
+    struct stree *retval = NULL;
+
+    retry:
+
+    mtree = streefind (configuration_by_mode, modename, tree_find_first);
+
+    if (mtree) {
+        struct stree *cur = streelinear_prepare((struct stree *)(mtree->value));
+
+        while (cur) {
+            if (strmatch(cur->key, prefix)) {
+                retval =
+                        streeadd(retval, cur->key, cur->value, SET_NOALLOC,
+                                 NULL);
+            }
+            cur = streenext(cur);
+        }
+    }
+    if (!strmatch (modename, SUPERMODE)) {
+        modename = SUPERMODE;
+        goto retry;
+    }
+
+//    fprintf (stderr, "cfg_match(%s)->%i\n", prefix, retval);
 
     return retval;
 }
@@ -464,10 +478,10 @@ struct stree *cfg_prefix_f(const char *prefix)
 /*
  * those i-could've-sworn-there-were-library-functions-for-that functions 
  */
-char *cfg_getpath_f(const char *id)
+char *cfg_getpath(const char *id)
 {
     int mplen;
-    char *svpath = cfg_getstring(id, NULL);
+    char *svpath = cfg_getstring(id);
     if (!svpath) {
         return NULL;
     }
@@ -491,24 +505,42 @@ void einit_configuration_stree_einit_event_handler_core_configuration_update(str
     // update global environment here
     char **env = einit_global_environment;
     einit_global_environment = NULL;
-    struct cfgnode *node = NULL;
-    efree(env);
+    if (env) efree(env);
 
     env = NULL;
-    while ((node =
-            cfg_findnode("configuration-environment-global", 0, node))) {
-        if (node->idattr && node->svalue) {
-            env = straddtoenviron(env, node->idattr, node->svalue);
-            setenv(node->idattr, node->svalue, 1);
+
+    struct stree *p = cfg_prefix ("configuration-environment-global");
+    if (p) {
+        struct stree *x = streelinear_prepare (p);
+
+        while (x) {
+            struct cfgnode *node = x->value;
+
+            if (node->idattr && node->svalue) {
+                env = straddtoenviron(env, node->idattr, node->svalue);
+                setenv(node->idattr, node->svalue, 1);
+            }
+
+            x = streenext (x);
         }
+        streefree(p);
     }
     einit_global_environment = env;
 }
 
 void cfg_run_callback(char *prefix, void (*callback) (struct cfgnode *))
 {
-    if (hconfiguration) {
-        struct stree *cur = streelinear_prepare(hconfiguration);
+    if (!configuration_by_mode) return;
+
+    char *modename = cmode;
+    struct stree *mtree = NULL;
+
+    retry:
+
+    mtree = streefind (configuration_by_mode, modename, tree_find_first);
+
+    if (mtree) {
+        struct stree *cur = streelinear_prepare((struct stree *)(mtree->value));
 
         while (cur) {
             if (strprefix(cur->key, prefix)) {
@@ -518,10 +550,14 @@ void cfg_run_callback(char *prefix, void (*callback) (struct cfgnode *))
             cur = streenext(cur);
         }
     }
+    if (!strmatch (modename, SUPERMODE)) {
+        modename = SUPERMODE;
+        goto retry;
+    }
 }
 
-int cfg_callback_prefix_f(char *prefix,
-                          void (*callback) (struct cfgnode *))
+int cfg_callback_prefix(char *prefix,
+                        void (*callback) (struct cfgnode *))
 {
     if (!prefix || !callback)
         return 0;
@@ -542,21 +578,12 @@ int einit_configuration_stree_configure(struct lmodule *tm)
     event_listen(einit_core_configuration_update,
                  einit_configuration_stree_einit_event_handler_core_configuration_update);
 
-    function_register("einit-configuration-node-add", 1, cfg_addnode_f);
-    function_register("einit-configuration-node-get", 1, cfg_getnode_f);
-    function_register("einit-configuration-node-get-string", 1,
-                      cfg_getstring_f);
-    function_register("einit-configuration-node-get-find", 1,
-                      cfg_findnode_f);
-    function_register("einit-configuration-node-get-path", 1,
-                      cfg_getpath_f);
-    function_register("einit-configuration-node-get-prefix", 1,
-                      cfg_prefix_f);
-
-    function_register("einit-configuration-callback-prefix", 1,
-                      cfg_callback_prefix_f);
-
     eregcomp(&cfg_storage_allowed_duplicates, ".*");
 
     return 0;
+}
+
+void cfg_set_current_mode (char *modename) {
+    cmode = (char*)str_stabilise (modename);
+    fprintf (stderr, "cfg_set_current_mode(%s)\n", modename);
 }

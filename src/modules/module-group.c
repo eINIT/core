@@ -82,7 +82,7 @@ enum seq_type {
 
 int module_group_module_enable(char *nodename, struct einit_event *status)
 {
-    struct cfgnode *cn = cfg_getnode(nodename, NULL);
+    struct cfgnode *cn = cfg_getnode(nodename);
 
     if (cn && cn->arbattrs) {
         int i = 0;

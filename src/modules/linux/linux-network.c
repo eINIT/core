@@ -192,7 +192,6 @@ void linux_network_interface_construct(struct einit_event *ev)
             esprintf(buffer, BUFFERSIZE, "configuration-kernel-modules-%s",
                      ev->string);
             newnode.id = (char *) str_stabilise(buffer);
-            newnode.type = einit_node_regular;
 
             esprintf(buffer, BUFFERSIZE, "kernel-module-%s", ev->string);
             newnode.arbattrs =

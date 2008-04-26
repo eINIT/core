@@ -99,6 +99,25 @@ char *einit_default_startup_configuration_files[] =
 struct lmodule *mlist;
 struct exported_function *einit_function_macro_data = NULL;
 
+void update_local_environment()
+{
+    struct stree *p = cfg_prefix ("configuration-environment-global");
+    if (p) {
+        struct stree *x = streelinear_prepare (p);
+
+        while (x) {
+            struct cfgnode *node = x->value;
+
+            if (node->idattr && node->svalue) {
+                setenv(node->idattr, node->svalue, 1);
+            }
+
+            x = streenext (x);
+        }
+        streefree(p);
+    }
+}
+
 int print_usage_info()
 {
     eputs("eINIT " EINIT_VERSION_LITERAL
@@ -548,7 +567,6 @@ int main(int argc, char **argv, char **environ)
 #endif
 
     uname(&osinfo);
-    config_configure();
     einit_ipc_setup();
 
     event_listen(einit_core_update_modules,
