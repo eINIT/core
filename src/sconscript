@@ -41,7 +41,7 @@ if uname == 'linux':
 else:
  env.Install (InstallDirLib, env.SharedLibrary ('einit', CodeLibEinit))
 
-env.Install (InstallDirLib, env.StaticLibrary ('einit', CodeLibEinit))
+env.StaticLibrary ('einit', CodeLibEinit)
 
 cenv = env.Clone()
 cenv.Append (LIBPATH = ['.'])
