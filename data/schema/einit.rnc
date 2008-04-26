@@ -182,7 +182,7 @@ Services = element services {
 
   element prefer {
    element * { StringAttribute }*
-  } ? &
+  } ?
 }
 
 Special = element special {
