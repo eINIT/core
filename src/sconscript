@@ -41,8 +41,6 @@ if uname == 'linux':
 else:
  env.Install (InstallDirLib, env.SharedLibrary ('einit', CodeLibEinit))
 
-env.StaticLibrary ('einit', CodeLibEinit)
-
 cenv = env.Clone()
 cenv.Append (LIBPATH = ['.'])
 cenv.Append (LIBS=['einit'])
@@ -50,6 +48,7 @@ cenv.Append (LIBS=['einit'])
 ccenv = cenv.Clone();
 
 if coreStatic:
+ env.StaticLibrary ('einit', CodeLibEinit)
  ccenv.Append (CCFLAGS = '-static')
  ccenv.Append (LINKFLAGS = '-static')
 

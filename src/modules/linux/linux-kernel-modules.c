@@ -80,12 +80,12 @@ int linux_kernel_modules_module_configure(struct lmodule *);
 
 char **linux_kernel_modules_get_modprobe_c()
 {
-    return ("modprobe -c");
+    return pget ("modprobe -c");
 }
 
 char **linux_kernel_modules_get_modprobe_l()
 {
-    return ("modprobe -l");
+    return pget ("modprobe -l");
 }
 
 void linux_kernel_modules_free_modprobe(char **r)
