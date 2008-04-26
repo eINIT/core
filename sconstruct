@@ -84,6 +84,8 @@ if f:
 
 AssemblyDir = '#asm/' + arch + '-' + uname.lower() + '-' + libc
 
+coreStatic = False;
+
 SpecialModules = ['00-configuration-stree', '01-configuration-xml-expat']
 
 Modules = []
@@ -127,7 +129,6 @@ Mkdir ('build/headers/einit-modules')
 Mkdir ('build/core')
 
 buildnumber = 0
-coreStatic = True;
 
 f = open ('buildnumber', 'r')
 if f:
