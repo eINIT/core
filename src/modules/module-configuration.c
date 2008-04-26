@@ -99,19 +99,19 @@ struct cfgnode *module_xml_v2_module_get_node (char *name, char *action) {
 
   esprintf (buffer, BUFFERSIZE, MODULES_EXECUTE_NODE_TEMPLATE, name);
 
-  struct stree *st = cfg_match (buffer);
-  struct stree *cur = streelinear_prepare(st);
+  struct cfgnode **st = cfg_match (buffer);
   if (st) {
-      while (cur) {
-          struct cfgnode *node = cur->value;
+      struct cfgnode **tcur = st;
+      while (*tcur) {
+          struct cfgnode *node = *tcur;
 
           if (node->idattr && strmatch (node->idattr, action)) {
               return node;
           }
 
-          cur = streenext(cur);
+          tcur++;
       }
-      streefree(st);
+      efree(st);
   }
  }
 

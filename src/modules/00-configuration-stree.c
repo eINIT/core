@@ -181,8 +181,6 @@ int cfg_addnode(struct cfgnode *node)
         node->modename = node->idattr;
     }
 
-    fprintf (stderr, "adding node %s to mode %s\n", node->id, node->modename);
-
     struct stree *mtree = NULL;
 
     if (configuration_by_mode) {
@@ -195,8 +193,6 @@ int cfg_addnode(struct cfgnode *node)
 
         configuration_by_mode = streeadd(configuration_by_mode, node->modename, mtree,
                                          sizeof (struct stree), NULL);
-
-        fprintf (stderr, "shortcut-add\n", node->id, node->modename);
 
         return 0;
     }
@@ -272,7 +268,8 @@ int cfg_addnode(struct cfgnode *node)
                 id_match = 1;
             }
 
-            if (((!allow_multi && (!node->idattr)) || id_match)) {
+            if (((!allow_multi && !node->idattr) || id_match)) {
+//                fprintf (stderr, "overwriting old node: %s\n", node->id);
                 // this means we found something that looks like it
                 // fprintf (stderr, "replacing old config: %s; %i %i
                 // %i\n", node->id, allow_multi, node->idattr ? 1 : 0,
@@ -423,6 +420,7 @@ struct stree *cfg_prefix(const char *prefix)
 
         while (cur) {
             if (strprefix(cur->key, prefix)) {
+//                fprintf (stderr, "cfg_prefix(%s)->%i\n", prefix, cur->value);
                 retval =
                     streeadd(retval, cur->key, cur->value, SET_NOALLOC,
                              NULL);
@@ -441,36 +439,31 @@ struct stree *cfg_prefix(const char *prefix)
 }
 
 // return a new stree with a certain prefix applied
-struct stree *cfg_match(const char *prefix)
+struct cfgnode **cfg_match(const char *name)
 {
-    if (!configuration_by_mode || !prefix) return NULL;
+    if (!configuration_by_mode || !name) return NULL;
 
     char *modename = cmode;
     struct stree *mtree = NULL;
-    struct stree *retval = NULL;
+    struct cfgnode **retval = NULL;
 
     retry:
 
     mtree = streefind (configuration_by_mode, modename, tree_find_first);
 
     if (mtree) {
-        struct stree *cur = streelinear_prepare((struct stree *)(mtree->value));
+        struct stree *cur = streefind ((struct stree *)(mtree->value), name, tree_find_first);
 
         while (cur) {
-            if (strmatch(cur->key, prefix)) {
-                retval =
-                        streeadd(retval, cur->key, cur->value, SET_NOALLOC,
-                                 NULL);
-            }
-            cur = streenext(cur);
+            retval = (struct cfgnode **)set_noa_add ((void **)retval, cur->value);
+
+            cur = streefind (cur, name, tree_find_next);
         }
     }
     if (!strmatch (modename, SUPERMODE)) {
         modename = SUPERMODE;
         goto retry;
     }
-
-//    fprintf (stderr, "cfg_match(%s)->%i\n", prefix, retval);
 
     return retval;
 }

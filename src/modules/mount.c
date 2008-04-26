@@ -255,11 +255,11 @@ unsigned char read_filesystem_flags_from_configuration(void *na)
     uint32_t i;
     char *id, *flags, *before, *after, **requires;
 
-    struct stree *st = cfg_match ("information-filesystem-type");
-    struct stree *cur = streelinear_prepare(st);
+    struct cfgnode **st = cfg_match ("information-filesystem-type");
     if (st) {
-        while (cur) {
-            struct cfgnode *node = cur->value;
+        struct cfgnode **tcur = st;
+        while (*tcur) {
+            struct cfgnode *node = *tcur;
 
             if (node->arbattrs) {
                 id = NULL;
@@ -286,9 +286,9 @@ unsigned char read_filesystem_flags_from_configuration(void *na)
                     mount_add_filesystem(id, flags, requires, after, before);
             }
 
-            cur = streenext(cur);
+            tcur++;
         }
-        streefree(st);
+        efree (st);
     }
     return 0;
 }
@@ -296,6 +296,8 @@ unsigned char read_filesystem_flags_from_configuration(void *na)
 void mount_add_filesystem(char *name, char *options, char **requires,
                           char *after, char *before)
 {
+    fprintf (stderr, "mount_add_filesystem_options(%s)=%s\n", name, options);
+
     char **t = str2set(':', options);
     uintptr_t flags = 0, i = 0;
     if (t) {
@@ -345,11 +347,14 @@ uintptr_t mount_get_filesystem_options(char *name)
     enum filesystem_capability ret = filesystem_capability_rw;
     struct stree *t;
 
-    if ((t = streefind(mount_filesystems, name, tree_find_first))) {
+    if (mount_filesystems &&
+        (t = streefind(mount_filesystems, name, tree_find_first))) {
         struct filesystem_data *d = t->value;
         if (d)
             ret = d->capabilities;
     }
+
+    fprintf (stderr, "mount_get_filesystem_options(%s)=%i\n", name, ret);
 
     return ret;
 }
@@ -739,11 +744,11 @@ void mount_update_fstab_nodes()
 {
     uint32_t i;
 
-    struct stree *st = cfg_match ("configuration-storage-fstab-node");
-    struct stree *cur = streelinear_prepare(st);
+    struct cfgnode **st = cfg_match ("configuration-storage-fstab-node");
     if (st) {
-        while (cur) {
-            struct cfgnode *node = cur->value;
+        struct cfgnode **tcur = st;
+        while (*tcur) {
+            struct cfgnode *node = *tcur;
 
                     char *mountpoint = NULL, *device = NULL, *fs = NULL, **options =
             NULL, *before_mount = NULL, *after_mount =
@@ -816,10 +821,10 @@ void mount_update_fstab_nodes()
             // after_umount, manager, 1, variables);
         }
 
-            cur = streenext(cur);
+            tcur++;
         }
 
-        streefree(st);
+        efree(st);
     }
 }
 
@@ -2127,11 +2132,11 @@ int mount_fsck(char *fs, char *device, struct einit_event *status)
 
     char *mount_fsck_template = NULL;
 
-    struct stree *st = cfg_match ("configuration-storage-fsck-command");
-    struct stree *cur = streelinear_prepare(st);
+    struct cfgnode **st = cfg_match ("configuration-storage-fsck-command");
     if (st) {
-        while (cur) {
-            struct cfgnode *node = cur->value;
+        struct cfgnode **tcur = st;
+        while (*tcur) {
+            struct cfgnode *node = *tcur;
 
             if (fs && node->idattr && strmatch(node->idattr, fs)) {
                 mount_fsck_template = node->svalue;
@@ -2140,9 +2145,9 @@ int mount_fsck(char *fs, char *device, struct einit_event *status)
                 mount_fsck_template = node->svalue;
             }
 
-            cur = streenext(cur);
+            tcur++;
         }
-        streefree(st);
+        efree(st);
     }
 
     if (mount_fsck_template) {

@@ -207,17 +207,17 @@ struct cfgnode **einit_module_network_v2_get_multiple_options(char
     esprintf(buffer, BUFFERSIZE, INTERFACES_PREFIX "-%s-%s", interface,
              option);
 
-    struct stree *st = cfg_match (buffer);
-    struct stree *cur = streelinear_prepare(st);
+    struct cfgnode **st = cfg_match (buffer);
     if (st) {
-        while (cur) {
-            struct cfgnode *node = cur->value;
+        struct cfgnode **tcur = st;
+        while (*tcur) {
+            struct cfgnode *node = *tcur;
 
             rv = (struct cfgnode **) set_noa_add((void **) rv, node);
 
-            cur = streenext(cur);
+            tcur++;
         }
-        streefree(st);
+        efree(st);
     }
 
     if (rv)
@@ -866,11 +866,11 @@ int einit_module_network_v2_do_dhcp(struct network_event_data *d,
     fbprintf(d->feedback, "trying dhcp client: %s", client);
     int rv = status_failed;
 
-    struct stree *st = cfg_match ("subsystem-network-dhcp-client");
-    struct stree *cur = streelinear_prepare(st);
+    struct cfgnode **st = cfg_match ("subsystem-network-dhcp-client");
     if (st) {
-        while (cur) {
-            struct cfgnode *node = cur->value;
+        struct cfgnode **tcur = st;
+        while (*tcur) {
+            struct cfgnode *node = *tcur;
 
             if (node->idattr && strmatch(node->idattr, client)) {
                 if (node->arbattrs) {
@@ -958,9 +958,9 @@ int einit_module_network_v2_do_dhcp(struct network_event_data *d,
                 break;
             }
 
-            cur = streenext(cur);
+            tcur++;
         }
-        streefree(st);
+        efree(st);
     }
 
     return rv;
@@ -1153,11 +1153,11 @@ void einit_module_network_v2_interface_construct(struct einit_event *ev)
                     int i = 0;
 
                     for (; v[i]; i++) {
-                        struct stree *st = cfg_match ("subsystem-network-dhcp-client");
-                        struct stree *cur = streelinear_prepare(st);
+                        struct cfgnode **st = cfg_match ("subsystem-network-dhcp-client");
                         if (st) {
-                            while (cur) {
-                                struct cfgnode *node = cur->value;
+                            struct cfgnode **tcur = st;
+                            while (*tcur) {
+                                struct cfgnode *node = *tcur;
 
                                 if (node->idattr
                                     && strmatch(node->idattr, v[i])) {
@@ -1219,9 +1219,9 @@ void einit_module_network_v2_interface_construct(struct einit_event *ev)
                                     }
                                     }
 
-                                cur = streenext(cur);
+                                tcur++;
                             }
-                            streefree(st);
+                            efree(st);
                         }
                     }
                 }
