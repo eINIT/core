@@ -385,7 +385,7 @@ struct cfgnode *cfg_getnode(const char *id)
 
     retry:
 
-    fprintf (stderr, "cfg_getnode(%s, %s)\n", id, modename);
+//    fprintf (stderr, "cfg_getnode(%s, %s)\n", id, modename);
 
     mtree = streefind (configuration_by_mode, modename, tree_find_first);
 
@@ -572,5 +572,5 @@ int einit_configuration_stree_configure(struct lmodule *tm)
 
 void cfg_set_current_mode (char *modename) {
     cmode = (char*)str_stabilise (modename);
-    fprintf (stderr, "cfg_set_current_mode(%s)\n", modename);
+//    fprintf (stderr, "cfg_set_current_mode(%s)\n", modename);
 }
