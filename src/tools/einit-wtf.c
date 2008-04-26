@@ -49,9 +49,83 @@ enum test_result {
     test_skipped
 };
 
+enum test_result test_file_with_rnv (char *file)
+{
+    char buffer[BUFFERSIZE];
+
+    snprintf (buffer, BUFFERSIZE,
+              "rnv " EINIT_LIB_BASE "/schemata/einit.rnc %s 2>&1", file);
+
+    char **rnvres = pget(buffer);
+
+    if (!rnvres) return test_failed;
+    else if (rnvres[1] || !strmatch (rnvres[0], file)) {
+        int i = 0;
+        fprintf (stdout, "\nfile \"%s\" contains errors:\n", file);
+
+        for (; rnvres[i]; i++) {
+            fprintf (stdout, " > %s \n", rnvres[i]);
+        }
+
+        return test_failed;
+    }
+
+    fprintf (stdout, "%s ", file);
+    fflush (stdout);
+
+    return test_passed;
+}
+
+enum test_result test_all_files_with_rnv (char **files)
+{
+    if (!files) return test_skipped;
+
+    enum test_result res = test_passed;
+    int i = 0;
+
+    for (; files[i]; i++) {
+        if (test_file_with_rnv (files[i]) == test_failed)
+            res = test_failed;
+    }
+
+    return res;
+}
+
+enum test_result test_all_dirs_with_rnv (char **dirs)
+{
+    if (!dirs) return test_skipped;
+
+    int i = 0;
+    enum test_result res = test_passed;
+
+    for (; dirs[i]; i++) {
+        if (test_all_files_with_rnv(
+              readdirfilter(NULL, dirs[i], "\\.xml$", NULL, 0)) == test_failed) {
+            res = test_failed;
+        }
+    }
+
+    return res;
+}
+
 enum test_result test_rnv ()
 {
-    return test_skipped;
+    char **w = which ("rnv");
+    if (!w) return test_skipped;
+
+    efree (w);
+
+    char *dirs[] = {
+        EINIT_LIB_BASE,
+        "/etc/einit",
+        "/etc/einit/local",
+        "/etc/einit/modules",
+        "/etc/einit/subsystems.d",
+        "/etc/einit/conf.d",
+        NULL
+    };
+
+    return test_all_dirs_with_rnv(dirs);
 }
 
 enum test_result test_mode_consistency ()

@@ -823,7 +823,7 @@ char **which(char *binary)
     if (!binary)
         return NULL;
 
-    for (; n < 2; n++) {
+    for (; n < 3; n++) {
         struct stat st;
 
         switch (n) {
@@ -838,34 +838,40 @@ char **which(char *binary)
             break;
         }
 
+        char **paths = NULL;
+
         if (env) {
             int i = 0;
 
             for (; env[i]; i++) {
                 if (strprefix(env[i], "PATH=")) {
-                    char **paths = str2set(':', env[i] + 5);
-
-                    if (paths) {
-                        int j = 0;
-                        for (; paths[j]; j++) {
-                            char *t = joinpath(paths[j], binary);
-
-                            if (!stat(t, &st)) {
-                                if (!inset
-                                    ((const void **) rv, t,
-                                     SET_TYPE_STRING))
-                                    rv = set_str_add_stable(rv, t);
-                            }
-
-                            efree(t);
-                        }
-
-                        efree(paths);
-                    }
+                    paths = str2set(':', env[i] + 5);
 
                     break;
                 }
             }
+        } else if (n == 2) {
+            char *p = getenv ("PATH");
+            if (p)
+                paths = str2set(':', p);
+        }
+
+        if (paths) {
+            int j = 0;
+            for (; paths[j]; j++) {
+                char *t = joinpath(paths[j], binary);
+
+                if (!stat(t, &st)) {
+                    if (!inset
+                         ((const void **) rv, t,
+                           SET_TYPE_STRING))
+                        rv = set_str_add_stable(rv, t);
+                }
+
+                efree(t);
+            }
+
+            efree(paths);
         }
     }
 
