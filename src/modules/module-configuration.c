@@ -216,16 +216,15 @@ void module_xml_v2_scanmodules (struct einit_event *ev) {
   modules_to_update = streenext (modules_to_update);
  }
 
- struct stree *module_nodes = cfg_prefix(MODULES_PREFIX);
+ struct cfgnode **module_nodes = cfg_prefix(MODULES_PREFIX);
 
  if (module_nodes) {
-  struct stree *cur = streelinear_prepare(module_nodes);
+     struct cfgnode **tcur = module_nodes;
+     while (*tcur) {
+         struct cfgnode *node = *tcur;
+         /*    notice (1, "processing id=%s", cur->key + MODULES_PREFIX_LENGTH); */
 
-  for (; cur; cur = streenext (cur)) {
-    struct cfgnode *node = cur->value;
-/*    notice (1, "processing id=%s", cur->key + MODULES_PREFIX_LENGTH); */
-
-    if ((!module_xml_v2_modules || !streefind (module_xml_v2_modules, cur->key + MODULES_PREFIX_LENGTH, tree_find_first)) && node->arbattrs) {
+    if ((!module_xml_v2_modules || !streefind (module_xml_v2_modules, node->id + MODULES_PREFIX_LENGTH, tree_find_first)) && node->arbattrs) {
      int i = 0;
      char *name = NULL, *requires = NULL, *provides = NULL, **after = NULL, *before = NULL, **fs = NULL;
      struct cfgnode *xnode;
@@ -244,11 +243,11 @@ void module_xml_v2_scanmodules (struct einit_event *ev) {
       }
      }
 
-     if ((xnode = module_xml_v2_module_get_attributive_node (cur->key + MODULES_PREFIX_LENGTH, "pidfile")) && xnode->svalue) {
+     if ((xnode = module_xml_v2_module_get_attributive_node (node->id + MODULES_PREFIX_LENGTH, "pidfile")) && xnode->svalue) {
       fs = module_xml_v2_add_fs(fs, xnode->svalue);
      }
 
-     if ((xnode = module_xml_v2_module_get_attributive_node (cur->key + MODULES_PREFIX_LENGTH, "need-files")) && xnode->svalue) {
+     if ((xnode = module_xml_v2_module_get_attributive_node (node->id + MODULES_PREFIX_LENGTH, "need-files")) && xnode->svalue) {
       char **sx = str2set (':', xnode->svalue);
       int ix = 0;
 
@@ -271,13 +270,13 @@ void module_xml_v2_scanmodules (struct einit_event *ev) {
       }
      }
 
-     if (name && provides && module_xml_v2_check_files (cur->key + MODULES_PREFIX_LENGTH)) {
+     if (name && provides && module_xml_v2_check_files (node->id + MODULES_PREFIX_LENGTH)) {
       struct smodule *new_sm = emalloc (sizeof (struct smodule));
       memset (new_sm, 0, sizeof (struct smodule));
 
       new_modules++;
 
-      new_sm->rid = (char *)str_stabilise (cur->key + MODULES_PREFIX_LENGTH);
+      new_sm->rid = (char *)str_stabilise (node->id + MODULES_PREFIX_LENGTH);
       new_sm->name = (char *)str_stabilise (name);
 
       new_sm->eiversion = EINIT_VERSION;
@@ -312,9 +311,10 @@ void module_xml_v2_scanmodules (struct einit_event *ev) {
      }
     }
 
+    tcur++;
   }
 
-  streefree (module_nodes);
+  efree (module_nodes);
  }
 
  return;

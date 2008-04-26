@@ -403,13 +403,13 @@ struct cfgnode *cfg_getnode(const char *id)
 }
 
 // return a new stree with a certain prefix applied
-struct stree *cfg_prefix(const char *prefix)
+struct cfgnode **cfg_prefix(const char *prefix)
 {
-    if (!configuration_by_mode || !prefix) return NULL;
-
     char *modename = cmode;
     struct stree *mtree = NULL;
-    struct stree *retval = NULL;
+    struct cfgnode **retval = NULL;
+
+    if (!configuration_by_mode || !prefix) return NULL;
 
     retry:
 
@@ -420,10 +420,7 @@ struct stree *cfg_prefix(const char *prefix)
 
         while (cur) {
             if (strprefix(cur->key, prefix)) {
-//                fprintf (stderr, "cfg_prefix(%s)->%i\n", prefix, cur->value);
-                retval =
-                    streeadd(retval, cur->key, cur->value, SET_NOALLOC,
-                             NULL);
+                retval = (struct cfgnode **)set_noa_add ((void **)retval, cur->value);
             }
             cur = streenext(cur);
         }
@@ -432,8 +429,6 @@ struct stree *cfg_prefix(const char *prefix)
         modename = SUPERMODE;
         goto retry;
     }
-
-//    fprintf (stderr, "cfg_prefix(%s)->%i\n", prefix, retval);
 
     return retval;
 }
@@ -502,21 +497,20 @@ void einit_configuration_stree_einit_event_handler_core_configuration_update(str
 
     env = NULL;
 
-    struct stree *p = cfg_prefix ("configuration-environment-global");
+    struct cfgnode **p = cfg_prefix ("configuration-environment-global");
     if (p) {
-        struct stree *x = streelinear_prepare (p);
-
-        while (x) {
-            struct cfgnode *node = x->value;
+        struct cfgnode **tcur = p;
+        while (*tcur) {
+            struct cfgnode *node = *tcur;
 
             if (node->idattr && node->svalue) {
                 env = straddtoenviron(env, node->idattr, node->svalue);
                 setenv(node->idattr, node->svalue, 1);
             }
 
-            x = streenext (x);
+            tcur++;
         }
-        streefree(p);
+        efree(p);
     }
     einit_global_environment = env;
 }

@@ -100,7 +100,7 @@ extern "C" {
     int cfg_getinteger(const char *);
     struct cfgnode *cfg_getnode(const char *);
     char *cfg_getpath(const char *);
-    struct stree *cfg_prefix(const char *);
+    struct cfgnode **cfg_prefix(const char *);
     struct cfgnode **cfg_match(const char *);
     int cfg_callback_prefix(char *prefix,
                             void (*callback) (struct cfgnode *));

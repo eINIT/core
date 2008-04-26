@@ -227,21 +227,21 @@ void einit_ipc_library_get_configuration_a(struct einit_sexp *sexp, int id,
                                            struct einit_ipc_connection *cd)
 {
     if (sexp->type == es_symbol) {
-        struct stree *st = cfg_prefix (sexp->symbol);
+        struct cfgnode **st = cfg_prefix (sexp->symbol);
 
         if (st) {
+            struct cfgnode **tcur = st;
             struct einit_sexp *sp = (struct einit_sexp *)sexp_end_of_list;
+            while (*tcur) {
+                struct cfgnode *node = *tcur;
 
-            st = streelinear_prepare (st);
-
-            while (st) {
                 sp = se_cons (
-                       se_cons(se_symbol (st->key),
-                         se_cons (cfgnode2sexp (st->value),
+                       se_cons(se_symbol (node->id),
+                         se_cons (cfgnode2sexp (node),
                          (struct einit_sexp *)sexp_end_of_list)),
                        sp);
 
-                st = streenext(st);
+                tcur++;
             }
 
             sp = se_cons(se_integer (id), se_cons (sp, (struct einit_sexp *)sexp_end_of_list));
@@ -253,6 +253,8 @@ void einit_ipc_library_get_configuration_a(struct einit_sexp *sexp, int id,
             einit_ipc_write (r, cd->reader);
 
             efree (r);
+
+            efree (st);
 
             return;
         }

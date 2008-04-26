@@ -516,16 +516,14 @@ void linux_kernel_modules_boot_event_handler_load_kernel_extensions(struct
 {
     pid_t **pids = NULL;
 
-    struct stree *linux_kernel_modules_nodes = cfg_prefix(MPREFIX);
+    struct cfgnode **linux_kernel_modules_nodes = cfg_prefix(MPREFIX);
     char have_generic = 0;
 
     if (linux_kernel_modules_nodes) {
-        struct stree *cur =
-            streelinear_prepare(linux_kernel_modules_nodes);
-
-        while (cur) {
-            char *subsystem = cur->key + sizeof(MPREFIX) - 1;
-            struct cfgnode *nod = cur->value;
+        struct cfgnode **tcur = linux_kernel_modules_nodes;
+        while (*tcur) {
+            struct cfgnode *nod = *tcur;
+            char *subsystem = nod->id + sizeof(MPREFIX) - 1;
 
             if (nod && nod->arbattrs) {
                 size_t i;
@@ -537,8 +535,6 @@ void linux_kernel_modules_boot_event_handler_load_kernel_extensions(struct
                 }
             }
 
-            struct cfgnode *node = cur->value;
-
             if (strmatch(subsystem, "generic")
                 || strmatch(subsystem, "arbitrary")) {
                 have_generic = 1;
@@ -548,8 +544,8 @@ void linux_kernel_modules_boot_event_handler_load_kernel_extensions(struct
                 goto nextgroup;
             }
 
-            if (node && node->svalue) {
-                char **modules = str2set(':', node->svalue);
+            if (nod && nod->svalue) {
+                char **modules = str2set(':', nod->svalue);
 
                 if (modules) {
                     pid_t p = efork();
@@ -558,7 +554,7 @@ void linux_kernel_modules_boot_event_handler_load_kernel_extensions(struct
                         perror("couldn't fork");
                         linux_kernel_modules_load(modules);
                     } else if (p > 0) {
-                        if (!node->flag)
+                        if (!nod->flag)
                             pids =
                                 (pid_t **) set_fix_add((void **) pids, &p,
                                                        sizeof(pid_t));
@@ -571,10 +567,10 @@ void linux_kernel_modules_boot_event_handler_load_kernel_extensions(struct
 
           nextgroup:
 
-            cur = streenext(cur);
+            tcur++;
         }
 
-        streefree(linux_kernel_modules_nodes);
+        efree(linux_kernel_modules_nodes);
     }
 
     if (!have_generic) {

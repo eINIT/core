@@ -240,30 +240,28 @@ struct cfgnode **einit_module_network_v2_get_multiple_options(char
 struct stree *einit_module_network_v2_get_all_addresses(char *interface)
 {
     char buffer[BUFFERSIZE];
-    struct stree *st;
     struct stree *rv = NULL;
 
     esprintf(buffer, BUFFERSIZE, INTERFACES_PREFIX "-%s-address-",
              interface);
 
-    st = cfg_prefix(buffer);
+    struct cfgnode **st = cfg_prefix(buffer);
     if (st) {
-        struct stree *cur = streelinear_prepare(st);
+        struct cfgnode **tcur = st;
         ssize_t prefixlen = strlen(buffer);
-
-        while (cur) {
-            struct cfgnode *n = cur->value;
+        while (*tcur) {
+            struct cfgnode *n = *tcur;
             if (n->arbattrs) {
                 char **narb = set_str_dup_stable(n->arbattrs);
 
-                rv = streeadd(rv, (cur->key + prefixlen), narb,
+                rv = streeadd(rv, (n->id + prefixlen), narb,
                               tree_value_noalloc, narb);
             }
 
-            cur = streenext(cur);
+            tcur++;
         }
 
-        streefree(st);
+        efree(st);
     } else {
         struct cfgnode *n;
         if ((n =
@@ -590,32 +588,30 @@ char *einit_module_network_v2_last_auto = NULL;
 
 char **einit_module_network_v2_add_configured_interfaces(char **interfaces)
 {
-    struct stree *interface_nodes = cfg_prefix(INTERFACES_PREFIX "-");
-
+    struct cfgnode **interface_nodes = cfg_prefix(INTERFACES_PREFIX "-");
     if (interface_nodes) {
-        struct stree *cur = streelinear_prepare(interface_nodes);
-
-        while (cur) {
-            struct cfgnode *n = cur->value;
+        struct cfgnode **tcur = interface_nodes;
+        while (*tcur) {
+            struct cfgnode *n = *tcur;
             if (!n->arbattrs
-                && !strchr(cur->key + sizeof(INTERFACES_PREFIX), '-')) {
+                && !strchr(n->id + sizeof(INTERFACES_PREFIX), '-')) {
                 /*
                  * only accept interfaces without dashes in them here... 
                  */
                 if (!inset
                     ((const void **) interfaces,
-                     cur->key + sizeof(INTERFACES_PREFIX),
+                     n->id + sizeof(INTERFACES_PREFIX),
                      SET_TYPE_STRING)) {
                     interfaces =
                         set_str_add(interfaces,
-                                    cur->key + sizeof(INTERFACES_PREFIX));
+                                    n->id + sizeof(INTERFACES_PREFIX));
                 }
             }
 
-            cur = streenext(cur);
+            tcur++;
         }
 
-        streefree(interface_nodes);
+        efree(interface_nodes);
     }
 
     return interfaces;
