@@ -497,74 +497,26 @@ int lookupuidgid(uid_t * uid, gid_t * gid, const char *user,
                  const char *group)
 {
 #if ! defined (__APPLE__)
-    if (!_getgr_r_size_max)
-        _getgr_r_size_max = sysconf(_SC_GETGR_R_SIZE_MAX);
-    if (!_getpw_r_size_max)
-        _getpw_r_size_max = sysconf(_SC_GETPW_R_SIZE_MAX);
-
     if (user && uid) {
-        struct passwd pwd, *pwdptr;
-        char *buffer = emalloc(_getpw_r_size_max);
+        struct passwd *pwd;
         errno = 0;
 
-        memset(buffer, 0, _getpw_r_size_max);
-
-        while (getpwnam_r(user, &pwd, buffer, _getpw_r_size_max, &pwdptr)) {
-            switch (errno) {
-            case EIO:
-            case EMFILE:
-            case ENFILE:
-            case ERANGE:
-                perror("getpwnam_r");
-                efree(buffer);
-                return -1;
-            case EINTR:
-                continue;
-            default:
-                efree(buffer);
-                goto abortusersearch;
-            }
-        }
-
-        if (pwd.pw_name && strmatch(pwd.pw_name, user)) {
-            *uid = pwd.pw_uid;
+        if ((pwd = getpwnam (user))) {
+            *uid = pwd->pw_uid;
 
             if (!group && gid)
-                *gid = pwd.pw_gid;
+                *gid = pwd->pw_gid;
         }
-        efree(buffer);
     }
-
-  abortusersearch:
 
     if (group && gid) {
-        struct group grp, *grpptr;
-        char *buffer = emalloc(_getgr_r_size_max);
-        errno = 0;
+        struct group *grp;
 
-        memset(buffer, 0, _getgr_r_size_max);
-
-        while (getgrnam_r(group, &grp, buffer, _getgr_r_size_max, &grpptr)) {
-            switch (errno) {
-            case EIO:
-            case EMFILE:
-            case ENFILE:
-            case ERANGE:
-                perror("getgrnam_r");
-                efree(buffer);
-                return -2;
-            default:
-                efree(buffer);
-                goto abortgroupsearch;
-            }
+        if ((grp = getgrnam (group))) {
+            *gid = grp->gr_gid;
         }
-
-        if (grp.gr_name && strmatch(grp.gr_name, group))
-            *gid = grp.gr_gid;
-        efree(buffer);
     }
 
-  abortgroupsearch:
 #endif
 
     return 0;
