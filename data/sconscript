@@ -1,4 +1,4 @@
-Import ('env', 'RuntimeDirEtc', 'InstallDirEtc', 'InstallDirLibEinit', 'RuntimeDirLibEinit')
+Import ('env', 'RuntimeDirEtc', 'InstallDirEtc', 'InstallDirLibEinit', 'RuntimeDirLibEinit', 'InstallDirLibJobs')
 
 import glob, os
 
@@ -46,3 +46,4 @@ for i in files:
    env.InstallAs (InstallDirEtc + '/' + i, i)
 
 env.Install (InstallDirLibEinit + '/schemata', glob.glob ('schema/*.rnc'))
+env.Install (InstallDirLibJobs, glob.glob ('jobs/*.sexpr'))
