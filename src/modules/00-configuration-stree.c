@@ -242,8 +242,7 @@ int cfg_addnode(struct cfgnode *node)
          * marginally different or that sport a matching id="" attribute 
          */
 
-        if (ptree)
-            cur = streefind(ptree, node->id, tree_find_first);
+        cur = streefind(ptree, node->id, tree_find_first);
         while (cur) {
             // this means we found a node wit the same path
             char allow_multi = 0;
