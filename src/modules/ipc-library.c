@@ -480,13 +480,53 @@ void einit_ipc_library_service_switch_mode(struct einit_sexp *sexp, int id,
 void einit_ipc_library_set_configuration(struct einit_sexp *sexp, int id,
                                          struct einit_ipc_connection *cd)
 {
-    einit_ipc_library_stub(sexp, id, cd);
-}
+    struct einit_sexp *primus = se_car(sexp), *rest = se_cdr(sexp), *secundus;
 
-void einit_ipc_library_set_configuration_a(struct einit_sexp *sexp, int id,
-                                           struct einit_ipc_connection *cd)
-{
-    einit_ipc_library_stub(sexp, id, cd);
+    if ((primus->type == es_symbol) && (rest->type == es_cons)) {
+        struct cfgnode nnode;
+        memset (&nnode, 0, sizeof (struct cfgnode));
+
+        nnode.id = primus->symbol;
+
+        primus = se_car (rest);
+        if (primus->type == es_symbol) {
+            nnode.modename = (char *)primus->symbol;
+            rest = se_cdr (rest);
+        }
+
+        do {
+            primus = se_car(se_car(rest));
+            secundus = se_car(se_cdr(se_car(rest)));
+
+            if ((primus->type == es_symbol) && (secundus->type == es_string)) {
+                nnode.arbattrs =
+                        set_str_add_stable (nnode.arbattrs,
+                                            (char *)primus->symbol);
+                nnode.arbattrs =
+                        set_str_add_stable (nnode.arbattrs,
+                                            (char *)secundus->string);
+
+                if (strmatch (primus->symbol, "s")) {
+                    nnode.svalue = (char *)secundus->string;
+                } else if (strmatch (primus->symbol, "i")) {
+                    nnode.value = parse_integer(secundus->string);
+                } else if (strmatch (primus->symbol, "b")) {
+                    nnode.flag = parse_boolean(secundus->string);
+                }
+            } else {
+                einit_ipc_reply_simple(id, "#f", cd);
+                return;
+            }
+
+            rest = se_cdr(rest);
+        } while (rest->type == es_cons);
+
+        cfg_addnode (&nnode);
+
+        einit_ipc_reply_simple(id, "#t", cd);
+    } else {
+        einit_ipc_reply_simple(id, "#f", cd);
+    }
 }
 
 int einit_ipc_library_configure(struct lmodule *irr)
@@ -522,8 +562,6 @@ int einit_ipc_library_configure(struct lmodule *irr)
 
     einit_ipc_register_handler("set-configuration!",
                                einit_ipc_library_set_configuration);
-    einit_ipc_register_handler("set-configuration!*",
-                               einit_ipc_library_set_configuration_a);
 
     return 0;
 }
