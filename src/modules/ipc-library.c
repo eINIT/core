@@ -427,6 +427,18 @@ void einit_ipc_library_service_switch_mode(struct einit_sexp *sexp, int id,
     }
 }
 
+void einit_ipc_library_set_configuration(struct einit_sexp *sexp, int id,
+                                         struct einit_ipc_connection *cd)
+{
+    einit_ipc_library_stub(sexp, id, cd);
+}
+
+void einit_ipc_library_set_configuration_a(struct einit_sexp *sexp, int id,
+                                           struct einit_ipc_connection *cd)
+{
+    einit_ipc_library_stub(sexp, id, cd);
+}
+
 int einit_ipc_library_configure(struct lmodule *irr)
 {
     module_init(irr);
@@ -457,6 +469,11 @@ int einit_ipc_library_configure(struct lmodule *irr)
                                einit_ipc_library_service_do_bang);
     einit_ipc_register_handler("switch-mode!",
                                einit_ipc_library_service_switch_mode);
+
+    einit_ipc_register_handler("set-configuration!",
+                               einit_ipc_library_set_configuration);
+    einit_ipc_register_handler("set-configuration!*",
+                               einit_ipc_library_set_configuration_a);
 
     return 0;
 }
