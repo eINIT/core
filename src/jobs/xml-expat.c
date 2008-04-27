@@ -360,6 +360,19 @@ int expat_parse_configuration_file(char *configfile)
     return 1;
 }
 
+void config_updated()
+{
+    struct einit_event se =
+            evstaticinit(einit_core_configuration_update);
+    event_emit(&se, einit_event_flag_remote);
+}
+
+void update_modules()
+{
+    struct einit_event se =
+            evstaticinit(einit_core_update_modules);
+    event_emit(&se, einit_event_flag_remote);
+}
 
 int main(int argc, char **argv)
 {
@@ -370,9 +383,8 @@ int main(int argc, char **argv)
 
     expat_parse_configuration_file(EINIT_ENTRY_CONFIG);
 
-    struct einit_event se =
-            evstaticinit(einit_core_configuration_update);
-    event_emit(&se, einit_event_flag_remote);
+    config_updated();
+    update_modules();
 
     return 0;
 }
