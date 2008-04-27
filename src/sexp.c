@@ -71,7 +71,8 @@ const struct einit_sexp *const sexp_end_of_list = &sexp_end_of_list_v;
 const struct einit_sexp *const sexp_empty_list = &sexp_empty_list_v;
 const struct einit_sexp *const sexp_bad = &sexp_bad_v;
 
-static struct einit_sexp *einit_parse_string_in_buffer(char *buffer, int *index,
+static struct einit_sexp *einit_parse_string_in_buffer(char *buffer,
+                                                       int *index,
                                                        int stop)
 {
     unsigned char sc_quote = 0;
@@ -81,8 +82,7 @@ static struct einit_sexp *einit_parse_string_in_buffer(char *buffer, int *index,
 
     for (; (*index) < stop; (*index)++) {
         if (sc_quote) {
-            if (sb_pos < (MAX_STRING_SIZE - 1))
-            {
+            if (sb_pos < (MAX_STRING_SIZE - 1)) {
                 stbuffer[sb_pos] = buffer[*index];
                 sb_pos++;
             }
@@ -110,8 +110,7 @@ static struct einit_sexp *einit_parse_string_in_buffer(char *buffer, int *index,
             break;
         }
 
-        if (sb_pos < (MAX_STRING_SIZE - 1))
-        {
+        if (sb_pos < (MAX_STRING_SIZE - 1)) {
             stbuffer[sb_pos] = buffer[*index];
             sb_pos++;
         }
@@ -120,7 +119,8 @@ static struct einit_sexp *einit_parse_string_in_buffer(char *buffer, int *index,
     return NULL;
 }
 
-static struct einit_sexp *einit_parse_symbol_in_buffer(char *buffer, int *index,
+static struct einit_sexp *einit_parse_symbol_in_buffer(char *buffer,
+                                                       int *index,
                                                        int stop)
 {
     char stbuffer[MAX_SYMBOL_SIZE];
@@ -133,14 +133,13 @@ static struct einit_sexp *einit_parse_symbol_in_buffer(char *buffer, int *index,
             struct einit_sexp *rv;
 
             if (stbuffer[0] == '#') {
-                switch (stbuffer[1])
-                {
-                    case 't':
-                        return (struct einit_sexp *)sexp_true;
-                    case 'f':
-                        return (struct einit_sexp *)sexp_false;
-                    default:
-                        return (struct einit_sexp *)sexp_nil;
+                switch (stbuffer[1]) {
+                case 't':
+                    return (struct einit_sexp *) sexp_true;
+                case 'f':
+                    return (struct einit_sexp *) sexp_false;
+                default:
+                    return (struct einit_sexp *) sexp_nil;
                 }
             } else {
                 rv = einit_sexp_create(es_symbol);
@@ -150,8 +149,7 @@ static struct einit_sexp *einit_parse_symbol_in_buffer(char *buffer, int *index,
             }
         }
 
-        if (sb_pos < (MAX_SYMBOL_SIZE - 1))
-        {
+        if (sb_pos < (MAX_SYMBOL_SIZE - 1)) {
             stbuffer[sb_pos] = buffer[*index];
             sb_pos++;
         }
@@ -161,7 +159,8 @@ static struct einit_sexp *einit_parse_symbol_in_buffer(char *buffer, int *index,
 }
 
 
-static struct einit_sexp *einit_parse_number_in_buffer(char *buffer, int *index,
+static struct einit_sexp *einit_parse_number_in_buffer(char *buffer,
+                                                       int *index,
                                                        int stop)
 {
     char stbuffer[MAX_NUMBER_SIZE];
@@ -179,8 +178,7 @@ static struct einit_sexp *einit_parse_number_in_buffer(char *buffer, int *index,
             return rv;
         }
 
-        if (sb_pos < (MAX_NUMBER_SIZE - 1))
-        {
+        if (sb_pos < (MAX_NUMBER_SIZE - 1)) {
             stbuffer[sb_pos] = buffer[*index];
             sb_pos++;
         }
@@ -195,7 +193,7 @@ static struct einit_sexp *einit_parse_sexp_in_buffer(char *buffer,
 {
     struct einit_sexp *rv = NULL;
 
-//    fprintf (stderr, "parsing buffer\n");
+    // fprintf (stderr, "parsing buffer\n");
 
     for (; (*index) < stop; (*index)++) {
         if ((buffer[*index]) && !isspace(buffer[*index])) {
@@ -234,8 +232,9 @@ static struct einit_sexp *einit_parse_sexp_in_buffer(char *buffer,
                             einit_parse_sexp_in_buffer(buffer, index,
                                                        stop);
 
-                        if (!tmp) { /* catch incompletely read sexprs */
-                            ccons->secundus = (struct einit_sexp *)sexp_end_of_list; 
+                        if (!tmp) {     /* catch incompletely read sexprs */
+                            ccons->secundus =
+                                (struct einit_sexp *) sexp_end_of_list;
                             einit_sexp_destroy(rv);
                             return NULL;
                         }
@@ -281,7 +280,7 @@ static int einit_read_sexp_from_fd_reader_fill_buffer(struct
         reader->size += MIN_CHUNK_SIZE;
 
         reader->buffer = erealloc(reader->buffer, reader->size);
-//        fprintf (stderr, "buffer size: %i\n", reader->size);
+        // fprintf (stderr, "buffer size: %i\n", reader->size);
     }
     // fprintf (stderr, "reading from fd: %i\n", reader->fd);
 
@@ -330,7 +329,8 @@ struct einit_sexp *einit_read_sexp_from_fd_reader(struct
     }
 
     for (ppos = 0;
-         (ppos < reader->position) && (!(reader->buffer[ppos]) || isspace(reader->buffer[ppos]));
+         (ppos < reader->position) && (!(reader->buffer[ppos])
+                                       || isspace(reader->buffer[ppos]));
          ppos++);
     if (ppos == reader->position) {
         reader->position = 0;
@@ -346,7 +346,7 @@ struct einit_sexp *einit_read_sexp_from_fd_reader(struct
         efree(reader->buffer);
         efree(reader);
 
-        return (struct einit_sexp *)sexp_bad;
+        return (struct einit_sexp *) sexp_bad;
     }
 
     return NULL;
@@ -420,12 +420,12 @@ struct einit_sexp_fd_reader *einit_create_sexp_fd_reader(int fd)
     return reader;
 }
 
-static void *sexp_chunk_realloc(void *p, size_t s, size_t *cs)
+static void *sexp_chunk_realloc(void *p, size_t s, size_t * cs)
 {
     size_t ns = ((s / MIN_CHUNK_SIZE) + 1) * MIN_CHUNK_SIZE;
     if (ns != (*cs)) {
         *cs = ns;
-        return erealloc (p, ns);
+        return erealloc(p, ns);
     } else {
         return p;
     }
@@ -438,7 +438,7 @@ static void *sexp_chunk_realloc(void *p, size_t s, size_t *cs)
 static void einit_sexp_to_string_iterator(struct einit_sexp *sexp,
                                           char **buffer, int *len,
                                           int *pos, char in_list,
-                                          size_t *cs)
+                                          size_t * cs)
 {
     int i;
     char *symbuffer = NULL;
@@ -479,7 +479,8 @@ static void einit_sexp_to_string_iterator(struct einit_sexp *sexp,
             (*pos)++;
         }
 
-        einit_sexp_to_string_iterator(sexp->primus, buffer, len, pos, 0, cs);
+        einit_sexp_to_string_iterator(sexp->primus, buffer, len, pos, 0,
+                                      cs);
 
         if (sexp->secundus->type != es_list_end) {
             *len += 1;
@@ -489,7 +490,8 @@ static void einit_sexp_to_string_iterator(struct einit_sexp *sexp,
             (*pos)++;
         }
 
-        einit_sexp_to_string_iterator(sexp->secundus, buffer, len, pos, 1, cs);
+        einit_sexp_to_string_iterator(sexp->secundus, buffer, len, pos, 1,
+                                      cs);
 
         break;
 
@@ -602,26 +604,25 @@ char *einit_sexp_to_string(struct einit_sexp *sexp)
     return buffer;
 }
 
-struct einit_sexp *se_cons (struct einit_sexp *car,
-                            struct einit_sexp *cdr)
+struct einit_sexp *se_cons(struct einit_sexp *car, struct einit_sexp *cdr)
 {
-    struct einit_sexp *r = einit_sexp_create (es_cons);
+    struct einit_sexp *r = einit_sexp_create(es_cons);
     r->primus = car;
     r->secundus = cdr;
     return r;
 }
 
-struct einit_sexp *se_integer (int i)
+struct einit_sexp *se_integer(int i)
 {
-    struct einit_sexp *r = einit_sexp_create (es_integer);
+    struct einit_sexp *r = einit_sexp_create(es_integer);
     r->integer = i;
     return r;
 }
 
 
-struct einit_sexp *se_string (const char *s)
+struct einit_sexp *se_string(const char *s)
 {
-    struct einit_sexp *r = einit_sexp_create (es_string);
+    struct einit_sexp *r = einit_sexp_create(es_string);
     if (s)
         r->string = s;
     else
@@ -629,9 +630,9 @@ struct einit_sexp *se_string (const char *s)
     return r;
 }
 
-struct einit_sexp *se_symbol (const char *s)
+struct einit_sexp *se_symbol(const char *s)
 {
-    struct einit_sexp *r = einit_sexp_create (es_symbol);
+    struct einit_sexp *r = einit_sexp_create(es_symbol);
     if (s)
         r->symbol = s;
     else
@@ -639,34 +640,38 @@ struct einit_sexp *se_symbol (const char *s)
     return r;
 }
 
-struct einit_sexp *se_stringset_to_list (char **s)
+struct einit_sexp *se_stringset_to_list(char **s)
 {
-    if (!s) return (struct einit_sexp *)sexp_end_of_list;
+    if (!s)
+        return (struct einit_sexp *) sexp_end_of_list;
     int i = 1;
-    struct einit_sexp *r = se_cons (se_string(str_stabilise(s[0])),
-                                    (struct einit_sexp *)sexp_end_of_list);
+    struct einit_sexp *r = se_cons(se_string(str_stabilise(s[0])),
+                                   (struct einit_sexp *) sexp_end_of_list);
     struct einit_sexp *v = r;
 
     for (; s[i]; i++) {
-        v->secundus = se_cons (se_string(str_stabilise(s[i])),
-                               (struct einit_sexp *)sexp_end_of_list);
+        v->secundus =
+            se_cons(se_string(str_stabilise(s[i])),
+                    (struct einit_sexp *) sexp_end_of_list);
         v = v->secundus;
     }
 
     return r;
 }
 
-struct einit_sexp *se_symbolset_to_list (char **s)
+struct einit_sexp *se_symbolset_to_list(char **s)
 {
-    if (!s) return (struct einit_sexp *)sexp_end_of_list;
+    if (!s)
+        return (struct einit_sexp *) sexp_end_of_list;
     int i = 1;
-    struct einit_sexp *r = se_cons (se_symbol(str_stabilise(s[0])),
-                                    (struct einit_sexp *)sexp_end_of_list);
+    struct einit_sexp *r = se_cons(se_symbol(str_stabilise(s[0])),
+                                   (struct einit_sexp *) sexp_end_of_list);
     struct einit_sexp *v = r;
 
     for (; s[i]; i++) {
-        v->secundus = se_cons (se_symbol(str_stabilise(s[i])),
-                               (struct einit_sexp *)sexp_end_of_list);
+        v->secundus =
+            se_cons(se_symbol(str_stabilise(s[i])),
+                    (struct einit_sexp *) sexp_end_of_list);
         v = v->secundus;
     }
 

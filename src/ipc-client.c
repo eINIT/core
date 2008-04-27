@@ -176,8 +176,10 @@ void einit_ipc_handle_sexp_event(struct einit_sexp *sexp)
     }
 
     if (ev) {
-/*        fprintf(stderr, "EVENT, decoded, emitting: %s\n",
-                einit_event_encode(ev));*/
+        /*
+         * fprintf(stderr, "EVENT, decoded, emitting: %s\n",
+         * einit_event_encode(ev));
+         */
 
         event_emit(ev, 0);
         efree(ev);
@@ -199,33 +201,37 @@ char einit_ipc_loop()
 
             continue;
         }
+        // char *r = einit_sexp_to_string(sexp);
+        // fprintf(stderr, "READ SEXP: (%i) \"%s\"\n", sexp->type, r);
 
-//        char *r = einit_sexp_to_string(sexp);
-//        fprintf(stderr, "READ SEXP: (%i) \"%s\"\n", sexp->type, r);
-
-//        efree(r);
+        // efree(r);
 
         if ((sexp->type == es_cons) && (sexp->secundus->type == es_cons)) {
-            if ((sexp->primus->type == es_integer) &&
-                (sexp->secundus->secundus->type == es_list_end)) {
-                /* 2-tuple and starts with an integer: reply */
-//                fprintf(stderr, "REPLY!\n");
+            if ((sexp->primus->type == es_integer)
+                && (sexp->secundus->secundus->type == es_list_end)) {
+                /*
+                 * 2-tuple and starts with an integer: reply 
+                 */
+                // fprintf(stderr, "REPLY!\n");
 
-//                fprintf (stderr, "storing reply with id=%i\n", sexp->primus->integer);
+                // fprintf (stderr, "storing reply with id=%i\n",
+                // sexp->primus->integer);
 
-                einit_ipc_replies = itreeadd (einit_ipc_replies, sexp->primus->integer, sexp->secundus->primus, tree_value_noalloc);
+                einit_ipc_replies =
+                    itreeadd(einit_ipc_replies, sexp->primus->integer,
+                             sexp->secundus->primus, tree_value_noalloc);
                 continue;
             }
 
-            if ((sexp->secundus->secundus->type == es_cons) &&
-                (sexp->secundus->secundus->secundus->type == es_cons) &&
-                (sexp->secundus->secundus->secundus->secundus->type == es_list_end) &&
-                (sexp->primus->type == es_symbol) &&
-                (strmatch(sexp->primus->symbol, "request"))) {
+            if ((sexp->secundus->secundus->type == es_cons)
+                && (sexp->secundus->secundus->secundus->type == es_cons)
+                && (sexp->secundus->secundus->secundus->secundus->type ==
+                    es_list_end) && (sexp->primus->type == es_symbol)
+                && (strmatch(sexp->primus->symbol, "request"))) {
                 /*
                  * 4-tuple: must be a request
                  */
-//                fprintf(stderr, "REQUEST!\n");
+                // fprintf(stderr, "REQUEST!\n");
 
                 /*
                  * TODO: still need to handle this somehow
@@ -239,7 +245,7 @@ char einit_ipc_loop()
             if ((sexp->primus->type == es_symbol)
                 && (strmatch(sexp->primus->symbol, "event"))) {
 
-//                fprintf(stderr, "EVENT, decoding\n");
+                // fprintf(stderr, "EVENT, decoding\n");
 
                 einit_ipc_handle_sexp_event(sexp->secundus);
                 einit_sexp_destroy(sexp);
@@ -247,8 +253,7 @@ char einit_ipc_loop()
                 continue;
             }
         }
-
-//        fprintf(stderr, "BAD MESSAGE!\n");
+        // fprintf(stderr, "BAD MESSAGE!\n");
 
         einit_sexp_destroy(sexp);
     }
@@ -303,7 +308,7 @@ char einit_ipc_connect(const char *address)
         return 0;
     }
 
-    return einit_ipc_connect_socket (fd);
+    return einit_ipc_connect_socket(fd);
 }
 
 int einit_ipc_get_fd()
@@ -318,18 +323,19 @@ int einit_ipc_current_id = 0;
 
 struct einit_sexp *einit_ipc_request_sexp_raw(struct einit_sexp *request)
 {
-    if (!einit_ipc_client_rd) return NULL;
+    if (!einit_ipc_client_rd)
+        return NULL;
     int id = (se_car(se_cdr(se_cdr(request))))->integer;
 
     int fd = einit_ipc_client_rd->fd;
 
-    char *r = einit_sexp_to_string (request);
+    char *r = einit_sexp_to_string(request);
     write(fd, r, strlen(r));
     fsync(fd);
-//    fprintf (stderr, "REQUEST: %s\n", r);
-    efree (r);
+    // fprintf (stderr, "REQUEST: %s\n", r);
+    efree(r);
 
-    einit_sexp_destroy (request);
+    einit_sexp_destroy(request);
 
     while (1) {
         int selectres;
@@ -339,35 +345,41 @@ struct einit_sexp *einit_ipc_request_sexp_raw(struct einit_sexp *request)
         selectres = select((fd + 1), &rfds, NULL, NULL, 0);
 
         if (selectres > 0) {
-            einit_ipc_loop ();
+            einit_ipc_loop();
         }
 
         if (einit_ipc_replies) {
-            struct itree *t = itreefind (einit_ipc_replies, id, tree_find_first);
+            struct itree *t =
+                itreefind(einit_ipc_replies, id, tree_find_first);
 
             if (t) {
-                struct einit_sexp *rv = (struct einit_sexp *)(t->value);
-//                fprintf (stderr, "REPLY FOR REQUEST: %s, REPLY=%s\n", r, einit_sexp_to_string(rv));
-//                efree (r);
+                struct einit_sexp *rv = (struct einit_sexp *) (t->value);
+                // fprintf (stderr, "REPLY FOR REQUEST: %s, REPLY=%s\n",
+                // r, einit_sexp_to_string(rv));
+                // efree (r);
 
                 return rv;
-            }// else {
-//                fprintf (stderr, "NO REPLY FOR REQUEST: %s [id=%i]\n", r, id);
-//            }
+            }                   // else {
+            // fprintf (stderr, "NO REPLY FOR REQUEST: %s [id=%i]\n", r,
+            // id);
+            // }
         }
     }
 
     return (struct einit_sexp *) sexp_bad;
 }
 
-struct einit_sexp *einit_ipc_request(const char *rq, struct einit_sexp *payload)
+struct einit_sexp *einit_ipc_request(const char *rq,
+                                     struct einit_sexp *payload)
 {
-    struct einit_sexp *req =
-        se_cons (se_symbol ("request"),
-        se_cons (se_symbol (rq),
-        se_cons (se_integer (einit_ipc_current_id++),
-        se_cons (payload,
-                 (struct einit_sexp *)sexp_end_of_list))));
+    struct einit_sexp *req = se_cons(se_symbol("request"),
+                                     se_cons(se_symbol(rq),
+                                             se_cons(se_integer
+                                                     (einit_ipc_current_id++),
+                                                     se_cons(payload,
+                                                             (struct
+                                                              einit_sexp *)
+                                                             sexp_end_of_list))));
 
     return einit_ipc_request_sexp_raw(req);
 }
@@ -377,17 +389,17 @@ void einit_ipc_write(char *s, struct einit_sexp_fd_reader *rd)
     int len = strlen(s);
 
     fcntl(rd->fd, F_SETFL, 0);
-    int r = write (rd->fd, s, len);
+    int r = write(rd->fd, s, len);
     fcntl(rd->fd, F_SETFL, O_NONBLOCK);
 
     if ((r < 0) || (r == 0)) {
-        fprintf (stderr, "COULDN'T WRITE: %s\n", s);
-        perror ("error");
+        fprintf(stderr, "COULDN'T WRITE: %s\n", s);
+        perror("error");
         if ((r == 0) || (errno == EAGAIN) || (errno == EINTR)) {
             einit_ipc_write(s, rd);
         }
     } else if (r < len) {
-        fprintf (stderr, "SHORT WRITE!\n");
+        fprintf(stderr, "SHORT WRITE!\n");
         einit_ipc_write(s + len, rd);
     }
 }

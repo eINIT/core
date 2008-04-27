@@ -276,7 +276,7 @@ void linux_network_interface_prepare(struct einit_event *ev)
             }
         } else {
             fprintf(stdout,
-                     "tunctl is not installed! no tunctl -- no tuns!\n");
+                    "tunctl is not installed! no tunctl -- no tuns!\n");
 
             d->status = status_failed;
             return;
@@ -373,8 +373,7 @@ void linux_network_interface_done(struct einit_event *ev)
                     if (pexec
                         (buffer, NULL, 0, 0, NULL, NULL, NULL,
                          d->feedback) == status_failed) {
-                        fprintf(stdout, "command failed: %s\n",
-                                 buffer);
+                        fprintf(stdout, "command failed: %s\n", buffer);
                     }
                 }
 
@@ -454,7 +453,7 @@ void linux_network_interface_done(struct einit_event *ev)
                     efree(resolvconf_binary);
 
                     fprintf(stdout,
-                             "updating resolv.conf using resolvconf\n");
+                            "updating resolv.conf using resolvconf\n");
 
                     esprintf(buffer, BUFFERSIZE, "resolvconf -a %s",
                              ev->string);
@@ -463,7 +462,7 @@ void linux_network_interface_done(struct einit_event *ev)
                     symlink("resolvconf/run/resolv.conf",
                             "/etc/resolv.conf");
 
-                    pput (buffer, resolv_conf);
+                    pput(buffer, resolv_conf);
                 } else {
                     fprintf(stdout, "overwriting old resolv.conf\n");
                     FILE *f = fopen("/etc/resolv.conf", "w");
@@ -506,7 +505,7 @@ void linux_network_interface_done(struct einit_event *ev)
                 }
             } else {
                 fprintf(stdout,
-                         "tunctl is not installed! no tunctl -- no tuns!\n");
+                        "tunctl is not installed! no tunctl -- no tuns!\n");
 
                 d->status = status_failed;
                 return;
@@ -652,8 +651,7 @@ void linux_network_address_static(struct einit_event *ev)
                          (buffer, NULL, 0, 0, NULL, NULL, NULL,
                           d->feedback) == status_failed)
                         && (d->action == interface_up)) {
-                        fprintf(stdout, "command failed: %s\n",
-                                 buffer);
+                        fprintf(stdout, "command failed: %s\n", buffer);
                         d->status = status_failed;
                         break;
                     }
@@ -758,7 +756,7 @@ void linux_network_address_static(struct einit_event *ev)
                                 (buffer, NULL, 0, 0, NULL, NULL, NULL,
                                  d->feedback) == status_failed) {
                                 fprintf(stdout, "command failed: %s\n",
-                                         buffer);
+                                        buffer);
                                 d->status = status_failed;
                                 break;
                             }
@@ -804,7 +802,7 @@ void linux_network_address_static(struct einit_event *ev)
                                   d->feedback) == status_failed)
                                 && (d->action == interface_up)) {
                                 fprintf(stdout, "command failed: %s\n",
-                                         buffer);
+                                        buffer);
                                 d->status = status_failed;
                                 break;
                             }
@@ -836,9 +834,8 @@ void linux_network_verify_carrier(struct einit_event *ev)
         while (repe) {
             if (!linux_network_has_carrier(ev->string)) {
                 if (repe != 1) {
-                    fprintf(stdout,
-                             "no carrier, waiting for %i seconds\n",
-                             (repe - 1));
+                    fprintf(stdout, "no carrier, waiting for %i seconds\n",
+                            (repe - 1));
                 } else {
                     fprintf(stdout, "no carrier, giving up\n");
                 }

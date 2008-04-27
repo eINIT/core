@@ -605,18 +605,19 @@ int main(int argc, char **argv, char **environ)
 #if defined(__linux__) && defined(PR_SET_NAME)
                     prctl(PR_SET_NAME, "einit [ipc]", 0, 0, 0);
 #endif
-                    einit_ipc_run_server (argv[i+1]);
+                    einit_ipc_run_server(argv[i + 1]);
                     i++;
                     doboot = 0;
                     coremode |= einit_mode_ipconly;
-                } else if (strmatch(argv[i], "--socket") && argv[i+1]) {
-                    einit_ipc_connect_client(parse_integer(argv[i+1]));
+                } else if (strmatch(argv[i], "--socket") && argv[i + 1]) {
+                    einit_ipc_connect_client(parse_integer(argv[i + 1]));
                     i++;
-                } else if (strmatch(argv[i], "--ipc-socket") && argv[i+1]) {
+                } else if (strmatch(argv[i], "--ipc-socket")
+                           && argv[i + 1]) {
 #if defined(__linux__) && defined(PR_SET_NAME)
                     prctl(PR_SET_NAME, "einit [ipc]", 0, 0, 0);
 #endif
-                    einit_ipc_connect_client(parse_integer(argv[i+1]));
+                    einit_ipc_connect_client(parse_integer(argv[i + 1]));
                     i++;
                     doboot = 0;
                     coremode |= einit_mode_ipconly;
@@ -719,8 +720,7 @@ int main(int argc, char **argv, char **environ)
                 eprintf(stdout, " [%s]", (*coremodules[cp])->rid);
             lmm = mod_add(NULL, (*coremodules[cp]));
 
-            if (lmm)
-            {
+            if (lmm) {
                 lmm->source = (char *) str_stabilise("core");
             }
         }
@@ -743,5 +743,5 @@ int main(int argc, char **argv, char **environ)
     event_emit(&update_event, 0);
     evstaticdestroy(update_event);
 
-     return einit_main_loop(doboot);
+    return einit_main_loop(doboot);
 }

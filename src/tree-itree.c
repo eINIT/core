@@ -91,7 +91,7 @@ struct stree *streeadd(const struct stree *stree, const char *key,
     newnode->luggage = (void *) luggage;
 
     newnode->treenode =
-        itreeadd(stree ? stree->treenode : NULL, (long)stablekey, newnode,
+        itreeadd(stree ? stree->treenode : NULL, (long) stablekey, newnode,
                  tree_value_noalloc);
 
     return newnode;
@@ -127,7 +127,7 @@ struct stree *streefind(const struct stree *stree, const char *key,
      * break; } 
      */
 
-    if ((it = itreefind(it, (long)stablekey, options)))
+    if ((it = itreefind(it, (long) stablekey, options)))
         return it->value;
 
     return NULL;

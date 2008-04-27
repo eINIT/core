@@ -169,7 +169,7 @@ char **linux_network_wpa_supplicant_get_as_option_set(char *interface,
             }
         }
 
-        efree (pr);
+        efree(pr);
     }
 
     return rv;
@@ -185,7 +185,7 @@ void linux_network_wpa_supplicant_verify_carrier(struct einit_event *ev)
         int retries = 30;       /* 30 sec timeout... should be enough */
 
         fprintf(stdout,
-                 "making sure wpa_supplicant associated properly\n");
+                "making sure wpa_supplicant associated properly\n");
 
         while (not_ok && (retries > 0)) {
             if ((wpa_options =

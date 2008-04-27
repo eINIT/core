@@ -80,12 +80,12 @@ int linux_kernel_modules_module_configure(struct lmodule *);
 
 char **linux_kernel_modules_get_modprobe_c()
 {
-    return pget ("modprobe -c");
+    return pget("modprobe -c");
 }
 
 char **linux_kernel_modules_get_modprobe_l()
 {
-    return pget ("modprobe -l");
+    return pget("modprobe -l");
 }
 
 void linux_kernel_modules_free_modprobe(char **r)
@@ -117,7 +117,10 @@ int linux_kernel_modules_load(char **modules)
         cfg_getstring("configuration-command-modprobe/with-env");
     uint32_t i = 0;
 
-    if (cfg_getboolean("configuration-kernel-modules-load-in-parallel")) {       /* load in parallel */
+    if (cfg_getboolean("configuration-kernel-modules-load-in-parallel")) {      /* load 
+                                                                                 * in 
+                                                                                 * parallel 
+                                                                                 */
         for (; modules[i]; i++)
             if (strcmp("", modules[i])) {
                 const char *tpldata[] = { "module", modules[i], NULL };

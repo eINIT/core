@@ -255,7 +255,7 @@ unsigned char read_filesystem_flags_from_configuration(void *na)
     uint32_t i;
     char *id, *flags, *before, *after, **requires;
 
-    struct cfgnode **st = cfg_match ("information-filesystem-type");
+    struct cfgnode **st = cfg_match("information-filesystem-type");
     if (st) {
         struct cfgnode **tcur = st;
         while (*tcur) {
@@ -283,12 +283,13 @@ unsigned char read_filesystem_flags_from_configuration(void *na)
                     }
                 }
                 if (id && (flags || requires || after || before))
-                    mount_add_filesystem(id, flags, requires, after, before);
+                    mount_add_filesystem(id, flags, requires, after,
+                                         before);
             }
 
             tcur++;
         }
-        efree (st);
+        efree(st);
     }
     return 0;
 }
@@ -296,7 +297,8 @@ unsigned char read_filesystem_flags_from_configuration(void *na)
 void mount_add_filesystem(char *name, char *options, char **requires,
                           char *after, char *before)
 {
-//    fprintf (stderr, "mount_add_filesystem_options(%s)=%s\n", name, options);
+    // fprintf (stderr, "mount_add_filesystem_options(%s)=%s\n", name,
+    // options);
 
     char **t = str2set(':', options);
     uintptr_t flags = 0, i = 0;
@@ -347,14 +349,14 @@ uintptr_t mount_get_filesystem_options(char *name)
     enum filesystem_capability ret = filesystem_capability_rw;
     struct stree *t;
 
-    if (mount_filesystems &&
-        (t = streefind(mount_filesystems, name, tree_find_first))) {
+    if (mount_filesystems
+        && (t = streefind(mount_filesystems, name, tree_find_first))) {
         struct filesystem_data *d = t->value;
         if (d)
             ret = d->capabilities;
     }
-
-//    fprintf (stderr, "mount_get_filesystem_options(%s)=%i\n", name, ret);
+    // fprintf (stderr, "mount_get_filesystem_options(%s)=%i\n", name,
+    // ret);
 
     return ret;
 }
@@ -744,82 +746,85 @@ void mount_update_fstab_nodes()
 {
     uint32_t i;
 
-    struct cfgnode **st = cfg_match ("configuration-storage-fstab-node");
+    struct cfgnode **st = cfg_match("configuration-storage-fstab-node");
     if (st) {
         struct cfgnode **tcur = st;
         while (*tcur) {
             struct cfgnode *node = *tcur;
 
-                    char *mountpoint = NULL, *device = NULL, *fs = NULL, **options =
-            NULL, *before_mount = NULL, *after_mount =
-            NULL, *before_umount = NULL, *after_umount = NULL, *manager =
-            NULL, **variables = NULL, **requires = NULL, *after =
-            NULL, *before = NULL;
-        uint32_t mountflags = 0;
+            char *mountpoint = NULL, *device = NULL, *fs =
+                NULL, **options = NULL, *before_mount =
+                NULL, *after_mount = NULL, *before_umount =
+                NULL, *after_umount = NULL, *manager = NULL, **variables =
+                NULL, **requires = NULL, *after = NULL, *before = NULL;
+            uint32_t mountflags = 0;
 
-        if (node->arbattrs) {
-            for (i = 0; node->arbattrs[i]; i += 2) {
-                if (strmatch(node->arbattrs[i], "mountpoint"))
-                    mountpoint =
-                        (char *) str_stabilise(node->arbattrs[i + 1]);
-                else if (strmatch(node->arbattrs[i], "device")) {
-                    device = (char *) str_stabilise(node->arbattrs[i + 1]);
-                } else if (strmatch(node->arbattrs[i], "fs"))
-                    fs = (char *) str_stabilise(node->arbattrs[i + 1]);
-                else if (strmatch(node->arbattrs[i], "options"))
-                    options = str2set(':', node->arbattrs[i + 1]);
-                else if (strmatch(node->arbattrs[i], "before-mount"))
-                    before_mount =
-                        (char *) str_stabilise(node->arbattrs[i + 1]);
-                else if (strmatch(node->arbattrs[i], "after-mount"))
-                    after_mount =
-                        (char *) str_stabilise(node->arbattrs[i + 1]);
-                else if (strmatch(node->arbattrs[i], "before-umount"))
-                    before_umount =
-                        (char *) str_stabilise(node->arbattrs[i + 1]);
-                else if (strmatch(node->arbattrs[i], "after-umount"))
-                    after_umount =
-                        (char *) str_stabilise(node->arbattrs[i + 1]);
-                else if (strmatch(node->arbattrs[i], "manager"))
-                    manager =
-                        (char *) str_stabilise(node->arbattrs[i + 1]);
-                else if (strmatch(node->arbattrs[i], "variables"))
-                    variables = str2set(':', node->arbattrs[i + 1]);
+            if (node->arbattrs) {
+                for (i = 0; node->arbattrs[i]; i += 2) {
+                    if (strmatch(node->arbattrs[i], "mountpoint"))
+                        mountpoint =
+                            (char *) str_stabilise(node->arbattrs[i + 1]);
+                    else if (strmatch(node->arbattrs[i], "device")) {
+                        device =
+                            (char *) str_stabilise(node->arbattrs[i + 1]);
+                    } else if (strmatch(node->arbattrs[i], "fs"))
+                        fs = (char *) str_stabilise(node->arbattrs[i + 1]);
+                    else if (strmatch(node->arbattrs[i], "options"))
+                        options = str2set(':', node->arbattrs[i + 1]);
+                    else if (strmatch(node->arbattrs[i], "before-mount"))
+                        before_mount =
+                            (char *) str_stabilise(node->arbattrs[i + 1]);
+                    else if (strmatch(node->arbattrs[i], "after-mount"))
+                        after_mount =
+                            (char *) str_stabilise(node->arbattrs[i + 1]);
+                    else if (strmatch(node->arbattrs[i], "before-umount"))
+                        before_umount =
+                            (char *) str_stabilise(node->arbattrs[i + 1]);
+                    else if (strmatch(node->arbattrs[i], "after-umount"))
+                        after_umount =
+                            (char *) str_stabilise(node->arbattrs[i + 1]);
+                    else if (strmatch(node->arbattrs[i], "manager"))
+                        manager =
+                            (char *) str_stabilise(node->arbattrs[i + 1]);
+                    else if (strmatch(node->arbattrs[i], "variables"))
+                        variables = str2set(':', node->arbattrs[i + 1]);
 
-                else if (strmatch(node->arbattrs[i], "label")) {
-                    char tmp[BUFFERSIZE];
+                    else if (strmatch(node->arbattrs[i], "label")) {
+                        char tmp[BUFFERSIZE];
 
-                    esprintf(tmp, BUFFERSIZE, "/dev/disk/by-label/%s",
-                             node->arbattrs[i + 1]);
-                    device = (char *) str_stabilise(tmp);
-                } else if (strmatch(node->arbattrs[i], "uuid")) {
-                    char tmp[BUFFERSIZE];
+                        esprintf(tmp, BUFFERSIZE, "/dev/disk/by-label/%s",
+                                 node->arbattrs[i + 1]);
+                        device = (char *) str_stabilise(tmp);
+                    } else if (strmatch(node->arbattrs[i], "uuid")) {
+                        char tmp[BUFFERSIZE];
 
-                    esprintf(tmp, BUFFERSIZE, "/dev/disk/by-uuid/%s",
-                             node->arbattrs[i + 1]);
-                    device = (char *) str_stabilise(tmp);
-                } else if (strmatch(node->arbattrs[i], "before"))
-                    before = (char *) str_stabilise(node->arbattrs[i + 1]);
-                else if (strmatch(node->arbattrs[i], "after"))
-                    after = (char *) str_stabilise(node->arbattrs[i + 1]);
-                else if (strmatch(node->arbattrs[i], "requires")) {
-                    char **t = str2set(':', node->arbattrs[i + 1]);
-                    requires = set_str_dup_stable(t);
-                    efree(t);
+                        esprintf(tmp, BUFFERSIZE, "/dev/disk/by-uuid/%s",
+                                 node->arbattrs[i + 1]);
+                        device = (char *) str_stabilise(tmp);
+                    } else if (strmatch(node->arbattrs[i], "before"))
+                        before =
+                            (char *) str_stabilise(node->arbattrs[i + 1]);
+                    else if (strmatch(node->arbattrs[i], "after"))
+                        after =
+                            (char *) str_stabilise(node->arbattrs[i + 1]);
+                    else if (strmatch(node->arbattrs[i], "requires")) {
+                        char **t = str2set(':', node->arbattrs[i + 1]);
+                        requires = set_str_dup_stable(t);
+                        efree(t);
+                    }
                 }
+
+                if (mountpoint)
+                    mount_add_update_fstab(mountpoint, device, fs, options,
+                                           before_mount, after_mount,
+                                           before_umount, after_umount,
+                                           manager, variables, mountflags,
+                                           requires, after, before);
+
+                // add_fstab_entry (mountpoint, device, fs, options,
+                // mountflags, before_mount, after_mount, before_umount,
+                // after_umount, manager, 1, variables);
             }
-
-            if (mountpoint)
-                mount_add_update_fstab(mountpoint, device, fs, options,
-                                       before_mount, after_mount,
-                                       before_umount, after_umount,
-                                       manager, variables, mountflags,
-                                       requires, after, before);
-
-            // add_fstab_entry (mountpoint, device, fs, options,
-            // mountflags, before_mount, after_mount, before_umount,
-            // after_umount, manager, 1, variables);
-        }
 
             tcur++;
         }
@@ -937,7 +942,9 @@ void mount_update_nodes_from_mtab()
             // 
             // 
             // 
+            // 
             // *after_mount, char *before_umount, char *after_umount, char 
+            // 
             // 
             // 
             // 
@@ -1874,6 +1881,7 @@ char *options_string_to_mountflags(char **options, unsigned long *mntflags,
         // 
         // 
         // 
+        // 
         // our 
         // own 
         // specifiers, 
@@ -2077,7 +2085,7 @@ int mount_mount(char *mountpoint, struct device_data *dd,
 void mount_do_special_root_umount(struct einit_event *status)
 {
     fprintf(stdout,
-             "unlinking /etc/mtab and replacing it by a symlink to /proc/mounts\n");
+            "unlinking /etc/mtab and replacing it by a symlink to /proc/mounts\n");
     unlink("/etc/mtab");
     symlink("/proc/mounts", "/etc/mtab");
     errno = 0;
@@ -2091,7 +2099,9 @@ int mount_umount(char *mountpoint, struct device_data *dd,
 {
 
     if (shutting_down) {
-        /* skip umounting when shutting down, last-rites does that */
+        /*
+         * skip umounting when shutting down, last-rites does that 
+         */
 
         return status_ok;
     }
@@ -2105,8 +2115,7 @@ int mount_umount(char *mountpoint, struct device_data *dd,
         mount_do_special_root_umount(status);
     }
 
-    retval =
-        mount_try_umount(mountpoint, mp->fs, 4, dd, mp, status);
+    retval = mount_try_umount(mountpoint, mp->fs, 4, dd, mp, status);
 
     return retval;
 
@@ -2127,7 +2136,7 @@ int mount_fsck(char *fs, char *device, struct einit_event *status)
 
     char *mount_fsck_template = NULL;
 
-    struct cfgnode **st = cfg_match ("configuration-storage-fsck-command");
+    struct cfgnode **st = cfg_match("configuration-storage-fsck-command");
     if (st) {
         struct cfgnode **tcur = st;
         while (*tcur) {
@@ -2136,7 +2145,7 @@ int mount_fsck(char *fs, char *device, struct einit_event *status)
             if (fs && node->idattr && strmatch(node->idattr, fs)) {
                 mount_fsck_template = node->svalue;
             } else if (!mount_fsck_template && node->idattr
-                        && strmatch(node->idattr, "generic")) {
+                       && strmatch(node->idattr, "generic")) {
                 mount_fsck_template = node->svalue;
             }
 
@@ -2198,18 +2207,18 @@ int mount_do_mount_generic(char *mountpoint, char *fs,
         {
             status->flag++;
             fprintf(stdout, "mounting has failed (error=%s)\n",
-                     strerror(errno));
+                    strerror(errno));
 #ifdef MS_REMOUNT
             if (errno == EBUSY) {
               attempt_remount:
-                      fprintf(stdout,
-                         "attempting to remount instead of mounting\n");
+                fprintf(stdout,
+                        "attempting to remount instead of mounting\n");
 
                 if (mount
                     (dd->device, mountpoint, fs,
                      MS_REMOUNT | mp->mountflags, mp->flatoptions) == -1) {
-                     fprintf(stdout, "remounting has failed (error=%s)\n",
-                             strerror(errno));
+                    fprintf(stdout, "remounting has failed (error=%s)\n",
+                            strerror(errno));
                     goto mount_panic;
                 } else
                     fprintf(stdout, "remounted\n");
@@ -2249,7 +2258,7 @@ int mount_do_umount_generic(char *mountpoint, char *fs, char step,
 {
 
     fprintf(stdout, "unmounting %s (fs=%s, attempt#%i)\n", dd->device, fs,
-             step);
+            step);
     // notice (1, "unmounting %s from %s (fs=%s, attempt #%i)",
     // dd->device, mountpoint, fs, step);
 
@@ -2262,14 +2271,14 @@ int mount_do_umount_generic(char *mountpoint, char *fs, char step,
         goto umount_ok;
     } else {
         fprintf(stdout, "#%i: umount() failed: %s\n", step,
-                 strerror(errno));
+                strerror(errno));
 #ifdef __linux__
         if (step >= 2) {
             if (umount2(mountpoint, MNT_FORCE) != -1) {
                 goto umount_ok;
             } else {
                 fprintf(stdout, "#%i: umount() failed: %s\n", step,
-                         strerror(errno));
+                        strerror(errno));
                 errno = 0;
             }
 
@@ -2278,19 +2287,19 @@ int mount_do_umount_generic(char *mountpoint, char *fs, char step,
                     (dd->device, mountpoint, mp->fs,
                      MS_REMOUNT | MS_RDONLY, NULL) == -1) {
                     fprintf(stdout, "#%i: remounting r/o failed: %s\n",
-                             step, strerror(errno));
+                            step, strerror(errno));
                     errno = 0;
                     goto umount_fail;
                 } else {
                     if (umount2(mountpoint, MNT_DETACH) == -1) {
                         fprintf(stdout,
-                                 "#%i: remounted r/o but detaching failed: %s\n",
-                                 step, strerror(errno));
+                                "#%i: remounted r/o but detaching failed: %s\n",
+                                step, strerror(errno));
                         errno = 0;
                         goto umount_ok;
                     } else {
-                        fprintf(stdout, "#%i: remounted r/o and detached\n",
-                                 step);
+                        fprintf(stdout,
+                                "#%i: remounted r/o and detached\n", step);
                         goto umount_ok;
                     }
                 }
@@ -2430,7 +2439,7 @@ int eumount(char *mountpoint, struct einit_event *status)
                 if (shutting_down) {
                     if (r == status_failed) {
                         fprintf(stdout,
-                                 "we're shutting down, last-rites will fix it later\n");
+                                "we're shutting down, last-rites will fix it later\n");
                         return status_ok;
                     }
                 }
@@ -2455,8 +2464,7 @@ void einit_mount_update_configuration()
 
     read_filesystem_flags_from_configuration(NULL);
 
-    if ((node =
-         cfg_getnode("configuration-storage-update-steps"))
+    if ((node = cfg_getnode("configuration-storage-update-steps"))
         && node->svalue) {
         char **tmp = str2set(':', node->svalue);
         uint32_t c = 0;
@@ -2470,17 +2478,15 @@ void einit_mount_update_configuration()
         efree(tmp);
     }
 
-    if ((node =
-         cfg_getnode("configuration-storage-mountpoints-critical")) &&
-         node->svalue) {
+    if ((node = cfg_getnode("configuration-storage-mountpoints-critical"))
+        && node->svalue) {
         if (mount_critical)
             efree(mount_critical);
         mount_critical = str2set(':', node->svalue);
     }
 
-    if ((node =
-         cfg_getnode("configuration-storage-mountpoints-no-umount")) &&
-         node->svalue) {
+    if ((node = cfg_getnode("configuration-storage-mountpoints-no-umount"))
+        && node->svalue) {
         if (mount_dont_umount)
             efree(mount_dont_umount);
         mount_dont_umount = str2set(':', node->svalue);

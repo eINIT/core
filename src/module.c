@@ -1080,10 +1080,11 @@ char **mod_list_all_available_services()
         if (module->si && module->si->provides) {
             int i = 0;
             for (; module->si->provides[i]; i++) {
-                if (!inset ((const void **)rv, module->si->provides[i],
-                            SET_TYPE_STRING))
+                if (!inset
+                    ((const void **) rv, module->si->provides[i],
+                     SET_TYPE_STRING))
 
-                    rv = set_str_add_stable (rv, module->si->provides[i]);
+                    rv = set_str_add_stable(rv, module->si->provides[i]);
             }
         }
 
@@ -1099,7 +1100,7 @@ char **mod_list_all_available_modules()
 
     struct lmodule *module = mlist;
     while (module) {
-        rv = set_str_add_stable (rv, module->module->rid);
+        rv = set_str_add_stable(rv, module->module->rid);
 
         module = module->next;
     }

@@ -202,7 +202,7 @@ int linux_mount_do_mount_real(char *mountpoint, char *fs,
                               struct einit_event *status)
 {
     fprintf(stdout, "mounting %s (fs=%s; using /bin/mount)\n", dd->device,
-             fs);
+            fs);
 
     char *fsdata = NULL;
     char command[BUFFERSIZE];
@@ -212,6 +212,7 @@ int linux_mount_do_mount_real(char *mountpoint, char *fs,
         for (; mp->options[fi]; fi++) {
             if (strmatch(mp->options[fi], "auto") || strmatch(mp->options[fi], "noauto") || strmatch(mp->options[fi], "system") || strmatch(mp->options[fi], "critical") || strmatch(mp->options[fi], "network") || strmatch(mp->options[fi], "skip-fsck"));    // ignore 
                                                                                                                                                                                                                                                                 // 
+            // 
             // 
             // 
             // 
@@ -260,7 +261,7 @@ int linux_mount_do_mount_ntfs_3g(char *mountpoint, char *fs,
                                  struct einit_event *status)
 {
     fprintf(stdout, "mounting %s (fs=%s; using ntfs-3g command)\n",
-             dd->device, fs);
+            dd->device, fs);
 
     char *fsdata = NULL;
     char command[BUFFERSIZE];
@@ -270,6 +271,7 @@ int linux_mount_do_mount_ntfs_3g(char *mountpoint, char *fs,
         for (; mp->options[fi]; fi++) {
             if (strmatch(mp->options[fi], "auto") || strmatch(mp->options[fi], "noauto") || strmatch(mp->options[fi], "system") || strmatch(mp->options[fi], "critical") || strmatch(mp->options[fi], "network") || strmatch(mp->options[fi], "skip-fsck"));    // ignore 
                                                                                                                                                                                                                                                                 // 
+            // 
             // 
             // 
             // 
@@ -318,11 +320,11 @@ int linux_mount_do_mount_swap(char *mountpoint, char *fs,
                               struct einit_event *status)
 {
     fprintf(stdout, "using %s as swap (using swapon()-syscall)\n",
-             dd->device);
+            dd->device);
 
     if (swapon(dd->device, 0) == -1) {
         fprintf(stdout, "error while calling swapon(): %s\n",
-                 strerror(errno));
+                strerror(errno));
 
         return status_failed;
     }
@@ -335,12 +337,13 @@ int linux_mount_do_umount_swap(char *mountpoint, char *fs, char step,
                                struct mountpoint_data *mp,
                                struct einit_event *status)
 {
-    fprintf(stdout, "disabling swapspace at %s (using swapoff()-syscall)\n",
-             dd->device);
+    fprintf(stdout,
+            "disabling swapspace at %s (using swapoff()-syscall)\n",
+            dd->device);
 
     if (swapoff(dd->device) == -1) {
         fprintf(stdout, "error while calling swapoff(): %s\n",
-                 strerror(errno));
+                strerror(errno));
 
         return status_failed;
     }

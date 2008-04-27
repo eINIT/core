@@ -106,7 +106,7 @@ int einit_monitor_loop(int argc, char **argv, char **env)
     int ipcsocket[2];
     pid_t core_pid;
 
-    socketpair (AF_UNIX, SOCK_STREAM, 0, ipcsocket);
+    socketpair(AF_UNIX, SOCK_STREAM, 0, ipcsocket);
 
     core_pid = fork();
 

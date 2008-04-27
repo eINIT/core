@@ -41,6 +41,6 @@
 
 #include <sys/types.h>
 
-char process_alive_p (pid_t pid);
+char process_alive_p(pid_t pid);
 
 #endif

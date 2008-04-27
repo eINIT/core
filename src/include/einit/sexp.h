@@ -108,11 +108,11 @@ const struct einit_sexp *const sexp_bad;
 #define se_cdr(sexp)\
  (struct einit_sexp *)(((sexp)->type == es_cons) ? (sexp)->secundus : sexp_nil)
 
-struct einit_sexp *se_cons (struct einit_sexp *car, struct einit_sexp *cdr);
-struct einit_sexp *se_integer (int);
-struct einit_sexp *se_string (const char *s);
-struct einit_sexp *se_symbol (const char *s);
-struct einit_sexp *se_stringset_to_list (char **s);
-struct einit_sexp *se_symbolset_to_list (char **s);
+struct einit_sexp *se_cons(struct einit_sexp *car, struct einit_sexp *cdr);
+struct einit_sexp *se_integer(int);
+struct einit_sexp *se_string(const char *s);
+struct einit_sexp *se_symbol(const char *s);
+struct einit_sexp *se_stringset_to_list(char **s);
+struct einit_sexp *se_symbolset_to_list(char **s);
 
 #endif

@@ -62,25 +62,27 @@ void event_emit(struct einit_event *event,
         return;
 
     if (flags & einit_event_flag_remote) {
-        const char *s = einit_event_encode (event);
-        int fd = einit_ipc_get_fd(), r, len = strlen (s);
+        const char *s = einit_event_encode(event);
+        int fd = einit_ipc_get_fd(), r, len = strlen(s);
 
         fcntl(fd, F_SETFL, 0);
 
-        r = write (fd, s, len);
+        r = write(fd, s, len);
 
         fcntl(fd, F_SETFL, O_NONBLOCK);
 
-        if (!r || r < 0) return;
+        if (!r || r < 0)
+            return;
         if (r < len) {
-            fprintf (stderr, "BAD EVENT! tried to write %d bytes,"
-                             " but only wrote %d bytes\n", len, r);
+            fprintf(stderr,
+                    "BAD EVENT! tried to write %d bytes,"
+                    " but only wrote %d bytes\n", len, r);
         }
 
         return;
     }
 
-    void (*handler)(struct einit_event *);
+    void (*handler) (struct einit_event *);
     struct event_function *f = NULL;
     uint32_t subsystem = event->type & EVENT_SUBSYSTEM_MASK;
 
@@ -91,7 +93,7 @@ void event_emit(struct einit_event *event,
                        tree_find_first);
 
         while (it) {
-            f = ((struct event_function *)it->data);
+            f = ((struct event_function *) it->data);
             handler = f->handler;
 
             it = itreefind(it, einit_event_subsystem_any, tree_find_next);
@@ -103,7 +105,7 @@ void event_emit(struct einit_event *event,
             it = itreefind(event_handlers, event->type, tree_find_first);
 
             while (it) {
-                f = ((struct event_function *)it->data);
+                f = ((struct event_function *) it->data);
                 handler = f->handler;
 
                 it = itreefind(it, event->type, tree_find_next);
@@ -114,7 +116,7 @@ void event_emit(struct einit_event *event,
         it = itreefind(event_handlers, subsystem, tree_find_first);
 
         while (it) {
-            f = ((struct event_function *)it->data);
+            f = ((struct event_function *) it->data);
             handler = f->handler;
 
             it = itreefind(it, subsystem, tree_find_next);

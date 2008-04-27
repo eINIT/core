@@ -164,8 +164,8 @@ int main(int argc, char **argv, char **env)
     }
 
     if (!c_version && !c_licence && !c_wtf && !c_service[0] && !c_module[0]
-        && !c_mode && !c_down && !c_reset && !o_cake && !c_update && !o_lm &&
-        !o_l)
+        && !c_mode && !c_down && !c_reset && !o_cake && !c_update && !o_lm
+        && !o_l)
         c_help = 1;
 
     if (o_cake) {
@@ -211,7 +211,7 @@ int main(int argc, char **argv, char **env)
             if (modules) {
                 int i = 0;
                 for (; modules[i]; i++) {
-                    fprintf (stdout, " * %s\n", modules[i]);
+                    fprintf(stdout, " * %s\n", modules[i]);
                 }
             }
         }
@@ -222,7 +222,7 @@ int main(int argc, char **argv, char **env)
             if (services) {
                 int i = 0;
                 for (; services[i]; i++) {
-                    fprintf (stdout, " * %s\n", services[i]);
+                    fprintf(stdout, " * %s\n", services[i]);
                 }
             }
         }

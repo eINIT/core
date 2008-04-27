@@ -142,7 +142,7 @@ void linux_network_bridge_verify_carrier(struct einit_event *ev)
                 if (pexec
                     (buffer, NULL, 0, 0, NULL, NULL, NULL,
                      d->feedback) == status_failed) {
-                         fprintf(stdout, "command failed: %s\n", buffer);
+                    fprintf(stdout, "command failed: %s\n", buffer);
                     d->status = status_failed;
                     return;
                 }
@@ -163,8 +163,7 @@ void linux_network_bridge_verify_carrier(struct einit_event *ev)
                     if (pexec
                         (buffer, NULL, 0, 0, NULL, NULL, NULL,
                          d->feedback) == status_failed) {
-                        fprintf(stdout, "command failed: %s\n",
-                                 buffer);
+                        fprintf(stdout, "command failed: %s\n", buffer);
                         if (d->action == interface_up) {
                             d->status = status_failed;
 

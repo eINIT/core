@@ -406,8 +406,7 @@ void einit_tty_update()
 {
     char **enab_ttys = NULL;
     int i = 0;
-    char sysv_semantics =
-        parse_boolean(cfg_getstring("ttys/sysv-style"));
+    char sysv_semantics = parse_boolean(cfg_getstring("ttys/sysv-style"));
 
     if (!einit_tty_feedback_blocked)
         enab_ttys = str2set(':', cfg_getstring("feedback-ttys"));

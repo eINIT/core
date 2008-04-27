@@ -501,7 +501,7 @@ int lookupuidgid(uid_t * uid, gid_t * gid, const char *user,
         struct passwd *pwd;
         errno = 0;
 
-        if ((pwd = getpwnam (user))) {
+        if ((pwd = getpwnam(user))) {
             *uid = pwd->pw_uid;
 
             if (!group && gid)
@@ -512,11 +512,10 @@ int lookupuidgid(uid_t * uid, gid_t * gid, const char *user,
     if (group && gid) {
         struct group *grp;
 
-        if ((grp = getgrnam (group))) {
+        if ((grp = getgrnam(group))) {
             *gid = grp->gr_gid;
         }
     }
-
 #endif
 
     return 0;
@@ -803,7 +802,7 @@ char **which(char *binary)
                 }
             }
         } else if (n == 2) {
-            char *p = getenv ("PATH");
+            char *p = getenv("PATH");
             if (p)
                 paths = str2set(':', p);
         }
@@ -814,9 +813,7 @@ char **which(char *binary)
                 char *t = joinpath(paths[j], binary);
 
                 if (!stat(t, &st)) {
-                    if (!inset
-                         ((const void **) rv, t,
-                           SET_TYPE_STRING))
+                    if (!inset((const void **) rv, t, SET_TYPE_STRING))
                         rv = set_str_add_stable(rv, t);
                 }
 
@@ -1133,7 +1130,7 @@ void einit_ping_core()
     write(einit_alarm_pipe_write, ".\n", 2);
 }
 
-char ** pget (const char *command)
+char **pget(const char *command)
 {
     FILE *f = popen(command, "r");
     char **rv = NULL;
@@ -1145,7 +1142,7 @@ char ** pget (const char *command)
 
             if (buffer[0] != '#')
                 rv = (char **) set_noa_add((void **) rv,
-                      (void *) estrdup(buffer));
+                                           (void *) estrdup(buffer));
         }
 
         pclose(f);
@@ -1154,7 +1151,7 @@ char ** pget (const char *command)
     return rv;
 }
 
-void pput (const char *command, const char *data)
+void pput(const char *command, const char *data)
 {
     FILE *f = popen(command, "w");
     if (f) {

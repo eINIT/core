@@ -60,7 +60,8 @@ extern "C" {
     };
 
     int parse_sh(const char *data,
-                 void (*callback) (const char **, uint8_t, void *), void *ud);
+                 void (*callback) (const char **, uint8_t, void *),
+                 void *ud);
 
 #define parse_sh_ud(data, callback, user) parse_sh(data, callback, user)
 

@@ -99,7 +99,7 @@ void einit_power_reset()
 
 void einit_switch_mode(const char *mode)
 {                               /* think "runlevel" */
-    einit_ipc_request ("switch-mode!", se_symbol(mode));
+    einit_ipc_request("switch-mode!", se_symbol(mode));
 }
 
 /*
@@ -130,8 +130,8 @@ char einit_connect(int *argc, char **argv)
                         einit_ipc_address = argv[i];
                     break;
                 case '-':
-                    if (strmatch (argv[i], "--socket") && ((++i) < (*argc)))
-                        einit_ipc_socket = parse_integer (argv[i]);
+                    if (strmatch(argv[i], "--socket") && ((++i) < (*argc)))
+                        einit_ipc_socket = parse_integer(argv[i]);
                 }
         }
     }
@@ -156,8 +156,8 @@ char einit_connect_spawn(int *argc, char **argv)
     if (argc && argv) {
         int i = 0;
         for (i = 1; i < *argc; i++) {
-            if ((argv[i][0] == '-') && (argv[i][1] == 'p') && (argv[i][2] == 's'))
-            {
+            if ((argv[i][0] == '-') && (argv[i][1] == 'p')
+                && (argv[i][2] == 's')) {
                 sandbox = 1;
                 break;
             }
@@ -166,7 +166,7 @@ char einit_connect_spawn(int *argc, char **argv)
 
     int ipcsocket[2];
 
-    socketpair (AF_UNIX, SOCK_STREAM, 0, ipcsocket);
+    socketpair(AF_UNIX, SOCK_STREAM, 0, ipcsocket);
 
     char socketstring[32];
 
@@ -180,28 +180,27 @@ char einit_connect_spawn(int *argc, char **argv)
     case -1:
         return 0;
     case 0:
-        fd = open ("/dev/null", O_RDWR);
-        close (ipcsocket[1]);
+        fd = open("/dev/null", O_RDWR);
+        close(ipcsocket[1]);
 
         if (fd) {
             int i = 0;
-            for (; i < 3; i++)
-            {
-                if (ipcsocket[0] != i)
-                {
-                    close (i);
-                    dup2 (fd, i);
+            for (; i < 3; i++) {
+                if (ipcsocket[0] != i) {
+                    close(i);
+                    dup2(fd, i);
                 }
             }
-            close (fd);
+            close(fd);
         }
 
-        execl(EINIT_LIB_BASE "/bin/einit-core", "einit-core", "--ipc-socket",
-              socketstring, (sandbox ? "--sandbox" : NULL), NULL);
+        execl(EINIT_LIB_BASE "/bin/einit-core", "einit-core",
+              "--ipc-socket", socketstring, (sandbox ? "--sandbox" : NULL),
+              NULL);
 
         exit(EXIT_FAILURE);
     default:
-        close (ipcsocket[0]);
+        close(ipcsocket[0]);
 
         return einit_ipc_connect_socket(ipcsocket[1]);
     }
@@ -218,38 +217,44 @@ char einit_disconnect()
         waitpid(einit_ipc_client_pid, NULL, 0);
     }
 
-    close (einit_ipc_get_fd());
+    close(einit_ipc_get_fd());
 
     return 1;
 }
 
 void einit_service_call(const char *service, const char *action)
 {
-    einit_ipc_request ("service-do!", se_cons(se_symbol(service),
-                       se_cons (se_symbol(action),
-                       (struct einit_sexp *)sexp_end_of_list)));
+    einit_ipc_request("service-do!",
+                      se_cons(se_symbol(service),
+                              se_cons(se_symbol(action),
+                                      (struct einit_sexp *)
+                                      sexp_end_of_list)));
 }
 
 void einit_module_call(const char *rid, const char *action)
 {
 
-    einit_ipc_request ("module-do!", se_cons(se_symbol(rid),
-                       se_cons (se_symbol(action),
-                       (struct einit_sexp *)sexp_end_of_list)));
+    einit_ipc_request("module-do!",
+                      se_cons(se_symbol(rid),
+                              se_cons(se_symbol(action),
+                                      (struct einit_sexp *)
+                                      sexp_end_of_list)));
 }
 
-struct lmodule *einit_get_core_module_descriptor (const char *rid)
+struct lmodule *einit_get_core_module_descriptor(const char *rid)
 {
-    return einit_decode_lmodule_from_sexpr(einit_ipc_request ("get-module", se_symbol(rid)));
+    return
+        einit_decode_lmodule_from_sexpr(einit_ipc_request
+                                        ("get-module", se_symbol(rid)));
 }
 
 char *einit_module_get_name(const char *rid)
 {
-    struct lmodule *lm = einit_get_core_module_descriptor (rid);
+    struct lmodule *lm = einit_get_core_module_descriptor(rid);
 
     if (lm) {
         char *rv = lm->module->name;
-        einit_destroy_core_module_descriptor (lm);
+        einit_destroy_core_module_descriptor(lm);
 
         return rv;
     } else {
@@ -259,11 +264,11 @@ char *einit_module_get_name(const char *rid)
 
 char **einit_module_get_provides(const char *rid)
 {
-    struct lmodule *lm = einit_get_core_module_descriptor (rid);
+    struct lmodule *lm = einit_get_core_module_descriptor(rid);
 
     if (lm) {
         char **rv = lm->si ? lm->si->provides : NULL;
-        einit_destroy_core_module_descriptor (lm);
+        einit_destroy_core_module_descriptor(lm);
 
         return rv;
     } else {
@@ -273,11 +278,11 @@ char **einit_module_get_provides(const char *rid)
 
 char **einit_module_get_requires(const char *rid)
 {
-    struct lmodule *lm = einit_get_core_module_descriptor (rid);
+    struct lmodule *lm = einit_get_core_module_descriptor(rid);
 
     if (lm) {
         char **rv = lm->si ? lm->si->requires : NULL;
-        einit_destroy_core_module_descriptor (lm);
+        einit_destroy_core_module_descriptor(lm);
 
         return rv;
     } else {
@@ -287,11 +292,11 @@ char **einit_module_get_requires(const char *rid)
 
 char **einit_module_get_after(const char *rid)
 {
-    struct lmodule *lm = einit_get_core_module_descriptor (rid);
+    struct lmodule *lm = einit_get_core_module_descriptor(rid);
 
     if (lm) {
         char **rv = lm->si ? lm->si->after : NULL;
-        einit_destroy_core_module_descriptor (lm);
+        einit_destroy_core_module_descriptor(lm);
 
         return rv;
     } else {
@@ -301,11 +306,11 @@ char **einit_module_get_after(const char *rid)
 
 char **einit_module_get_before(const char *rid)
 {
-    struct lmodule *lm = einit_get_core_module_descriptor (rid);
+    struct lmodule *lm = einit_get_core_module_descriptor(rid);
 
     if (lm) {
         char **rv = lm->si ? lm->si->before : NULL;
-        einit_destroy_core_module_descriptor (lm);
+        einit_destroy_core_module_descriptor(lm);
 
         return rv;
     } else {
@@ -315,10 +320,10 @@ char **einit_module_get_before(const char *rid)
 
 char **einit_module_get_status(const char *rid)
 {
-    struct lmodule *lm = einit_get_core_module_descriptor (rid);
+    struct lmodule *lm = einit_get_core_module_descriptor(rid);
 
     if (lm) {
-        einit_destroy_core_module_descriptor (lm);
+        einit_destroy_core_module_descriptor(lm);
 
         return NULL;
     } else {
@@ -328,10 +333,10 @@ char **einit_module_get_status(const char *rid)
 
 char **einit_module_get_options(const char *rid)
 {
-    struct lmodule *lm = einit_get_core_module_descriptor (rid);
+    struct lmodule *lm = einit_get_core_module_descriptor(rid);
 
     if (lm) {
-        einit_destroy_core_module_descriptor (lm);
+        einit_destroy_core_module_descriptor(lm);
 
         return NULL;
     } else {
@@ -341,19 +346,19 @@ char **einit_module_get_options(const char *rid)
 
 void einit_event_loop()
 {
-    einit_ipc_request ("receive-events", se_symbol("backlog"));
+    einit_ipc_request("receive-events", se_symbol("backlog"));
     einit_ipc_loop_infinite();
 }
 
 void einit_event_loop_skip_old()
 {
-    einit_ipc_request ("receive-events", se_symbol("no-backlog"));
+    einit_ipc_request("receive-events", se_symbol("no-backlog"));
     einit_ipc_loop_infinite();
 }
 
 void einit_replay_events()
 {
-    einit_ipc_request ("receive-events", se_symbol("replay-only"));
+    einit_ipc_request("receive-events", se_symbol("replay-only"));
 }
 
 /*
@@ -363,21 +368,39 @@ void einit_replay_events()
 
 const char *einit_event_encode(struct einit_event *ev)
 {
-    struct einit_sexp *sp = 
-        se_cons(se_symbol ("event"),
-        se_cons(se_symbol (event_code_to_string(ev->type)),
-        se_cons(se_integer(ev->integer),
-        se_cons(se_integer(ev->status),
-        se_cons(se_integer(ev->task),
-        se_cons(se_integer(ev->flag),
-        se_cons(se_string(ev->string),
-        se_cons(se_stringset_to_list(ev->stringset),
-        se_cons(se_symbol(ev->rid),
-                (struct einit_sexp *)sexp_end_of_list)))))))));
+    struct einit_sexp *sp = se_cons(se_symbol("event"),
+                                    se_cons(se_symbol
+                                            (event_code_to_string
+                                             (ev->type)),
+                                            se_cons(se_integer
+                                                    (ev->integer),
+                                                    se_cons(se_integer
+                                                            (ev->status),
+                                                            se_cons
+                                                            (se_integer
+                                                             (ev->task),
+                                                             se_cons
+                                                             (se_integer
+                                                              (ev->flag),
+                                                              se_cons
+                                                              (se_string
+                                                               (ev->
+                                                                string),
+                                                               se_cons
+                                                               (se_stringset_to_list
+                                                                (ev->
+                                                                 stringset),
+                                                                se_cons
+                                                                (se_symbol
+                                                                 (ev->rid),
+                                                                 (struct
+                                                                  einit_sexp
+                                                                  *)
+                                                                 sexp_end_of_list)))))))));
 
     char *r = einit_sexp_to_string(sp);
-    const char *rv = str_stabilise (r);
-    efree (r);
+    const char *rv = str_stabilise(r);
+    efree(r);
 
     einit_sexp_destroy(sp);
 
@@ -413,126 +436,126 @@ struct smodule *einit_decode_module_from_sexpr(struct einit_sexp *sexp)
         struct einit_sexp *p = sexp->primus;
 
         switch (s) {
-            case smps_rid:
-                if (p->type == es_symbol) {
-                    sm = emalloc(sizeof (struct smodule));
-                    memset (sm, 0, sizeof (struct smodule));
+        case smps_rid:
+            if (p->type == es_symbol) {
+                sm = emalloc(sizeof(struct smodule));
+                memset(sm, 0, sizeof(struct smodule));
 
-                    sm->rid = (char*)(p->symbol);
+                sm->rid = (char *) (p->symbol);
+            } else {
+                return NULL;
+            }
+            break;
+
+        case smps_name:
+            if (p->type == es_string) {
+                sm->name = (char *) (p->string);
+            } else {
+                efree(sm);
+                return NULL;
+            }
+            break;
+
+        case smps_provides:
+            while (p->type == es_cons) {
+                struct einit_sexp *pp = p->primus;
+
+                if (pp->type == es_symbol) {
+                    sm->si.provides =
+                        set_str_add_stable(sm->si.provides,
+                                           (char *) pp->symbol);
                 } else {
+                    efree(sm);
                     return NULL;
                 }
-                break;
 
-            case smps_name:
-                if (p->type == es_string) {
-                    sm->name = (char*)(p->string);
+                p = p->secundus;
+            }
+            break;
+
+        case smps_requires:
+            while (p->type == es_cons) {
+                struct einit_sexp *pp = p->primus;
+
+                if (pp->type == es_symbol) {
+                    sm->si.requires =
+                        set_str_add_stable(sm->si.requires,
+                                           (char *) pp->symbol);
                 } else {
-                    efree (sm);
+                    efree(sm);
                     return NULL;
                 }
-                break;
 
-            case smps_provides:
-                while (p->type == es_cons) {
-                    struct einit_sexp *pp = p->primus;
+                p = p->secundus;
+            }
+            break;
 
-                    if (pp->type == es_symbol) {
-                        sm->si.provides =
-                                set_str_add_stable(sm->si.provides,
-                                (char *) pp->symbol);
-                    } else {
-                        efree (sm);
-                        return NULL;
-                    }
+        case smps_before:
+            while (p->type == es_cons) {
+                struct einit_sexp *pp = p->primus;
 
-                    p = p->secundus;
+                if (pp->type == es_string) {
+                    sm->si.before =
+                        set_str_add_stable(sm->si.before,
+                                           (char *) pp->string);
+                } else {
+                    efree(sm);
+                    return NULL;
                 }
-                break;
 
-            case smps_requires:
-                while (p->type == es_cons) {
-                    struct einit_sexp *pp = p->primus;
+                p = p->secundus;
+            }
+            break;
 
-                    if (pp->type == es_symbol) {
-                        sm->si.requires =
-                                set_str_add_stable(sm->si.requires,
-                                (char *) pp->symbol);
-                    } else {
-                        efree (sm);
-                        return NULL;
-                    }
+        case smps_after:
+            while (p->type == es_cons) {
+                struct einit_sexp *pp = p->primus;
 
-                    p = p->secundus;
+                if (pp->type == es_string) {
+                    sm->si.after =
+                        set_str_add_stable(sm->si.after,
+                                           (char *) pp->string);
+                } else {
+                    efree(sm);
+
+                    return NULL;
                 }
-                break;
 
-            case smps_before:
-                while (p->type == es_cons) {
-                    struct einit_sexp *pp = p->primus;
+                p = p->secundus;
+            }
+            break;
 
-                    if (pp->type == es_string) {
-                        sm->si.before =
-                                set_str_add_stable(sm->si.before,
-                                (char *) pp->string);
-                    } else {
-                        efree (sm);
-                        return NULL;
-                    }
+        case smps_uses:
+            while (p->type == es_cons) {
+                struct einit_sexp *pp = p->primus;
 
-                    p = p->secundus;
+                if (pp->type == es_symbol) {
+                    sm->si.uses =
+                        set_str_add_stable(sm->si.uses,
+                                           (char *) pp->symbol);
+                } else {
+                    efree(sm);
+
+                    return NULL;
                 }
-                break;
 
-            case smps_after:
-                while (p->type == es_cons) {
-                    struct einit_sexp *pp = p->primus;
+                p = p->secundus;
+            }
+            break;
 
-                    if (pp->type == es_string) {
-                        sm->si.after =
-                                set_str_add_stable(sm->si.after,
-                                (char *) pp->string);
-                    } else {
-                        efree (sm);
+        case smps_run_once:
+            if (p == sexp_true)
+                sm->mode |= einit_feedback_job;
+            break;
 
-                        return NULL;
-                    }
+        case smps_deprecated:
+            if (p == sexp_true)
+                sm->mode |= einit_module_deprecated;
+            break;
 
-                    p = p->secundus;
-                }
-                break;
-
-            case smps_uses:
-                while (p->type == es_cons) {
-                    struct einit_sexp *pp = p->primus;
-
-                    if (pp->type == es_symbol) {
-                        sm->si.uses =
-                                set_str_add_stable(sm->si.uses,
-                                (char *) pp->symbol);
-                    } else {
-                        efree (sm);
-
-                        return NULL;
-                    }
-
-                    p = p->secundus;
-                }
-                break;
-
-            case smps_run_once:
-                if (p == sexp_true)
-                    sm->mode |= einit_feedback_job;
-                break;
-
-            case smps_deprecated:
-                if (p == sexp_true)
-                    sm->mode |= einit_module_deprecated;
-                break;
-
-            case smps_done:
-            default:
-                break;
+        case smps_done:
+        default:
+            break;
         }
 
         s++;
@@ -548,22 +571,28 @@ struct smodule *einit_decode_module_from_sexpr(struct einit_sexp *sexp)
 
 struct lmodule *einit_decode_lmodule_from_sexpr(struct einit_sexp *sexp)
 {
-    struct smodule *sm = einit_decode_module_from_sexpr (sexp);
+    struct smodule *sm = einit_decode_module_from_sexpr(sexp);
 
     if (sm) {
-        struct lmodule *lm = ecalloc (1, sizeof (struct lmodule));
+        struct lmodule *lm = ecalloc(1, sizeof(struct lmodule));
         lm->module = sm;
 
         struct einit_sexp *p =
-                se_cdr (se_cdr (se_cdr (se_cdr (se_cdr (se_cdr (se_cdr (se_cdr (se_cdr (sexp)))))))));
+            se_cdr(se_cdr
+                   (se_cdr
+                    (se_cdr
+                     (se_cdr(se_cdr(se_cdr(se_cdr(se_cdr(sexp)))))))));
 
         struct einit_sexp *status = se_car(p);
         struct einit_sexp *actions = se_car(se_cdr(p));
 
-        /* TODO : parse status and actions */
+        /*
+         * TODO : parse status and actions 
+         */
 
-        if (sm->si.provides || sm->si.requires || sm->si.after || sm->si.before || sm->si.uses) {
-            lm->si = emalloc (sizeof (*(lm->si)));
+        if (sm->si.provides || sm->si.requires || sm->si.after
+            || sm->si.before || sm->si.uses) {
+            lm->si = emalloc(sizeof(*(lm->si)));
 
             lm->si->provides = sm->si.provides ? sm->si.provides : NULL;
             lm->si->requires = sm->si.requires ? sm->si.requires : NULL;
@@ -574,59 +603,80 @@ struct lmodule *einit_decode_lmodule_from_sexpr(struct einit_sexp *sexp)
 
         return lm;
     } else {
-        fprintf (stderr, "failed to parse module: %s\n", einit_sexp_to_string(sexp));
+        fprintf(stderr, "failed to parse module: %s\n",
+                einit_sexp_to_string(sexp));
 
         return NULL;
     }
 }
 
-void einit_destroy_core_module_descriptor (struct lmodule *lm)
+void einit_destroy_core_module_descriptor(struct lmodule *lm)
 {
-    if (lm->si) efree (lm->si);
-    if (lm->module) efree ((void *)(lm->module));
-    efree (lm);
+    if (lm->si)
+        efree(lm->si);
+    if (lm->module)
+        efree((void *) (lm->module));
+    efree(lm);
 }
 
 
 void einit_register_module(struct smodule *s)
 {
-    struct einit_sexp *sp = 
-                se_cons(se_symbol (s->rid),
-                se_cons(se_string (s->name),
-                se_cons(se_symbolset_to_list(s->si.provides),
-                se_cons(se_symbolset_to_list(s->si.requires),
-                se_cons(se_stringset_to_list(s->si.before),
-                se_cons(se_stringset_to_list(s->si.after),
-                se_cons(se_symbolset_to_list(s->si.uses),
-                se_cons((struct einit_sexp *)
-                          ((s->mode & einit_feedback_job) ?
-                             sexp_true : sexp_false),
-                se_cons((struct einit_sexp *)
-                          ((s->mode & einit_module_deprecated) ?
-                             sexp_true : sexp_false),
-                        (struct einit_sexp *)sexp_end_of_list)))))))));
+    struct einit_sexp *sp = se_cons(se_symbol(s->rid),
+                                    se_cons(se_string(s->name),
+                                            se_cons(se_symbolset_to_list
+                                                    (s->si.provides),
+                                                    se_cons
+                                                    (se_symbolset_to_list
+                                                     (s->si.requires),
+                                                     se_cons
+                                                     (se_stringset_to_list
+                                                      (s->si.before),
+                                                      se_cons
+                                                      (se_stringset_to_list
+                                                       (s->si.after),
+                                                       se_cons
+                                                       (se_symbolset_to_list
+                                                        (s->si.uses),
+                                                        se_cons((struct
+                                                                 einit_sexp
+                                                                 *)
+                                                                ((s->
+                                                                  mode &
+                                                                  einit_feedback_job)
+                                                                 ?
+                                                                 sexp_true
+                                                                 :
+                                                                 sexp_false),
+                                                                se_cons((struct einit_sexp *)
+                                                                        ((s->mode & einit_module_deprecated) ? sexp_true : sexp_false),
+                                                                        (struct einit_sexp *) sexp_end_of_list)))))))));
 
-    einit_ipc_request ("register-module", sp);
+    einit_ipc_request("register-module", sp);
 }
 
 char *einit_get_configuration_string(const char *key,
                                      const char *attribute)
 {
     char *rv = NULL;
-    if (!attribute) attribute = "s";
+    if (!attribute)
+        attribute = "s";
 
     struct einit_sexp *s =
-            einit_ipc_request("get-configuration", se_cons(se_symbol (key),
-                              se_cons (se_symbol (attribute),
-                              (struct einit_sexp *)sexp_end_of_list)));
+        einit_ipc_request("get-configuration", se_cons(se_symbol(key),
+                                                       se_cons(se_symbol
+                                                               (attribute),
+                                                               (struct
+                                                                einit_sexp
+                                                                *)
+                                                               sexp_end_of_list)));
 
     if (s) {
-        if (s->type == es_string)
-        {
-            rv = (char *)s->string;
+        if (s->type == es_string) {
+            rv = (char *) s->string;
         }
 
-        einit_sexp_destroy (s);
+        einit_sexp_destroy(s);
     }
 
     return rv;
@@ -664,9 +714,10 @@ static char **sexp2arbattrs(char **rv, struct einit_sexp *s)
             struct einit_sexp *primus = se_car(se_car(p));
             struct einit_sexp *secundus = se_car(se_cdr(se_car(p)));
 
-            if ((primus->type == es_symbol) && (secundus->type == es_string)) {
-                rv = set_str_add_stable (rv, (char*)primus->symbol);
-                rv = set_str_add_stable (rv, (char*)secundus->string);
+            if ((primus->type == es_symbol)
+                && (secundus->type == es_string)) {
+                rv = set_str_add_stable(rv, (char *) primus->symbol);
+                rv = set_str_add_stable(rv, (char *) secundus->string);
             }
 
             p = p->secundus;
@@ -678,21 +729,22 @@ static char **sexp2arbattrs(char **rv, struct einit_sexp *s)
 
 char **einit_get_configuration_attributes(const char *key)
 {
-    struct einit_sexp *s = einit_ipc_request ("get-configuration-multi",
-                                              se_symbol(key));
+    struct einit_sexp *s = einit_ipc_request("get-configuration-multi",
+                                             se_symbol(key));
 
     char **rv = NULL;
 
     rv = sexp2arbattrs(rv, s);
-    if (s) einit_sexp_destroy (s);
+    if (s)
+        einit_sexp_destroy(s);
 
     return rv;
 }
 
 char ***einit_get_configuration_prefix(const char *prefix)
 {
-    struct einit_sexp *s = einit_ipc_request ("get-configuration*",
-                                              se_symbol(prefix));
+    struct einit_sexp *s = einit_ipc_request("get-configuration*",
+                                             se_symbol(prefix));
     char ***rv = NULL;
 
     if (s) {
@@ -702,28 +754,30 @@ char ***einit_get_configuration_prefix(const char *prefix)
             struct einit_sexp *secundus = se_car(se_cdr(se_car(p)));
 
             if (primus->type == es_symbol) {
-                char **e = set_str_add_stable (NULL, (char *)primus->symbol);
+                char **e =
+                    set_str_add_stable(NULL, (char *) primus->symbol);
                 e = sexp2arbattrs(e, secundus);
 
-                rv = (char***)set_noa_add((void**)rv, e);
+                rv = (char ***) set_noa_add((void **) rv, e);
             }
 
             p = p->secundus;
         }
 
-        einit_sexp_destroy (s);
+        einit_sexp_destroy(s);
     }
 
     return rv;
 }
 
-char **einit_list (char *r)
+char **einit_list(char *r)
 {
-    struct einit_sexp *s = einit_ipc_request ("list", se_symbol(r));
+    struct einit_sexp *s = einit_ipc_request("list", se_symbol(r));
     struct einit_sexp *p = s;
-    char ** rv = NULL;
+    char **rv = NULL;
 
-    if (!s) return NULL;
+    if (!s)
+        return NULL;
 
     while (p->type == es_cons) {
         struct einit_sexp *pp = p->primus;
@@ -731,8 +785,8 @@ char **einit_list (char *r)
         if (pp->type == es_symbol) {
             rv = set_str_add_stable(rv, (char *) pp->symbol);
         } else {
-            efree (rv);
-            einit_sexp_destroy (s);
+            efree(rv);
+            einit_sexp_destroy(s);
 
             return NULL;
         }
@@ -740,17 +794,17 @@ char **einit_list (char *r)
         p = p->secundus;
     }
 
-    einit_sexp_destroy (s);
+    einit_sexp_destroy(s);
 
     return rv;
 }
 
-char **einit_list_modules ()
+char **einit_list_modules()
 {
     return einit_list("modules");
 }
 
-char **einit_list_services ()
+char **einit_list_services()
 {
     return einit_list("services");
 }

@@ -193,7 +193,7 @@ struct vtree *vtreefind(struct vtree *tree, signed long key)
 
     do {
         if (key == tree->key) {
-            vtree_splay (tree);
+            vtree_splay(tree);
             return tree;
         } else if (key < tree->key) {
             tree = tree->left;

@@ -97,8 +97,7 @@ void linux_cpufreq_set_governor_data(char *gd, int cpus)
 
 void linux_cpufreq_switch()
 {
-    struct cfgnode *node =
-        cfg_getnode("configuration-linux-cpufreq");
+    struct cfgnode *node = cfg_getnode("configuration-linux-cpufreq");
 
     if (node && node->arbattrs) {
         char *governor_data = NULL;
@@ -121,8 +120,7 @@ void linux_cpufreq_switch()
 
 void linux_cpufreq_switch_done()
 {
-    struct cfgnode *node =
-        cfg_getnode("configuration-linux-cpufreq");
+    struct cfgnode *node = cfg_getnode("configuration-linux-cpufreq");
 
     if (node && node->arbattrs) {
         char *governor_data = NULL;
@@ -146,8 +144,7 @@ void linux_cpufreq_switch_done()
 void linux_cpufreq_power_source_battery()
 {
     notice(3, "power source battery event heard");
-    struct cfgnode *node =
-        cfg_getnode("configuration-linux-cpufreq");
+    struct cfgnode *node = cfg_getnode("configuration-linux-cpufreq");
 
     if (node && node->arbattrs) {
         char *governor_data = NULL;
@@ -171,8 +168,7 @@ void linux_cpufreq_power_source_battery()
 void linux_cpufreq_power_source_ac()
 {
     notice(3, "power source ac event heard");
-    struct cfgnode *node =
-        cfg_getnode("configuration-linux-cpufreq");
+    struct cfgnode *node = cfg_getnode("configuration-linux-cpufreq");
 
     if (node && node->arbattrs) {
         char *governor_data = NULL;
@@ -197,8 +193,7 @@ int linux_cpufreq_configure(struct lmodule *pa)
 {
     module_init(pa);
 
-    struct cfgnode *node =
-        cfg_getnode("configuration-linux-cpufreq");
+    struct cfgnode *node = cfg_getnode("configuration-linux-cpufreq");
     if (!node) {
         return status_configure_failed | status_not_in_use;
     }

@@ -61,28 +61,34 @@ extern "C" {
     void einit_ipc_register_handler(const char *name,
                                     void (*handler) (struct einit_sexp *,
                                                      int,
-                                                     struct einit_ipc_connection *));
+                                                     struct
+                                                     einit_ipc_connection
+                                                     *));
     void einit_ipc_unregister_handler(const char *name,
                                       void (*handler) (struct einit_sexp *,
                                                        int,
-                                                       struct einit_ipc_connection *));
+                                                       struct
+                                                       einit_ipc_connection
+                                                       *));
 
     char einit_ipc_connect(const char *address);
     char einit_ipc_connect_socket(int fd);
     char einit_ipc_loop();
 
     void einit_ipc_loop_infinite();
-    void einit_ipc_update_event_listeners ();
+    void einit_ipc_update_event_listeners();
 
     int einit_ipc_get_fd();
 
     void einit_ipc_handle_sexp_event(struct einit_sexp *sexp);
     char einit_ipx_sexp_handle_fd(struct einit_sexp_fd_reader *rd);
 
-    struct einit_sexp *einit_ipc_request_sexp_raw(struct einit_sexp *request);
-    struct einit_sexp *einit_ipc_request(const char *rq, struct einit_sexp *payload);
+    struct einit_sexp *einit_ipc_request_sexp_raw(struct einit_sexp
+                                                  *request);
+    struct einit_sexp *einit_ipc_request(const char *rq,
+                                         struct einit_sexp *payload);
 
-    char ** einit_event_backlog;
+    char **einit_event_backlog;
 
     char einit_ipc_run_server(char *socket);
     void einit_ipc_connect_client(int fd);

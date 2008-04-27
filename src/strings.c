@@ -148,11 +148,10 @@ const char *str_stabilise(const char *s)
         return "";              /* use a real static string for this one
                                  * since it can fuck things up hard */
 
-    if (einit_stable_strings_reverse &&
-        vtreefind(einit_stable_strings_reverse, (long)s)) {
+    if (einit_stable_strings_reverse
+        && vtreefind(einit_stable_strings_reverse, (long) s)) {
         return s;
     }
-
     // uintptr_t pi = (uintptr_t)s;
     int len;
     uint32_t hash;
@@ -172,7 +171,8 @@ const char *str_stabilise(const char *s)
      * } else { hash = StrSuperFastHash(s, &len); }
      */
 
-    i = einit_stable_strings ? btreefind(einit_stable_strings, hash) : NULL;
+    i = einit_stable_strings ? btreefind(einit_stable_strings,
+                                         hash) : NULL;
 
     if (i) {
         if (nv)
@@ -194,7 +194,8 @@ const char *str_stabilise(const char *s)
      */
     i = btreeadd(einit_stable_strings, hash, nv, tree_value_noalloc);
 
-    einit_stable_strings_reverse = vtreeadd(einit_stable_strings_reverse, (long)nv);
+    einit_stable_strings_reverse =
+        vtreeadd(einit_stable_strings_reverse, (long) nv);
 
     einit_stable_strings = i;
 

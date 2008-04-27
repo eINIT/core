@@ -1573,15 +1573,14 @@ void module_logic_einit_event_handler_core_configuration_update(struct
  * the following three events are used to make the module logics core do
  * something 
  */
-char *module_logic_prepare_mode_switch(char *modename,
-                                       char ***enable_r,
+char *module_logic_prepare_mode_switch(char *modename, char ***enable_r,
                                        char ***disable_r)
 {
     if (!modename)
         return NULL;
 
-    cfg_set_current_mode (modename);
-    struct cfgnode *modenode = cfg_getnode ("mode");
+    cfg_set_current_mode(modename);
+    struct cfgnode *modenode = cfg_getnode("mode");
     if (!modenode) {
         return NULL;
     }
@@ -1634,7 +1633,7 @@ char *module_logic_prepare_mode_switch(char *modename,
             for (i = 0; base[i]; i++) {
                 module_logic_prepare_mode_switch(base[i], &enable,
                                                  &disable);
-                cfg_set_current_mode (modename);
+                cfg_set_current_mode(modename);
             }
         }
     }
@@ -1717,7 +1716,7 @@ void module_logic_einit_event_handler_core_switch_mode_callback(void *p)
      * do it serially... 
      */
     if (d->modename) {
-        cfg_set_current_mode (d->modename);
+        cfg_set_current_mode(d->modename);
 
         if (strmatch(d->modename, "power-down")) {
             struct einit_event ee =
@@ -1782,12 +1781,11 @@ void module_logic_einit_event_handler_core_switch_mode(struct einit_event
     if (ev->string) {
         char **enable = NULL, **disable = NULL;
 
-        char *mode =
-            module_logic_prepare_mode_switch(ev->string, &enable,
-                                             &disable);
+        char *mode = module_logic_prepare_mode_switch(ev->string, &enable,
+                                                      &disable);
 
         if (mode) {
-            cfg_set_current_mode (mode);
+            cfg_set_current_mode(mode);
 
             struct einit_event eex =
                 evstaticinit(einit_core_mode_switching);
@@ -1945,8 +1943,7 @@ void module_logic_einit_event_handler_core_change_service_status(struct
                 ((const void **) module_logic_list_enable, ev->rid,
                  SET_TYPE_STRING))
                 module_logic_list_enable =
-                    set_str_add_stable(module_logic_list_enable,
-                                       ev->rid);
+                    set_str_add_stable(module_logic_list_enable, ev->rid);
 
             struct lmodule **spawn = module_logic_find_things_to_enable();
 
@@ -1957,8 +1954,7 @@ void module_logic_einit_event_handler_core_change_service_status(struct
                 ((const void **) module_logic_list_disable, ev->rid,
                  SET_TYPE_STRING))
                 module_logic_list_disable =
-                    set_str_add_stable(module_logic_list_disable,
-                                       ev->rid);
+                    set_str_add_stable(module_logic_list_disable, ev->rid);
 
             struct lmodule **spawn = module_logic_find_things_to_disable();
 

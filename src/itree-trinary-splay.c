@@ -288,10 +288,10 @@ struct itree *itreefind(struct itree *tree, signed long key,
     do {
         if (key == tree->key) {
             if (base == tree_find_first) {
-                itree_splay (tree);
+                itree_splay(tree);
                 return tree;
             } else if (tree->equal) {
-                itree_splay (tree->equal);
+                itree_splay(tree->equal);
                 return tree->equal;
             } else
                 return NULL;
@@ -393,8 +393,8 @@ void itreefree_all(struct itree *tree, void (*free_node) (void *))
     itreefree(tree, free_node);
 }
 
-static void itreemap_sub(struct itree *tree, void (*f) (struct itree *, void *),
-                         void *t)
+static void itreemap_sub(struct itree *tree,
+                         void (*f) (struct itree *, void *), void *t)
 {
     if (tree->left)
         itreemap_sub(tree->left, f, t);

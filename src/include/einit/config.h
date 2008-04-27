@@ -105,7 +105,7 @@ extern "C" {
     int cfg_callback_prefix(char *prefix,
                             void (*callback) (struct cfgnode *));
 
-    void cfg_set_current_mode (char *modename);
+    void cfg_set_current_mode(char *modename);
 
 #endif                          /* _CONFIG_H */
 

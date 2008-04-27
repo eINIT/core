@@ -221,7 +221,7 @@ struct btree *btreefind(struct btree *tree, signed long key)
 
     do {
         if (key == tree->key) {
-            btree_splay (tree);
+            btree_splay(tree);
             return tree;
         } else if (key < tree->key) {
             tree = tree->left;

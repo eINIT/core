@@ -86,8 +86,7 @@ int linux_urandom_get_poolsize(void)
 
 int linux_urandom_save_seed(struct einit_event *status)
 {
-    char *seedPath =
-        cfg_getstring("configuration-services-urandom/seed");
+    char *seedPath = cfg_getstring("configuration-services-urandom/seed");
     if (seedPath) {
         linux_urandom_mini_dd("/dev/urandom", seedPath,
                               linux_urandom_get_poolsize());
@@ -101,8 +100,7 @@ int linux_urandom_save_seed(struct einit_event *status)
 int linux_urandom_enable(void *param, struct einit_event *status)
 {
     fbprintf(status, "Initialising the Random Number Generator");
-    char *seedPath =
-        cfg_getstring("configuration-services-urandom/seed");
+    char *seedPath = cfg_getstring("configuration-services-urandom/seed");
     if (seedPath) {
         struct stat fileattrib;
         if (stat(seedPath, &fileattrib) == 0) {
@@ -133,8 +131,7 @@ int linux_urandom_configure(struct lmodule *pa)
     module_init(pa);
     pa->enable = linux_urandom_enable;
     pa->disable = linux_urandom_disable;
-    char *seedPath =
-        cfg_getstring("configuration-services-urandom/seed");
+    char *seedPath = cfg_getstring("configuration-services-urandom/seed");
     if (seedPath) {
         char *files[2];
         files[0] = seedPath;

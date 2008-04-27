@@ -75,13 +75,14 @@ const struct smodule einit_ipc_library_self = {
 
 module_register(einit_ipc_library_self);
 
-void einit_ipc_reply_simple(int id, char *s, struct einit_ipc_connection *cd)
+void einit_ipc_reply_simple(int id, char *s,
+                            struct einit_ipc_connection *cd)
 {
     char buffer[BUFFERSIZE];
 
-    snprintf (buffer, BUFFERSIZE, "(%i %s)", id, s);
+    snprintf(buffer, BUFFERSIZE, "(%i %s)", id, s);
 
-    einit_ipc_write (buffer, cd->reader);
+    einit_ipc_write(buffer, cd->reader);
 }
 
 void einit_ipc_library_stub(struct einit_sexp *sexp, int id,
@@ -92,47 +93,53 @@ void einit_ipc_library_stub(struct einit_sexp *sexp, int id,
 
     efree(r);
 
-    einit_ipc_reply_simple (id, "stub", cd);
+    einit_ipc_reply_simple(id, "stub", cd);
 }
 
-/* TODO: allow the clients to tell us what events it should receive */
+/*
+ * TODO: allow the clients to tell us what events it should receive 
+ */
 void einit_ipc_library_receive_events(struct einit_sexp *sexp, int id,
                                       struct einit_ipc_connection *cd)
 {
     if (sexp->type == es_symbol) {
-        if (strmatch (sexp->symbol, "replay-only")
-            || strmatch (sexp->symbol, "backlog")) {
+        if (strmatch(sexp->symbol, "replay-only")
+            || strmatch(sexp->symbol, "backlog")) {
             cd->current_event = 0;
 
-            einit_ipc_update_event_listeners ();
+            einit_ipc_update_event_listeners();
 
-            if (strmatch (sexp->symbol, "replay-only")) {
+            if (strmatch(sexp->symbol, "replay-only")) {
                 cd->current_event = -1;
             }
-        } else if (strmatch (sexp->symbol, "no-backlog")) {
+        } else if (strmatch(sexp->symbol, "no-backlog")) {
             for (cd->current_event = 0;
                  einit_event_backlog[cd->current_event];
-                 cd->current_event++) ;
+                 cd->current_event++);
         } else {
             goto bad_request;
         }
 
-        einit_ipc_reply_simple (id, "#t", cd);
+        einit_ipc_reply_simple(id, "#t", cd);
     } else {
-        bad_request:
+      bad_request:
 
-        einit_ipc_reply_simple (id, "#f", cd);
+        einit_ipc_reply_simple(id, "#f", cd);
     }
 }
 
-void einit_ipc_library_receive_specific_events(struct einit_sexp *sexp, int id,
-                                               struct einit_ipc_connection *cd)
+void einit_ipc_library_receive_specific_events(struct einit_sexp *sexp,
+                                               int id,
+                                               struct einit_ipc_connection
+                                               *cd)
 {
     einit_ipc_library_stub(sexp, id, cd);
 }
 
-void einit_ipc_library_mute_specific_events(struct einit_sexp *sexp, int id,
-                                            struct einit_ipc_connection *cd)
+void einit_ipc_library_mute_specific_events(struct einit_sexp *sexp,
+                                            int id,
+                                            struct einit_ipc_connection
+                                            *cd)
 {
     einit_ipc_library_stub(sexp, id, cd);
 }
@@ -144,123 +151,130 @@ void einit_ipc_library_get_configuration(struct einit_sexp *sexp, int id,
     struct einit_sexp *secundus = se_car(se_cdr(sexp));
 
     if ((primus->type == es_symbol) && (secundus->type == es_symbol)) {
-        struct cfgnode *n = cfg_getnode (primus->symbol);
+        struct cfgnode *n = cfg_getnode(primus->symbol);
         char *value = NULL;
 
         if (n && n->arbattrs) {
             int i = 0;
-            for (; n->arbattrs[i]; i+=2) {
-                if (strmatch (n->arbattrs[i], secundus->symbol)) {
-                    value = n->arbattrs[i+1];
+            for (; n->arbattrs[i]; i += 2) {
+                if (strmatch(n->arbattrs[i], secundus->symbol)) {
+                    value = n->arbattrs[i + 1];
                     break;
                 }
             }
         }
 
         if (value) {
-            struct einit_sexp *sp = 
-                    se_cons(se_integer (id),
-                    se_cons(se_string(value),
-                            (struct einit_sexp *)sexp_end_of_list));
+            struct einit_sexp *sp = se_cons(se_integer(id),
+                                            se_cons(se_string(value),
+                                                    (struct einit_sexp *)
+                                                    sexp_end_of_list));
 
             char *r = einit_sexp_to_string(sp);
 
             einit_sexp_destroy(sp);
 
-            einit_ipc_write (r, cd->reader);
+            einit_ipc_write(r, cd->reader);
 
-            efree (r);
+            efree(r);
 
             return;
         }
     }
 
-    einit_ipc_reply_simple (id, "#f", cd);
+    einit_ipc_reply_simple(id, "#f", cd);
 }
 
-static struct einit_sexp *cfgnode2sexp (struct cfgnode *n)
+static struct einit_sexp *cfgnode2sexp(struct cfgnode *n)
 {
     if (n && n->arbattrs) {
         int i = 0;
-        struct einit_sexp *sp = (struct einit_sexp *)sexp_end_of_list;
-        for (; n->arbattrs[i]; i+=2) {
-            struct einit_sexp *v = se_cons (se_symbol (n->arbattrs[i]),
-                                            se_cons (se_string (n->arbattrs[i+1]),
-                                                    (struct einit_sexp *)sexp_end_of_list));
+        struct einit_sexp *sp = (struct einit_sexp *) sexp_end_of_list;
+        for (; n->arbattrs[i]; i += 2) {
+            struct einit_sexp *v = se_cons(se_symbol(n->arbattrs[i]),
+                                           se_cons(se_string
+                                                   (n->arbattrs[i + 1]),
+                                                   (struct einit_sexp *)
+                                                   sexp_end_of_list));
 
-            sp = se_cons (v, sp);
+            sp = se_cons(v, sp);
         }
 
         if (sp == sexp_end_of_list)
-            sp = (struct einit_sexp *)sexp_false;
+            sp = (struct einit_sexp *) sexp_false;
 
         return sp;
     }
 
-    return (struct einit_sexp*)sexp_false;
+    return (struct einit_sexp *) sexp_false;
 }
 
-void einit_ipc_library_get_configuration_multi(struct einit_sexp *sexp, int id,
-                                               struct einit_ipc_connection *cd)
+void einit_ipc_library_get_configuration_multi(struct einit_sexp *sexp,
+                                               int id,
+                                               struct einit_ipc_connection
+                                               *cd)
 {
     if (sexp->type == es_symbol) {
-        struct cfgnode *n = cfg_getnode (sexp->symbol);
+        struct cfgnode *n = cfg_getnode(sexp->symbol);
 
         struct einit_sexp *sp = cfgnode2sexp(n);
 
-        sp = se_cons(se_integer (id), se_cons (sp, (struct einit_sexp *)sexp_end_of_list));
+        sp = se_cons(se_integer(id),
+                     se_cons(sp, (struct einit_sexp *) sexp_end_of_list));
 
         char *r = einit_sexp_to_string(sp);
 
         einit_sexp_destroy(sp);
 
-        einit_ipc_write (r, cd->reader);
+        einit_ipc_write(r, cd->reader);
 
-        efree (r);
+        efree(r);
         return;
     }
 
-    einit_ipc_reply_simple (id, "#f", cd);
+    einit_ipc_reply_simple(id, "#f", cd);
 }
 
 void einit_ipc_library_get_configuration_a(struct einit_sexp *sexp, int id,
                                            struct einit_ipc_connection *cd)
 {
     if (sexp->type == es_symbol) {
-        struct cfgnode **st = cfg_prefix (sexp->symbol);
+        struct cfgnode **st = cfg_prefix(sexp->symbol);
 
         if (st) {
             struct cfgnode **tcur = st;
-            struct einit_sexp *sp = (struct einit_sexp *)sexp_end_of_list;
+            struct einit_sexp *sp = (struct einit_sexp *) sexp_end_of_list;
             while (*tcur) {
                 struct cfgnode *node = *tcur;
 
-                sp = se_cons (
-                       se_cons(se_symbol (node->id),
-                         se_cons (cfgnode2sexp (node),
-                         (struct einit_sexp *)sexp_end_of_list)),
-                       sp);
+                sp = se_cons(se_cons
+                             (se_symbol(node->id),
+                              se_cons(cfgnode2sexp(node),
+                                      (struct einit_sexp *)
+                                      sexp_end_of_list)), sp);
 
                 tcur++;
             }
 
-            sp = se_cons(se_integer (id), se_cons (sp, (struct einit_sexp *)sexp_end_of_list));
+            sp = se_cons(se_integer(id),
+                         se_cons(sp,
+                                 (struct einit_sexp *) sexp_end_of_list));
 
             char *r = einit_sexp_to_string(sp);
 
             einit_sexp_destroy(sp);
 
-            einit_ipc_write (r, cd->reader);
+            einit_ipc_write(r, cd->reader);
 
-            efree (r);
+            efree(r);
 
-            efree (st);
+            efree(st);
 
             return;
         }
     }
 
-    einit_ipc_reply_simple (id, "#f", cd);
+    einit_ipc_reply_simple(id, "#f", cd);
 }
 
 void einit_ipc_library_register_module(struct einit_sexp *sexp, int id,
@@ -269,16 +283,18 @@ void einit_ipc_library_register_module(struct einit_sexp *sexp, int id,
     struct smodule *sm = einit_decode_module_from_sexpr(sexp);
 
     if (sm) {
-        mod_add_or_update (NULL, sm, substitue_and_prune);
-        einit_ipc_reply_simple (id, "#t", cd);
+        mod_add_or_update(NULL, sm, substitue_and_prune);
+        einit_ipc_reply_simple(id, "#t", cd);
         return;
     }
 
-    einit_ipc_reply_simple (id, "#f", cd);
+    einit_ipc_reply_simple(id, "#f", cd);
 }
 
-void einit_ipc_library_register_module_actions(struct einit_sexp *sexp, int id,
-                                               struct einit_ipc_connection *cd)
+void einit_ipc_library_register_module_actions(struct einit_sexp *sexp,
+                                               int id,
+                                               struct einit_ipc_connection
+                                               *cd)
 {
     einit_ipc_library_stub(sexp, id, cd);
 }
@@ -289,31 +305,32 @@ void einit_ipc_library_list(struct einit_sexp *sexp, int id,
     if (sexp->type == es_symbol) {
         char **l = NULL;
 
-        if (strmatch (sexp->symbol, "modules")) {
+        if (strmatch(sexp->symbol, "modules")) {
             l = mod_list_all_available_modules();
         }
 
-        if (strmatch (sexp->symbol, "services")) {
+        if (strmatch(sexp->symbol, "services")) {
             l = mod_list_all_available_services();
         }
 
         if (l) {
-            char *m = set2str (' ', (const char **)l);
+            char *m = set2str(' ', (const char **) l);
 
             if (m) {
-                int size = strlen (m) + 38; /* 32 for the int, just in case */
+                int size = strlen(m) + 38;      /* 32 for the int, just in 
+                                                 * case */
                 char buffer[size];
 
-                snprintf (buffer, size, "(%i (%s))", id, m);
+                snprintf(buffer, size, "(%i (%s))", id, m);
 
-                einit_ipc_write (buffer, cd->reader);
+                einit_ipc_write(buffer, cd->reader);
 
                 return;
             }
         }
     }
 
-    einit_ipc_reply_simple (id, "#f", cd);
+    einit_ipc_reply_simple(id, "#f", cd);
 }
 
 /*
@@ -326,43 +343,75 @@ void einit_ipc_library_get_module(struct einit_sexp *sexp, int id,
                                   struct einit_ipc_connection *cd)
 {
     if (sexp->type == es_symbol) {
-        struct lmodule *lm = mod_lookup_rid (sexp->symbol);
+        struct lmodule *lm = mod_lookup_rid(sexp->symbol);
 
-        if (!lm || !lm->module) goto fail;
+        if (!lm || !lm->module)
+            goto fail;
 
-        struct einit_sexp *sp = 
-            se_cons(se_integer (id),
-            se_cons(se_cons(se_symbol (lm->module->rid),
-                se_cons(se_string (lm->module->name),
-                se_cons(se_symbolset_to_list(lm->si ? lm->si->provides : NULL),
-                se_cons(se_symbolset_to_list(lm->si ? lm->si->requires : NULL),
-                se_cons(se_stringset_to_list(lm->si ? lm->si->before : NULL),
-                se_cons(se_stringset_to_list(lm->si ? lm->si->after : NULL),
-                se_cons(se_symbolset_to_list(lm->si ? lm->si->uses : NULL),
-                se_cons((struct einit_sexp *)
-                          ((lm->module->mode & einit_feedback_job) ?
-                             sexp_true : sexp_false),
-                se_cons((struct einit_sexp *)
-                          ((lm->module->mode & einit_module_deprecated) ?
-                             sexp_true : sexp_false),
-                se_cons((struct einit_sexp *)sexp_end_of_list,
-                se_cons((struct einit_sexp *)sexp_end_of_list,
-                        (struct einit_sexp *)sexp_end_of_list))))))))))),
-                    (struct einit_sexp *)sexp_end_of_list));
+        struct einit_sexp *sp = se_cons(se_integer(id),
+                                        se_cons(se_cons
+                                                (se_symbol
+                                                 (lm->module->rid),
+                                                 se_cons(se_string
+                                                         (lm->module->
+                                                          name),
+                                                         se_cons
+                                                         (se_symbolset_to_list
+                                                          (lm->si ? lm->
+                                                           si->
+                                                           provides :
+                                                           NULL),
+                                                          se_cons
+                                                          (se_symbolset_to_list
+                                                           (lm->si ? lm->
+                                                            si->
+                                                            requires :
+                                                            NULL),
+                                                           se_cons
+                                                           (se_stringset_to_list
+                                                            (lm->si ? lm->
+                                                             si->
+                                                             before :
+                                                             NULL),
+                                                            se_cons
+                                                            (se_stringset_to_list
+                                                             (lm->si ? lm->
+                                                              si->
+                                                              after :
+                                                              NULL),
+                                                             se_cons
+                                                             (se_symbolset_to_list
+                                                              (lm->
+                                                               si ? lm->
+                                                               si->
+                                                               uses :
+                                                               NULL),
+                                                              se_cons((struct einit_sexp *)
+                                                                      ((lm->module->mode & einit_feedback_job) ? sexp_true : sexp_false),
+                                                                      se_cons
+                                                                      ((struct einit_sexp *)
+                                                                       ((lm->module->mode & einit_module_deprecated) ? sexp_true : sexp_false),
+                                                                       se_cons
+                                                                       ((struct einit_sexp *) sexp_end_of_list,
+                                                                        se_cons
+                                                                        ((struct einit_sexp *) sexp_end_of_list,
+                                                                         (struct einit_sexp *) sexp_end_of_list))))))))))),
+                                                (struct einit_sexp *)
+                                                sexp_end_of_list));
 
         char *r = einit_sexp_to_string(sp);
 
-//        fprintf (stderr, "reply: %s\n", r);
+        // fprintf (stderr, "reply: %s\n", r);
 
         einit_sexp_destroy(sp);
 
-        einit_ipc_write (r, cd->reader);
+        einit_ipc_write(r, cd->reader);
 
-        efree (r);
+        efree(r);
     } else {
-        fail:
+      fail:
 
-        einit_ipc_reply_simple (id, "#f", cd);
+        einit_ipc_reply_simple(id, "#f", cd);
     }
 }
 
@@ -375,41 +424,42 @@ void einit_ipc_library_get_service(struct einit_sexp *sexp, int id,
 void einit_ipc_library_module_do_bang(struct einit_sexp *sexp, int id,
                                       struct einit_ipc_connection *cd)
 {
-    struct einit_sexp *primus = se_car(sexp),
-    *secundus = se_car(se_cdr(sexp));
+    struct einit_sexp *primus = se_car(sexp), *secundus =
+        se_car(se_cdr(sexp));
 
     if ((primus->type == es_symbol) && (secundus->type == es_symbol)) {
-        einit_ipc_reply_simple (id, "#t", cd);
+        einit_ipc_reply_simple(id, "#t", cd);
 
-        struct lmodule *lm = mod_lookup_rid (primus->symbol);
+        struct lmodule *lm = mod_lookup_rid(primus->symbol);
 
-        if (strmatch (secundus->symbol, "enable")) {
-            mod (einit_module_enable, lm, NULL);
-        } else if (strmatch (secundus->symbol, "disable")) {
-            mod (einit_module_disable, lm, NULL);
+        if (strmatch(secundus->symbol, "enable")) {
+            mod(einit_module_enable, lm, NULL);
+        } else if (strmatch(secundus->symbol, "disable")) {
+            mod(einit_module_disable, lm, NULL);
         } else {
-            mod (einit_module_custom, lm, (char*)(secundus->symbol));
+            mod(einit_module_custom, lm, (char *) (secundus->symbol));
         }
     } else {
-        einit_ipc_reply_simple (id, "#f", cd);
+        einit_ipc_reply_simple(id, "#f", cd);
     }
 }
 
 void einit_ipc_library_service_do_bang(struct einit_sexp *sexp, int id,
                                        struct einit_ipc_connection *cd)
 {
-    struct einit_sexp *primus = se_car(sexp),
-    *secundus = se_car(se_cdr(sexp));
+    struct einit_sexp *primus = se_car(sexp), *secundus =
+        se_car(se_cdr(sexp));
 
     if ((primus->type == es_symbol) && (secundus->type == es_symbol)) {
-        einit_ipc_reply_simple (id, "#t", cd);
+        einit_ipc_reply_simple(id, "#t", cd);
 
-        struct einit_event ev = evstaticinit (einit_core_change_service_status);
-        ev.rid = (char*)(primus->symbol);
-        ev.string = (char*)(secundus->symbol);
-        event_emit (&ev, 0);
+        struct einit_event ev =
+            evstaticinit(einit_core_change_service_status);
+        ev.rid = (char *) (primus->symbol);
+        ev.string = (char *) (secundus->symbol);
+        event_emit(&ev, 0);
     } else {
-        einit_ipc_reply_simple (id, "#f", cd);
+        einit_ipc_reply_simple(id, "#f", cd);
     }
 }
 
@@ -417,13 +467,13 @@ void einit_ipc_library_service_switch_mode(struct einit_sexp *sexp, int id,
                                            struct einit_ipc_connection *cd)
 {
     if (sexp->type == es_symbol) {
-        einit_ipc_reply_simple (id, "#t", cd);
+        einit_ipc_reply_simple(id, "#t", cd);
 
-        struct einit_event ev = evstaticinit (einit_core_switch_mode);
-        ev.string = (char*)(sexp->symbol);
-        event_emit (&ev, 0);
+        struct einit_event ev = evstaticinit(einit_core_switch_mode);
+        ev.string = (char *) (sexp->symbol);
+        event_emit(&ev, 0);
     } else {
-        einit_ipc_reply_simple (id, "#t", cd);
+        einit_ipc_reply_simple(id, "#t", cd);
     }
 }
 

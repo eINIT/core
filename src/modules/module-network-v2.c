@@ -207,7 +207,7 @@ struct cfgnode **einit_module_network_v2_get_multiple_options(char
     esprintf(buffer, BUFFERSIZE, INTERFACES_PREFIX "-%s-%s", interface,
              option);
 
-    struct cfgnode **st = cfg_match (buffer);
+    struct cfgnode **st = cfg_match(buffer);
     if (st) {
         struct cfgnode **tcur = st;
         while (*tcur) {
@@ -600,8 +600,7 @@ char **einit_module_network_v2_add_configured_interfaces(char **interfaces)
                  */
                 if (!inset
                     ((const void **) interfaces,
-                     n->id + sizeof(INTERFACES_PREFIX),
-                     SET_TYPE_STRING)) {
+                     n->id + sizeof(INTERFACES_PREFIX), SET_TYPE_STRING)) {
                     interfaces =
                         set_str_add(interfaces,
                                     n->id + sizeof(INTERFACES_PREFIX));
@@ -796,8 +795,7 @@ void einit_module_network_v2_scanmodules(struct einit_event *ev)
         char doadd = 1;
 
         if (au) {
-            struct cfgnode *n =
-                cfg_getnode("services-alias-network");
+            struct cfgnode *n = cfg_getnode("services-alias-network");
             if (n && n->arbattrs) {
                 int i = 0;
                 for (; n->arbattrs[i]; i += 2) {
@@ -862,7 +860,7 @@ int einit_module_network_v2_do_dhcp(struct network_event_data *d,
     fprintf(stdout, "trying dhcp client: %s\n", client);
     int rv = status_failed;
 
-    struct cfgnode **st = cfg_match ("subsystem-network-dhcp-client");
+    struct cfgnode **st = cfg_match("subsystem-network-dhcp-client");
     if (st) {
         struct cfgnode **tcur = st;
         while (*tcur) {
@@ -873,8 +871,8 @@ int einit_module_network_v2_do_dhcp(struct network_event_data *d,
                     char *command = NULL;
                     char **need_binaries = NULL;
                     char *pidfile = NULL;
-                // char **environment = straddtoenviron (NULL,
-                // "interface", interface);
+                    // char **environment = straddtoenviron (NULL,
+                    // "interface", interface);
                     char **vars = set_str_add(NULL, "interface");
                     vars = set_str_add(vars, interface);
                     int i = 0;
@@ -882,25 +880,25 @@ int einit_module_network_v2_do_dhcp(struct network_event_data *d,
                     for (; node->arbattrs[i]; i += 2) {
                         if (strmatch(node->arbattrs[i], "need-binaries")) {
                             need_binaries =
-                                    str2set(':', node->arbattrs[i + 1]);
+                                str2set(':', node->arbattrs[i + 1]);
                         } else if ((d->action == interface_up)
-                                    && strmatch(node->arbattrs[i], "up")) {
-                        // command = node->arbattrs[i+1];
-                                        command =
-                                                apply_variables(node->arbattrs[i + 1],
+                                   && strmatch(node->arbattrs[i], "up")) {
+                            // command = node->arbattrs[i+1];
+                            command =
+                                apply_variables(node->arbattrs[i + 1],
                                                 (const char **) vars);
-                                    } else if ((d->action == interface_down)
-                                                && strmatch(node->arbattrs[i], "down")) {
-                        // command = node->arbattrs[i+1];
-                                                    command =
-                                                            apply_variables(node->arbattrs[i + 1],
-                                                            (const char **) vars);
-                                                } else if (strmatch(node->arbattrs[i], "pid")) {
-                        // command = node->arbattrs[i+1];
-                                                    pidfile =
-                                                            apply_variables(node->arbattrs[i + 1],
-                                                            (const char **) vars);
-                                                }
+                        } else if ((d->action == interface_down)
+                                   && strmatch(node->arbattrs[i], "down")) {
+                            // command = node->arbattrs[i+1];
+                            command =
+                                apply_variables(node->arbattrs[i + 1],
+                                                (const char **) vars);
+                        } else if (strmatch(node->arbattrs[i], "pid")) {
+                            // command = node->arbattrs[i+1];
+                            pidfile =
+                                apply_variables(node->arbattrs[i + 1],
+                                                (const char **) vars);
+                        }
                     }
 
                     if (command) {
@@ -913,8 +911,8 @@ int einit_module_network_v2_do_dhcp(struct network_event_data *d,
                                     efree(vars);
 
                                     fprintf(stdout,
-                                             "dhcp client not available: %s\n",
-                                             client);
+                                            "dhcp client not available: %s\n",
+                                            client);
 
                                     if (pidfile)
                                         efree(pidfile);
@@ -935,13 +933,13 @@ int einit_module_network_v2_do_dhcp(struct network_event_data *d,
                                    d->feedback);
                         if (rv == status_ok) {
                             fprintf(stdout, "dhcp client OK: %s\n",
-                                     client);
+                                    client);
 
                             if ((d->action == interface_down) && pidfile)
                                 unlink(pidfile);
                         } else if (rv == status_failed) {
                             fprintf(stdout, "dhcp client failed: %s\n",
-                                     client);
+                                    client);
                         }
                     }
 
@@ -1027,7 +1025,7 @@ void einit_module_network_v2_address_automatic(struct einit_event *ev)
                     }
                 } else {
                     fprintf(stdout,
-                             "dhcp requested, but no clients to try\n");
+                            "dhcp requested, but no clients to try\n");
 
                     d->status = status_failed;
                 }
@@ -1149,7 +1147,8 @@ void einit_module_network_v2_interface_construct(struct einit_event *ev)
                     int i = 0;
 
                     for (; v[i]; i++) {
-                        struct cfgnode **st = cfg_match ("subsystem-network-dhcp-client");
+                        struct cfgnode **st =
+                            cfg_match("subsystem-network-dhcp-client");
                         if (st) {
                             struct cfgnode **tcur = st;
                             while (*tcur) {
@@ -1160,51 +1159,51 @@ void einit_module_network_v2_interface_construct(struct einit_event *ev)
                                     if (node->arbattrs) {
                                         char *pidfile = NULL;
                                         char **vars =
-                                                set_str_add(NULL, "interface");
-                                        vars = set_str_add(vars, ev->string);
+                                            set_str_add(NULL, "interface");
+                                        vars =
+                                            set_str_add(vars, ev->string);
 
                                         int y = 0;
 
                                         for (; node->arbattrs[y]; y += 2) {
                                             if (strmatch
-                                                (node->arbattrs[y], "pid")) {
+                                                (node->arbattrs[y],
+                                                 "pid")) {
                                                 pidfile =
-                                                        apply_variables(node->
-                                                        arbattrs[y
-                                                        +
-                                                        1],
-                                                        (const char
-                                                                **) vars);
-                                                }
+                                                    apply_variables(node->
+                                                                    arbattrs
+                                                                    [y +
+                                                                     1],
+                                                                    (const
+                                                                     char
+                                                                     **)
+                                                                    vars);
+                                            }
                                         }
 
                                         if (pidfile) {
                                             char **fs =
-                                                    einit_module_network_v2_add_fs
-                                                    (NULL, pidfile);
+                                                einit_module_network_v2_add_fs
+                                                (NULL, pidfile);
 
                                             if (fs) {
                                                 char *a =
-                                                        einit_module_network_v2_generate_defer_fs
-                                                        (fs);
+                                                    einit_module_network_v2_generate_defer_fs
+                                                    (fs);
 
                                                 if (a) {
                                                     if (!inset
-                                                         ((const void **) d->
-                                                         static_descriptor->si.
-                                                         after, a,
-                                                            SET_TYPE_STRING)) {
+                                                        ((const void **)
+                                                         d->
+                                                         static_descriptor->
+                                                         si.after, a,
+                                                         SET_TYPE_STRING))
+                                                    {
 
-                                                                d->static_descriptor->
-                                                                        si.after =
-                                                                        set_str_add(d->
-                                                                        static_descriptor->
-                                                                        si.
-                                                                        after,
-                                                                        a);
-                                                            }
+                                                        d->static_descriptor->si.after = set_str_add(d->static_descriptor->si.after, a);
+                                                    }
 
-                                                            efree(a);
+                                                    efree(a);
                                                 }
                                             }
 
@@ -1213,7 +1212,7 @@ void einit_module_network_v2_interface_construct(struct einit_event *ev)
 
                                         efree(vars);
                                     }
-                                    }
+                                }
 
                                 tcur++;
                             }

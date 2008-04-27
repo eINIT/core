@@ -82,7 +82,7 @@ char **bsd_network_list_interfaces_ifconfig(int spawn_events)
             interfaces = str2set(' ', pr[0]);
         }
 
-        efree (pr);
+        efree(pr);
     }
 
     if (spawn_events) {

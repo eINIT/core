@@ -108,12 +108,13 @@ void set_module_status(char *name, enum einit_module_status status)
         s.status = status;
         s.progress = 0;
 
-        struct lmodule *lm = einit_get_core_module_descriptor (name);
+        struct lmodule *lm = einit_get_core_module_descriptor(name);
 
         if (lm) {
             s.name = lm->module->name;
-            s.feedback_job = (lm->module->mode & einit_feedback_job) ? 1 : 0;
-            einit_destroy_core_module_descriptor (lm);
+            s.feedback_job =
+                (lm->module->mode & einit_feedback_job) ? 1 : 0;
+            einit_destroy_core_module_descriptor(lm);
         } else {
             s.name = name;
         }
@@ -144,12 +145,13 @@ void set_module_progress(char *name, int p)
         s.status = status_idle;
         s.progress = p;
 
-        struct lmodule *lm = einit_get_core_module_descriptor (name);
+        struct lmodule *lm = einit_get_core_module_descriptor(name);
 
         if (lm) {
             s.name = lm->module->name;
-            s.feedback_job = (lm->module->mode & einit_feedback_job) ? 1 : 0;
-            einit_destroy_core_module_descriptor (lm);
+            s.feedback_job =
+                (lm->module->mode & einit_feedback_job) ? 1 : 0;
+            einit_destroy_core_module_descriptor(lm);
         } else {
             s.name = name;
         }
@@ -545,7 +547,8 @@ void update_do()
 
 void update()
 {
-    if (!updatesok) return;
+    if (!updatesok)
+        return;
 
     update_do();
 }
@@ -723,7 +726,7 @@ int main(int argc, char **argv, char **env)
 
     einit_event_loop();
 
-    endwin(); 
+    endwin();
 
     einit_disconnect();
 

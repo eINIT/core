@@ -42,7 +42,7 @@
 #include <unistd.h>
 #include <einit/einit.h>
 
-char process_alive_p (pid_t pid)
+char process_alive_p(pid_t pid)
 {
     char tmp[BUFFERSIZE];
     struct stat st;

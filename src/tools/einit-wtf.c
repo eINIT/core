@@ -51,60 +51,64 @@ enum test_result {
 
 char verbose = 0;
 
-enum test_result test_file_with_rnv (char *file)
+enum test_result test_file_with_rnv(char *file)
 {
     char buffer[BUFFERSIZE];
 
-    snprintf (buffer, BUFFERSIZE,
-              "rnv " EINIT_LIB_BASE "/schemata/einit.rnc %s 2>&1", file);
+    snprintf(buffer, BUFFERSIZE,
+             "rnv " EINIT_LIB_BASE "/schemata/einit.rnc %s 2>&1", file);
 
     char **rnvres = pget(buffer);
 
-    if (!rnvres) return test_failed;
-    else if (rnvres[1] || !strmatch (rnvres[0], file)) {
+    if (!rnvres)
+        return test_failed;
+    else if (rnvres[1] || !strmatch(rnvres[0], file)) {
         int i = 0;
-        fprintf (stdout, "\nfile \"%s\" contains errors:\n", file);
+        fprintf(stdout, "\nfile \"%s\" contains errors:\n", file);
 
         for (; rnvres[i]; i++) {
-            fprintf (stdout, " > %s \n", rnvres[i]);
+            fprintf(stdout, " > %s \n", rnvres[i]);
         }
 
         return test_failed;
     }
 
     if (verbose) {
-        fprintf (stdout, "%s ", file);
-        fflush (stdout);
+        fprintf(stdout, "%s ", file);
+        fflush(stdout);
     }
 
     return test_passed;
 }
 
-enum test_result test_all_files_with_rnv (char **files)
+enum test_result test_all_files_with_rnv(char **files)
 {
-    if (!files) return test_skipped;
+    if (!files)
+        return test_skipped;
 
     enum test_result res = test_passed;
     int i = 0;
 
     for (; files[i]; i++) {
-        if (test_file_with_rnv (files[i]) == test_failed)
+        if (test_file_with_rnv(files[i]) == test_failed)
             res = test_failed;
     }
 
     return res;
 }
 
-enum test_result test_all_dirs_with_rnv (char **dirs)
+enum test_result test_all_dirs_with_rnv(char **dirs)
 {
-    if (!dirs) return test_skipped;
+    if (!dirs)
+        return test_skipped;
 
     int i = 0;
     enum test_result res = test_passed;
 
     for (; dirs[i]; i++) {
-        if (test_all_files_with_rnv(
-              readdirfilter(NULL, dirs[i], "\\.xml$", NULL, 0)) == test_failed) {
+        if (test_all_files_with_rnv
+            (readdirfilter(NULL, dirs[i], "\\.xml$", NULL, 0)) ==
+            test_failed) {
             res = test_failed;
         }
     }
@@ -112,12 +116,13 @@ enum test_result test_all_dirs_with_rnv (char **dirs)
     return res;
 }
 
-enum test_result test_rnv ()
+enum test_result test_rnv()
 {
-    char **w = which ("rnv");
-    if (!w) return test_skipped;
+    char **w = which("rnv");
+    if (!w)
+        return test_skipped;
 
-    efree (w);
+    efree(w);
 
     char *dirs[] = {
         EINIT_LIB_BASE,
@@ -132,30 +137,29 @@ enum test_result test_rnv ()
     return test_all_dirs_with_rnv(dirs);
 }
 
-enum test_result test_mode_consistency ()
+enum test_result test_mode_consistency()
 {
     return test_skipped;
 }
 
-void run_test (char *message, enum test_result (*test_function)())
+void run_test(char *message, enum test_result (*test_function) ())
 {
-    fprintf (stdout, "%s: ", message);
-    fflush (stdout);
+    fprintf(stdout, "%s: ", message);
+    fflush(stdout);
 
     enum test_result result = test_function();
 
-    switch (result)
-    {
-        case test_passed:
-            fputs ("passed\n", stdout);
-            break;
-        case test_failed:
-            fputs ("failed\n", stdout);
-            have_issues++;
-            break;
-        case test_skipped:
-            fputs ("skipped\n", stdout);
-            break;
+    switch (result) {
+    case test_passed:
+        fputs("passed\n", stdout);
+        break;
+    case test_failed:
+        fputs("failed\n", stdout);
+        have_issues++;
+        break;
+    case test_skipped:
+        fputs("skipped\n", stdout);
+        break;
     }
 }
 
@@ -169,13 +173,13 @@ int main(int argc, char **argv)
     for (i = 1; i < argc; i++) {
         if (argv[i][0] == '-')
             switch (argv[i][1]) {
-                case 'v':
-                    verbose = 1;
+            case 'v':
+                verbose = 1;
             }
     }
 
-    run_test ("checking config files against schema", test_rnv);
-    run_test ("checking services in modes", test_mode_consistency);
+    run_test("checking config files against schema", test_rnv);
+    run_test("checking services in modes", test_mode_consistency);
 
     return have_issues;
 }

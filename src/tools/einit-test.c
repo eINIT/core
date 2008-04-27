@@ -83,13 +83,13 @@ int main(int argc, char **argv)
     if (!einit_connect(&argc, argv)) {
         return 0;
     }
-
 #if 0
     char ***p = einit_get_configuration_prefix("c");
     if (p) {
         int i = 0;
         for (; p[i]; i++) {
-            fprintf (stderr, "key=%s, arbattrs=(%s)\n", p[i][0], set2str(' ', p[i]+1));
+            fprintf(stderr, "key=%s, arbattrs=(%s)\n", p[i][0],
+                    set2str(' ', p[i] + 1));
         }
     }
 #endif

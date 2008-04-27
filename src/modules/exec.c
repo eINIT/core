@@ -1166,13 +1166,17 @@ int einit_exec_configure(struct lmodule *irr)
 
     int i = 0;
 
-    if ((i = cfg_getinteger ("configuration-system-daemon-spawn-timeout")))
+    if ((i = cfg_getinteger("configuration-system-daemon-spawn-timeout")))
         spawn_timeout = i;
 
-    if ((i = cfg_getinteger ("configuration-system-daemon-term-timeout-primary")))
+    if ((i =
+         cfg_getinteger
+         ("configuration-system-daemon-term-timeout-primary")))
         kill_timeout_primary = i;
 
-    if ((i = cfg_getinteger ("configuration-system-daemon-term-timeout-secondary")))
+    if ((i =
+         cfg_getinteger
+         ("configuration-system-daemon-term-timeout-secondary")))
         kill_timeout_secondary = i;
 
     function_register("einit-execute-command", 1, pexec_f);

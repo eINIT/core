@@ -162,7 +162,8 @@ int dispatcher_configure(struct lmodule *pa)
 
         dispatcher_bootchart =
             ((node =
-              cfg_getnode("configuration-bootchart-active")) ? node->flag : 0);
+              cfg_getnode("configuration-bootchart-active")) ? node->
+             flag : 0);
     }
 
     if (dispatcher_psplash) {

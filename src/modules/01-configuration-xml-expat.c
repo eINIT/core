@@ -146,14 +146,14 @@ void cfg_xml_handler_tag_start(void *userData, const XML_Char * name,
          * mode-definition 
          */
         struct cfgnode newnode;
-        memset (&newnode, 0, sizeof (struct cfgnode));
+        memset(&newnode, 0, sizeof(struct cfgnode));
         newnode.arbattrs = set_str_dup_stable((char **) atts);
         char *idattr = NULL;
 
         for (; newnode.arbattrs[i] != NULL; i += 2) {
             if (strmatch(newnode.arbattrs[i], "id")) {
                 idattr =
-                        (char *) str_stabilise((char *) newnode.
+                    (char *) str_stabilise((char *) newnode.
                                            arbattrs[i + 1]);
             }
         }
@@ -235,7 +235,7 @@ void cfg_xml_handler_tag_start(void *userData, const XML_Char * name,
              */
             struct cfgnode newnode;
 
-            memset (&newnode, 0, sizeof (struct cfgnode));
+            memset(&newnode, 0, sizeof(struct cfgnode));
 
             newnode.id = (char *)
                 str_stabilise(((struct einit_xml_expat_user_data *)
@@ -243,19 +243,18 @@ void cfg_xml_handler_tag_start(void *userData, const XML_Char * name,
             newnode.arbattrs = set_str_dup_stable((char **) atts);
             if (newnode.arbattrs)
                 for (; newnode.arbattrs[i] != NULL; i += 2) {
-                if (strmatch(newnode.arbattrs[i], "s"))
-                    newnode.svalue =
-                            (char *) newnode.arbattrs[i + 1];
-                else if (strmatch(newnode.arbattrs[i], "i"))
-                    newnode.value =
+                    if (strmatch(newnode.arbattrs[i], "s"))
+                        newnode.svalue = (char *) newnode.arbattrs[i + 1];
+                    else if (strmatch(newnode.arbattrs[i], "i"))
+                        newnode.value =
                             parse_integer(newnode.arbattrs[i + 1]);
-                else if (strmatch(newnode.arbattrs[i], "b")) {
-                    newnode.flag =
+                    else if (strmatch(newnode.arbattrs[i], "b")) {
+                        newnode.flag =
                             parse_boolean(newnode.arbattrs[i + 1]);
                     }
                 }
 
-                newnode.modename = ud->mode;
+            newnode.modename = ud->mode;
             if (cfg_addnode(&newnode) != -1)
                 ud->adds++;
         }
