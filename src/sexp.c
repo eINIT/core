@@ -356,7 +356,7 @@ void einit_sexp_display(struct einit_sexp *sexp)
 {
     char *x = einit_sexp_to_string(sexp);
     if (x) {
-        fputs(x, stdout);
+        fprintf(stdout, "%s\n", x);
         efree(x);
     }
 }

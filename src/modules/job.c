@@ -42,8 +42,15 @@
 #include <einit/module.h>
 #include <einit/config.h>
 #include <einit/bitch.h>
+#include <einit/sexp.h>
+#include <einit/exec.h>
+#include <einit/ipc.h>
 #include <errno.h>
 #include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <sys/socket.h>
 
 #define EXPECTED_EIV 1
 
@@ -58,7 +65,7 @@ const struct smodule einit_job_self = {
     .eibuild = BUILDNUMBER,
     .version = 1,
     .mode = 0,
-    .name = "eINIT Job and Subcore Support",
+    .name = "eINIT Job Support",
     .rid = "einit-job",
     .si = {
            .provides = NULL,
@@ -70,9 +77,176 @@ const struct smodule einit_job_self = {
 
 module_register(einit_job_self);
 
+struct einit_job {
+    const char *name;
+    char **run_on;
+    struct lmodule *module;
+};
+
+struct stree *einit_jobs = NULL;
+
+void einit_job_add_or_update (struct einit_sexp *s)
+{
+    einit_sexp_display (s);
+
+    struct einit_sexp *primus = se_car (s);
+    struct einit_sexp *secundus = se_car (se_cdr(s));
+    struct einit_sexp *tertius = se_car (se_cdr(se_cdr(s)));
+    struct einit_sexp *rest = se_cdr(se_cdr(se_cdr(s)));
+
+    if ((primus->type == es_symbol) && strmatch (primus->symbol, "job") &&
+        (secundus->type == es_symbol) && (tertius->type == es_string)) {
+        struct einit_job j = { tertius->string, NULL, NULL };
+        char buffer[BUFFERSIZE];
+        const char *binary;
+
+        snprintf (buffer, BUFFERSIZE, "job-%s", secundus->symbol);
+        binary = str_stabilise(buffer);
+
+        while (rest->type == es_cons) {
+            primus = se_car(se_car(rest));
+            secundus = se_cdr(se_car(rest));
+
+            if (primus->type == es_symbol) {
+                if (strmatch(primus->symbol, "run-on")) {
+                    while (secundus->type == es_cons) {
+                        primus = se_car (secundus);
+
+                        if (primus->type == es_symbol) {
+                            j.run_on = (char **)set_noa_add
+                                    ((void **)j.run_on, (void *)primus->symbol);
+                        }
+
+                        secundus = se_cdr (secundus);
+                    }
+                }
+            }
+
+            rest = se_cdr (rest);
+        }
+
+        struct lmodule *lm;
+        snprintf (buffer, BUFFERSIZE, "j-%s", binary);
+
+        if (!(lm = mod_lookup_rid (buffer))) {
+            struct smodule *sm = ecalloc (1, sizeof (struct smodule));
+
+            sm->name = (char *)j.name;
+            sm->rid = (char *)str_stabilise (buffer);
+
+            lm = mod_add_or_update(NULL, sm, substitue_and_prune);
+        }
+
+        if (lm) {
+            j.module = lm;
+        }
+
+        if (einit_jobs) {
+            struct stree *st = streefind (einit_jobs, binary, tree_find_first);
+            if (st) {
+                efree (st->luggage);
+                st->luggage = j.run_on;
+                memcpy (st->value, &j, sizeof (struct einit_job));
+                return;
+            }
+        }
+
+        einit_jobs = streeadd(einit_jobs, binary, &j, sizeof (struct einit_job),
+                              j.run_on);
+    }
+}
+
+void einit_jobs_update()
+{
+    char **files =
+            readdirfilter(NULL, EINIT_LIB_BASE "/jobs", "\\.sexpr$", NULL, 0);
+
+    if (files) {
+        int i = 0;
+        for (; files[i]; i++) {
+            int fd = open (files[i], O_RDONLY);
+            if (fd < 0) continue;
+
+            struct einit_sexp_fd_reader *r = einit_create_sexp_fd_reader(fd);
+            struct einit_sexp *s;
+
+            while ((s = einit_read_sexp_from_fd_reader(r)) != sexp_bad) {
+                if (s) {
+                    einit_job_add_or_update(s);
+                }
+            }
+        }
+    }
+}
+
+void einit_job_run_dead_process_callback (struct einit_exec_data *d)
+{
+}
+
+void einit_job_run(struct einit_job *j, const char *binary, const char *event)
+{
+    notice (1, "running job \"%s\" for event \"%s\"", j->name, event);
+
+    char *path = joinpath (EINIT_LIB_BASE "/bin/", (char *)binary);
+    if (path) {
+        char *rpath = path;
+        struct stat st;
+        int ipcsocket[2];
+        char sstring[33];
+
+        if (coremode & einit_mode_sandbox) rpath++;
+
+        if (stat (rpath, &st)) {
+            notice (1,
+                    "failed to run job \"%s\" for event \"%s\": missing "
+                    "binary (%s)", j->name, event, binary);
+            return;
+        }
+
+        if (socketpair(AF_UNIX, SOCK_STREAM, 0, ipcsocket) == -1) {
+            return;
+        }
+
+        fcntl(ipcsocket[1], F_SETFD, FD_CLOEXEC);
+
+        snprintf (sstring, 33, "%i", ipcsocket[0]);
+
+        char *cmd[] = { rpath, (char *)event, "--socket", sstring, NULL, NULL };
+
+        if (coremode & einit_mode_sandbox) {
+            cmd[4] = "--sandbox";
+        }
+
+        einit_exec_without_shell_with_function_on_process_death(cmd,
+                einit_job_run_dead_process_callback, j->module);
+
+        einit_ipc_connect_client (ipcsocket[1]);
+
+        efree (path);
+    }
+}
+
+void einit_jobs_run(const char *event)
+{
+    struct stree *st = streelinear_prepare (einit_jobs);
+    while (st) {
+        struct einit_job *j = st->value;
+
+        if (j->run_on &&
+            inset ((const void **)j->run_on, event, SET_TYPE_STRING)) {
+            einit_job_run (j, st->key, event);
+        }
+
+        st = streenext (st);
+    }
+}
+
 int einit_job_configure(struct lmodule *irr)
 {
     module_init(irr);
+
+    einit_jobs_update();
+    einit_jobs_run("core-initialisation");
 
     return 1;
 }

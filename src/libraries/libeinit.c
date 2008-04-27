@@ -132,6 +132,9 @@ char einit_connect(int *argc, char **argv)
                 case '-':
                     if (strmatch(argv[i], "--socket") && ((++i) < (*argc)))
                         einit_ipc_socket = parse_integer(argv[i]);
+                    else if (strmatch(argv[i], "--sandbox")) {
+                        coremode |= einit_mode_sandbox;
+                    }
                 }
         }
     }
@@ -807,4 +810,20 @@ char **einit_list_modules()
 char **einit_list_services()
 {
     return einit_list("services");
+}
+
+/* TODO: finish */
+void einit_set_configuration (char *key, char *mode, char **attributes)
+{
+    if (!attributes || !key) return;
+
+    struct einit_sexp *s;
+
+    if (mode) {
+        s = (struct einit_sexp *)sexp_end_of_list;
+    } else {
+        s = (struct einit_sexp *)sexp_end_of_list;
+    }
+
+    einit_ipc_request("set-configuration!", se_symbol(mode));
 }

@@ -1,2 +1,3 @@
 (job xml-expat "eINIT Configuration (.xml, using expat)"
+  (wait #t)
   (run-on core-initialisation))

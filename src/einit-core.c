@@ -610,17 +610,21 @@ int main(int argc, char **argv, char **environ)
                     doboot = 0;
                     coremode |= einit_mode_ipconly;
                 } else if (strmatch(argv[i], "--socket") && argv[i + 1]) {
-                    einit_ipc_connect_client(parse_integer(argv[i + 1]));
+                    int fd = parse_integer(argv[i + 1]);
+                    einit_ipc_connect_client(fd);
                     i++;
+                    fcntl(fd, F_SETFD, FD_CLOEXEC);
                 } else if (strmatch(argv[i], "--ipc-socket")
                            && argv[i + 1]) {
+                    int fd = parse_integer(argv[i + 1]);
 #if defined(__linux__) && defined(PR_SET_NAME)
                     prctl(PR_SET_NAME, "einit [ipc]", 0, 0, 0);
 #endif
-                    einit_ipc_connect_client(parse_integer(argv[i + 1]));
+                    einit_ipc_connect_client(fd);
                     i++;
                     doboot = 0;
                     coremode |= einit_mode_ipconly;
+                    fcntl(fd, F_SETFD, FD_CLOEXEC);
                 }
 
                 break;

@@ -181,6 +181,8 @@ extern "C" {
     char **einit_list_modules();
     char **einit_list_services();
 
+    void einit_set_configuration (char *key, char *mode, char **attributes);
+
 #ifdef __cplusplus
 }
 #endif

@@ -57,6 +57,8 @@ ccenv.Install (InstallDirLibBin, ccenv.Program ('einit-core', CodeCoreObjects + 
 cenv.Install (InstallDirLibBin, cenv.Program ('einit-wtf', ['tools/einit-wtf.c']))
 cenv.Install (InstallDirLibBin, cenv.Program ('einit-test',  ['tools/einit-test.c']))
 
+cenv.Install (InstallDirLibBin, cenv.Program ('job-xml-expat',  ['jobs/xml-expat.c']))
+
 cenv.Install (InstallDirLibBin, cenv.Program ('einit-helper', CodeEinitHelper))
 cenv.Install (InstallDirLibBin, cenv.Program ('last-rites', CodeLastRites))
 
