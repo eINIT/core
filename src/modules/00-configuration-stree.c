@@ -481,32 +481,6 @@ struct cfgnode **cfg_match(const char *name)
     return retval;
 }
 
-/*
- * those i-could've-sworn-there-were-library-functions-for-that functions 
- */
-char *cfg_getpath(const char *id)
-{
-    int mplen;
-    char *svpath = cfg_getstring(id);
-    if (!svpath) {
-        return NULL;
-    }
-    mplen = strlen(svpath) + 1;
-    if (svpath[mplen - 2] != '/') {
-        // if (svpath->path) return svpath->path;
-        char *tmpsvpath = (char *) emalloc(mplen + 1);
-        tmpsvpath[0] = 0;
-
-        strcat(tmpsvpath, svpath);
-        tmpsvpath[mplen - 1] = '/';
-        tmpsvpath[mplen] = 0;
-        // svpath->svalue = tmpsvpath;
-        // svpath->path = tmpsvpath;
-        return tmpsvpath;
-    }
-    return svpath;
-}
-
 void
 einit_configuration_stree_einit_event_handler_core_configuration_update
 (struct einit_event *ev)

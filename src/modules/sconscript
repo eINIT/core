@@ -1,6 +1,6 @@
-Import(['env', 'InternalModules', 'ExpatObjects', 'ModulesLinux', 'ModulesBSD'])
+Import(['env', 'InternalModules', 'ModulesLinux', 'ModulesBSD'])
 
-InternalModuleObjects = ['#build/core/module-configuration.c'] + ExpatObjects
+InternalModuleObjects = ['#build/core/module-configuration.c']
 
 def buildInternalModule(name, location, e):
  tm = name.replace('-', '_')

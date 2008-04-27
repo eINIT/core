@@ -3,7 +3,7 @@
  <core>
   <settings>
    <configuration>
-    <multi-node-variables allow="^(core-((commands-include-(file|directory))))|configuration-(storage-fstab-node)$" />
+    <multi-node-variables allow="^configuration-storage-fstab-node$" />
    </configuration>
 
    <configuration-path s="/etc/einit/" />

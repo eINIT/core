@@ -206,6 +206,8 @@ char einit_ipc_loop()
 
         // efree(r);
 
+//        einit_sexp_display(sexp);
+
         if ((sexp->type == es_cons) && (sexp->secundus->type == es_cons)) {
             if ((sexp->primus->type == es_integer)
                 && (sexp->secundus->secundus->type == es_list_end)) {
@@ -330,9 +332,7 @@ struct einit_sexp *einit_ipc_request_sexp_raw(struct einit_sexp *request)
     int fd = einit_ipc_client_rd->fd;
 
     char *r = einit_sexp_to_string(request);
-    write(fd, r, strlen(r));
-    fsync(fd);
-    // fprintf (stderr, "REQUEST: %s\n", r);
+    einit_ipc_write(r, einit_ipc_client_rd);
     efree(r);
 
     einit_sexp_destroy(request);
@@ -402,4 +402,6 @@ void einit_ipc_write(char *s, struct einit_sexp_fd_reader *rd)
         fprintf(stderr, "SHORT WRITE!\n");
         einit_ipc_write(s + len, rd);
     }
+
+    fsync(rd->fd);
 }

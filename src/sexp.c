@@ -81,19 +81,22 @@ static struct einit_sexp *einit_parse_string_in_buffer(char *buffer,
 
 
     for (; (*index) < stop; (*index)++) {
+        char skip = 0;
+
         if (sc_quote) {
             if (sb_pos < (MAX_STRING_SIZE - 1)) {
                 stbuffer[sb_pos] = buffer[*index];
                 sb_pos++;
             }
-            sc_quote ^= sc_quote;
+            sc_quote = 0;
 
             continue;
         }
 
         switch (buffer[*index]) {
         case '\\':
-            sc_quote ^= sc_quote;
+            sc_quote = 1;
+            skip = 1;
             break;
         case '"':
             stbuffer[sb_pos] = 0;
@@ -109,6 +112,8 @@ static struct einit_sexp *einit_parse_string_in_buffer(char *buffer,
         default:
             break;
         }
+
+        if (skip) continue;
 
         if (sb_pos < (MAX_STRING_SIZE - 1)) {
             stbuffer[sb_pos] = buffer[*index];

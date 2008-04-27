@@ -88,7 +88,7 @@ AssemblyDir = '#asm/' + arch + '-' + uname.lower() + '-' + libc
 
 coreStatic = False;
 
-SpecialModules = ['00-configuration-stree', '01-configuration-xml-expat']
+SpecialModules = ['00-configuration-stree']
 
 Modules = []
 

@@ -815,15 +815,26 @@ char **einit_list_services()
 /* TODO: finish */
 void einit_set_configuration (char *key, char *mode, char **attributes)
 {
-    if (!attributes || !key) return;
+    if (!attributes || !key || !attributes[0]) return;
 
     struct einit_sexp *s;
 
-    if (mode) {
-        s = (struct einit_sexp *)sexp_end_of_list;
-    } else {
-        s = (struct einit_sexp *)sexp_end_of_list;
+    struct einit_sexp *attrs = (struct einit_sexp *)sexp_end_of_list;
+    int i = 0;
+
+    for (; attributes[i]; i+=2) {
+        attrs = se_cons (se_cons (se_symbol (attributes[i]),
+                         se_cons (se_string (attributes[i+1]),
+                                  (struct einit_sexp *)sexp_end_of_list)),
+                                   attrs);
     }
 
-    einit_ipc_request("set-configuration!", se_symbol(mode));
+    if (mode) {
+        s = se_cons (se_symbol(key),
+            se_cons (se_symbol(mode), attrs));
+    } else {
+        s = se_cons (se_symbol(key), attrs);
+    }
+
+    einit_ipc_request("set-configuration!", s);
 }

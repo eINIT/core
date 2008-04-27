@@ -480,13 +480,15 @@ void einit_ipc_library_service_switch_mode(struct einit_sexp *sexp, int id,
 void einit_ipc_library_set_configuration(struct einit_sexp *sexp, int id,
                                          struct einit_ipc_connection *cd)
 {
+//    einit_sexp_display (sexp);
+
     struct einit_sexp *primus = se_car(sexp), *rest = se_cdr(sexp), *secundus;
 
     if ((primus->type == es_symbol) && (rest->type == es_cons)) {
         struct cfgnode nnode;
         memset (&nnode, 0, sizeof (struct cfgnode));
 
-        nnode.id = primus->symbol;
+        nnode.id = (char *)primus->symbol;
 
         primus = se_car (rest);
         if (primus->type == es_symbol) {
