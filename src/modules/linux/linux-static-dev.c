@@ -101,6 +101,12 @@ void linux_static_dev_post_load_kernel_extensions(struct einit_exec_data
 
 void linux_static_dev_boot_event_handler(struct einit_event *ev)
 {
+    char *dm = cfg_getstring("configuration-system-device-manager");
+
+    if (!dm || strcmp(dm, "static-dev")) {
+        return;
+    }
+
     linux_static_dev_enabled = 1;
 
     mount("proc", "/proc", "proc", 0, NULL);
@@ -142,12 +148,6 @@ void linux_static_dev_boot_event_handler(struct einit_event *ev)
 int linux_static_dev_configure(struct lmodule *pa)
 {
     module_init(pa);
-
-    char *dm = cfg_getstring("configuration-system-device-manager");
-
-    if (!dm || strcmp(dm, "static")) {
-        return status_configure_failed | status_not_in_use;
-    }
 
     event_listen(einit_boot_early, linux_static_dev_boot_event_handler);
 

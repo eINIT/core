@@ -95,7 +95,7 @@ retrieve loads of config data by means of a common prefix. prefix is a symbol
 * (request set-configuration! (key (attribute value) (attribute value)))
 * (request set-configuration! (key mode (attribute value) (attribute value)))
   (tag #t/#f)
-set configuration variables. use set-configuration* to set multiple keys.
+set configuration variables.
 keys and attributes need to be symbols, values need to be strings
 mode is an optional symbol, and if present designates the mode that the config
 applies to. it must occur between 'key' and the first attribute/value pair

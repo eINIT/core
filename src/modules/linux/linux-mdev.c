@@ -119,6 +119,12 @@ void linux_mdev_post_execute(struct einit_exec_data *xd)
 
 void linux_mdev_run()
 {
+    char *dm = cfg_getstring("configuration-system-device-manager");
+
+    if (!dm || strcmp(dm, "mdev")) {
+        return;
+    }
+
     mount("proc", "/proc", "proc", 0, NULL);
     mount("sys", "/sys", "sysfs", 0, NULL);
     mount("mdev", "/dev", "tmpfs", 0, NULL);
@@ -165,12 +171,6 @@ void linux_mdev_run()
 int linux_mdev_configure(struct lmodule *pa)
 {
     module_init(pa);
-
-    char *dm = cfg_getstring("configuration-system-device-manager");
-
-    if (!dm || strcmp(dm, "mdev")) {
-        return status_configure_failed | status_not_in_use;
-    }
 
     event_listen(einit_boot_early, linux_mdev_run);
 

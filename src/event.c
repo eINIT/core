@@ -545,6 +545,9 @@ char *event_code_to_string(const uint32_t code)
         return "laptop/lid-open";
     case einit_laptop_lid_closed:
         return "laptop/lid-closed";
+
+    case einit_job_all_done:
+        return "job/all-done";
     }
 
     switch (code & EVENT_SUBSYSTEM_MASK) {
@@ -570,6 +573,9 @@ char *event_code_to_string(const uint32_t code)
 
     case einit_event_subsystem_laptop:
         return "laptop/unknown";
+
+    case einit_event_subsystem_job:
+        return "job/unknown";
 
     case einit_event_subsystem_any:
         return "any";
@@ -606,6 +612,8 @@ uint32_t event_string_to_code(const char *code)
             ret = einit_event_subsystem_hotplug;
         else if (strmatch(tcode[0], "laptop"))
             ret = einit_event_subsystem_laptop;
+        else if (strmatch(tcode[0], "job"))
+            ret = einit_event_subsystem_job;
         else if (strmatch(tcode[0], "any"))
             ret = einit_event_subsystem_any;
         else if (strmatch(tcode[0], "custom"))
@@ -788,6 +796,10 @@ uint32_t event_string_to_code(const char *code)
                     ret = einit_laptop_lid_open;
                 else if (strmatch(tcode[1], "lid-closed"))
                     ret = einit_laptop_lid_closed;
+                break;
+            case einit_event_subsystem_job:
+                if (strmatch(tcode[1], "all-done"))
+                    ret = einit_job_all_done;
                 break;
             }
 

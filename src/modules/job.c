@@ -84,6 +84,7 @@ struct einit_job {
 };
 
 struct stree *einit_jobs = NULL;
+int einit_jobs_running = 0;
 
 void einit_job_add_or_update (struct einit_sexp *s)
 {
@@ -181,6 +182,13 @@ void einit_jobs_update()
 
 void einit_job_run_dead_process_callback (struct einit_exec_data *d)
 {
+    einit_jobs_running--;
+
+    if (!einit_jobs_running) {
+        struct einit_event ev = evstaticinit(einit_job_all_done);
+        event_emit (&ev, 0);
+        evstaticdestroy (ev);
+    }
 }
 
 void einit_job_run(struct einit_job *j, const char *binary, const char *event)
@@ -221,6 +229,7 @@ void einit_job_run(struct einit_job *j, const char *binary, const char *event)
                 einit_job_run_dead_process_callback, j->module);
 
         einit_ipc_connect_client (ipcsocket[1]);
+        einit_jobs_running++;
 
         efree (path);
     }

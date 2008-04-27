@@ -234,6 +234,13 @@ void linux_udev_post_execute(struct einit_exec_data *xd)
  */
 void linux_udev_run()
 {
+    char *dm = cfg_getstring("configuration-system-device-manager");
+
+    if (dm && strcmp(dm, "udev")) {
+        /* default, if nothing else configured, is to use udev */
+        return;
+    }
+
     struct stat st;
 
     mount("proc", "/proc", "proc", 0, NULL);
@@ -322,12 +329,6 @@ void linux_udev_shutdown_imminent()
 int linux_udev_configure(struct lmodule *pa)
 {
     module_init(pa);
-
-    char *dm = cfg_getstring("configuration-system-device-manager");
-
-    if (strcmp(dm, "udev")) {
-        return status_configure_failed | status_not_in_use;
-    }
 
     event_listen(einit_boot_early, linux_udev_run);
     event_listen(einit_power_down_imminent, linux_udev_shutdown_imminent);

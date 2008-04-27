@@ -157,6 +157,7 @@ void sched_signal_sigchld(int, siginfo_t *, void *);
 void sched_run_sigchild();
 
 char sigint_called = 0;
+char do_run_early_bootup = 0;
 
 int einit_alarm_pipe_write;
 int einit_alarm_pipe_read = -1;
@@ -485,16 +486,7 @@ int einit_main_loop(char early_bootup)
     einit_add_fd_prepare_function(einit_raw_ipc_prepare);
     einit_add_fd_handler_function(einit_raw_ipc_handle);
 
-    if (early_bootup) {
-        event_listen(einit_boot_root_device_ok,
-                     core_event_einit_boot_root_device_ok);
-
-        fprintf(stderr, "running early bootup code...\n");
-
-        struct einit_event eml = evstaticinit(einit_boot_early);
-        event_emit(&eml, 0);
-        evstaticdestroy(eml);
-    }
+    do_run_early_bootup = early_bootup;
 
     while (1) {
         int selectres;
@@ -532,6 +524,21 @@ void core_process_died(struct einit_event *ev)
     }
 }
 
+void core_einit_core_einit_job_all_done(struct einit_event *ev) {
+    if (do_run_early_bootup) {
+        do_run_early_bootup = 0;
+
+        event_listen(einit_boot_root_device_ok,
+                     core_event_einit_boot_root_device_ok);
+
+        fprintf(stderr, "running early bootup code...\n");
+
+        struct einit_event eml = evstaticinit(einit_boot_early);
+        event_emit(&eml, 0);
+        evstaticdestroy(eml);
+    }
+}
+
 /*
  * t3h m41n l00ps0rzZzzz!!!11!!!1!1111oneeleven11oneone11!!11 
  */
@@ -557,6 +564,9 @@ int main(int argc, char **argv, char **environ)
     event_listen(einit_core_module_action_complete,
                  core_einit_core_module_action_complete);
     event_listen(einit_process_died, core_process_died);
+
+    event_listen(einit_job_all_done,
+                 core_einit_core_einit_job_all_done);
 
     if (argv)
         einit_argv = set_str_dup_stable(argv);

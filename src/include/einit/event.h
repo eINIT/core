@@ -81,6 +81,8 @@ extern "C" {
         einit_event_subsystem_ipc_v2 = 0x0000b000,
         einit_event_subsystem_laptop = 0x0000c000,
 
+        einit_event_subsystem_job = 0x0000d000,
+
         einit_event_subsystem_any = 0xffffe000,
         /*
          * !< match any subsystem... mostly intended to be used for
@@ -298,6 +300,11 @@ extern "C" {
         einit_ipc_enabling = einit_event_subsystem_ipc_v2 | 0x010,
         einit_ipc_disabling = einit_event_subsystem_ipc_v2 | 0x011,
         einit_ipc_disable = einit_event_subsystem_ipc_v2 | 0x012,
+
+        /*
+         * einit_event_subsystem_job: 
+        */
+        einit_job_all_done = einit_event_subsystem_job | 0x001,
 
         /*
          * einit_event_subsystem_laptop: 
