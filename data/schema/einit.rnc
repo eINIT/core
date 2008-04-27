@@ -294,7 +294,7 @@ FSTab =
     attribute before { text }?,
     attribute after { text }?
   }* &
-  element use-legacy-fstab { BooleanAttribute }? &
+  element use-legacy-fstab { BooleanAttribute }?
 
 Information =
   element information {
