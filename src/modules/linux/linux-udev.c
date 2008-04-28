@@ -137,7 +137,7 @@ void linux_udev_post_udevsettle(struct einit_exec_data *xd)
      * let's not forget about raid setups and the like here... 
      */
     if (!stat("/sbin/lvm", &st)) {
-        char *xtx[] = { "/sbin/lvm", "vgscan", "-P", "--mkdnodes",
+        char *xtx[] = { "/sbin/lvm", "vgscan", "-P", "--mknodes",
             "--ignorelockingfailure", NULL
         };
         einit_exec_without_shell_with_function_on_process_death(xtx,
