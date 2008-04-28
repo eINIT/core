@@ -1,3 +1,4 @@
 (server chicken "eINIT Chicken Scheme Module Support"
+  (pass-socket #f)
   (need-files "/usr/lib/." "/dev/einit")
   (environment "CHICKEN_REPOSITORY=/lib/einit/chicken"))

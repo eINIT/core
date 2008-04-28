@@ -87,6 +87,7 @@ struct einit_server {
     const char *name;
     char **need_files;
     char **environment;
+    char pass_socket;
     struct lmodule *module;
 };
 
@@ -170,7 +171,7 @@ void einit_job_add_or_update (struct einit_sexp *s)
     } else if ((primus->type == es_symbol) &&
                 strmatch (primus->symbol, "server") &&
                 (secundus->type == es_symbol) && (tertius->type == es_string)) {
-        struct einit_server s = { tertius->string, NULL, NULL };
+        struct einit_server s = { tertius->string, NULL, NULL, 1, NULL };
         char buffer[BUFFERSIZE];
         const char *binary;
 
@@ -204,6 +205,9 @@ void einit_job_add_or_update (struct einit_sexp *s)
 
                         secundus = se_cdr (secundus);
                     }
+                } else if (strmatch(primus->symbol, "pass-socket")) {
+                    primus = se_car (secundus);
+                    s.pass_socket = (primus == sexp_true);
                 }
 
             }
@@ -337,7 +341,6 @@ void einit_server_run(struct einit_server *s, const char *binary)
     if (path) {
         char *rpath = path;
         struct stat st;
-        int ipcsocket[2];
         char sstring[33];
 
         if (coremode & einit_mode_sandbox) rpath++;
@@ -349,31 +352,51 @@ void einit_server_run(struct einit_server *s, const char *binary)
             return;
         }
 
-        if (socketpair(AF_UNIX, SOCK_STREAM, 0, ipcsocket) == -1) {
-            return;
+        if (s->pass_socket) {
+            int ipcsocket[2];
+
+            if (socketpair(AF_UNIX, SOCK_STREAM, 0, ipcsocket) == -1) {
+                return;
+            }
+
+            fcntl(ipcsocket[1], F_SETFD, FD_CLOEXEC);
+
+            snprintf (sstring, 33, "%i", ipcsocket[0]);
+
+            char *cmd[] = { rpath, "--socket", sstring, NULL, NULL };
+
+            if (coremode & einit_mode_sandbox) {
+                cmd[3] = "--sandbox";
+            }
+
+            struct einit_exec_data *x = ecalloc(1, sizeof(struct einit_exec_data));
+
+            x->command_d = cmd;
+            x->options = einit_exec_no_shell;
+            x->module = s->module;
+            x->handle_dead_process = einit_server_run_dead_process_callback;
+            x->environment = s->environment;
+
+            einit_exec(x);
+
+            einit_ipc_connect_client (ipcsocket[1]);
+        } else {
+            char *cmd[] = { rpath, NULL, NULL };
+
+            if (coremode & einit_mode_sandbox) {
+                cmd[1] = "--sandbox";
+            }
+
+            struct einit_exec_data *x = ecalloc(1, sizeof(struct einit_exec_data));
+
+            x->command_d = cmd;
+            x->options = einit_exec_no_shell;
+            x->module = s->module;
+            x->handle_dead_process = einit_server_run_dead_process_callback;
+            x->environment = s->environment;
+
+            einit_exec(x);
         }
-
-        fcntl(ipcsocket[1], F_SETFD, FD_CLOEXEC);
-
-        snprintf (sstring, 33, "%i", ipcsocket[0]);
-
-        char *cmd[] = { rpath, "--socket", sstring, NULL, NULL };
-
-        if (coremode & einit_mode_sandbox) {
-            cmd[3] = "--sandbox";
-        }
-
-        struct einit_exec_data *x = ecalloc(1, sizeof(struct einit_exec_data));
-
-        x->command_d = cmd;
-        x->options = einit_exec_no_shell;
-        x->module = s->module;
-        x->handle_dead_process = einit_server_run_dead_process_callback;
-        x->environment = s->environment;
-
-        einit_exec(x);
-
-        einit_ipc_connect_client (ipcsocket[1]);
 
         einit_servers_running =
                 set_str_add_stable (einit_servers_running, (char *)binary);
