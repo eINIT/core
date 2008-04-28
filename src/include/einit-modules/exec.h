@@ -51,7 +51,6 @@ extern "C" {
 #include <stdlib.h>
 
     enum pexec_options {
-        pexec_option_nopipe = 0x1,
         pexec_option_dont_close_stdin = 0x4
     };
 

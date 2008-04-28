@@ -384,10 +384,9 @@ int pexec_f(const char *command, const char **variables, uid_t uid,
             gid_t gid, const char *user, const char *group,
             char **local_environment, struct einit_event *status)
 {
-    int pipefderr[2];
     pid_t child;
     int pidstatus = 0;
-    enum pexec_options options = (status ? 0 : pexec_option_nopipe);
+    enum pexec_options options = 0;
     uint32_t cs = status_ok;
     char have_waited = 0;
 
@@ -413,9 +412,7 @@ int pexec_f(const char *command, const char **variables, uid_t uid,
         if (optx) {
             unsigned int x = 0;
             for (; optx[x]; x++) {
-                if (strmatch(optx[x], "no-pipe")) {
-                    options |= pexec_option_nopipe;
-                } else if (strmatch(optx[x], "dont-close-stdin")) {
+                if (strmatch(optx[x], "dont-close-stdin")) {
                     options |= pexec_option_dont_close_stdin;
                 }
             }
@@ -429,29 +426,6 @@ int pexec_f(const char *command, const char **variables, uid_t uid,
 
     if (strmatch(command, "true")) {
         return status_ok;
-    }
-
-    if (!(options & pexec_option_nopipe)) {
-        if (pipe(pipefderr)) {
-            fbprintf(status, "failed to create pipe: %s", strerror(errno));
-            return status_failed;
-        }
-        /*
-         * make sure the read end won't survive an exec*() 
-         */
-        fcntl(pipefderr[0], F_SETFD, FD_CLOEXEC);
-        if (fcntl(pipefderr[0], F_SETFL, O_NONBLOCK) == -1) {
-            bitch(bitch_stdio, errno,
-                  "can't set pipe (read end) to non-blocking mode!");
-        }
-        /*
-         * make sure we unset this flag after fork()-ing 
-         */
-        fcntl(pipefderr[1], F_SETFD, FD_CLOEXEC);
-        if (fcntl(pipefderr[1], F_SETFL, O_NONBLOCK) == -1) {
-            bitch(bitch_stdio, errno,
-                  "can't set pipe (write end) to non-blocking mode!");
-        }
     }
 
     char **exec_environment;
@@ -523,109 +497,17 @@ int pexec_f(const char *command, const char **variables, uid_t uid,
             close(0);
 
         close(1);
-        if (!(options & pexec_option_nopipe)) {
-            /*
-             * unset this flag after fork()-ing 
-             */
-            fcntl(pipefderr[1], F_SETFD, 0);
-            close(2);
-            close(pipefderr[0]);
-            dup2(pipefderr[1], 1);
-            dup2(pipefderr[1], 2);
-            close(pipefderr[1]);
-        } else {
             dup2(2, 1);
-        }
 
         execve(exvec[0], exvec, exec_environment);
     } else {
-        FILE *fx;
-
         if (exec_environment)
             efree(exec_environment);
         if (exvec)
             efree(exvec);
 
-        if (!(options & pexec_option_nopipe) && status) {
-            /*
-             * tag the fd as close-on-exec, just in case 
-             */
-            fcntl(pipefderr[1], F_SETFD, FD_CLOEXEC);
-            close(pipefderr[1]);
-            errno = 0;
-
-            if ((fx = fdopen(pipefderr[0], "r"))) {
-                char rxbuffer[BUFFERSIZE];
-                setvbuf(fx, NULL, _IONBF, 0);
-
 #ifdef __linux__
-                kill(child, SIGCONT);
-#endif
-
-                if ((waitpid(child, &pidstatus, WNOHANG) == child)
-                    && (WIFEXITED(pidstatus) || WIFSIGNALED(pidstatus))) {
-                    have_waited = 1;
-                } else
-                    while (!feof(fx)) {
-                        if (!fgets(rxbuffer, BUFFERSIZE, fx)) {
-                            if (errno == EAGAIN) {
-                                usleep(100);
-                                goto skip_read;
-                            }
-                            break;
-                        }
-
-                        char **fbc = str2set('|', rxbuffer), orest = 1;
-                        strtrim(rxbuffer);
-
-                        if (fbc) {
-                            if (strmatch(fbc[0], "feedback")) {
-                                // suppose things are going fine until
-                                // proven otherwise
-                                cs = status_ok;
-
-                                if (strmatch(fbc[1], "notice")) {
-                                    orest = 0;
-                                    fbprintf(status, "%s", fbc[2]);
-                                } else if (strmatch(fbc[1], "success")) {
-                                    orest = 0;
-                                    cs = status_ok;
-                                    fbprintf(status, "%s", fbc[2]);
-                                } else if (strmatch(fbc[1], "failure")) {
-                                    orest = 0;
-                                    cs = status_failed;
-                                    fbprintf(status, "%s", fbc[2]);
-                                }
-                            }
-
-                            efree(fbc);
-                        }
-
-                        if (orest) {
-                            fbprintf(status, "%s", rxbuffer);
-                        }
-
-                        continue;
-
-                      skip_read:
-
-                        if (waitpid(child, &pidstatus, WNOHANG) == child) {
-                            if (WIFEXITED(pidstatus)
-                                || WIFSIGNALED(pidstatus)) {
-                                have_waited = 1;
-                                break;
-                            }
-                        }
-                    }
-
-                efclose(fx);
-            } else {
-                perror("pexec(): open pipe");
-            }
-        }
-#ifdef __linux__
-        else
-            kill(child, SIGCONT);
+        kill(child, SIGCONT);
 #endif
 
         if (!have_waited) {
@@ -647,10 +529,9 @@ int eexec_f(const char *command, const char **variables, uid_t uid,
             gid_t gid, const char *user, const char *group,
             char **local_environment, struct einit_event *status)
 {
-    int pipefderr[2];
     pid_t child;
     int pidstatus = 0;
-    enum pexec_options options = (status ? 0 : pexec_option_nopipe);
+    enum pexec_options options = 0;
     uint32_t cs = status_ok;
     char have_waited = 0;
 
@@ -676,9 +557,7 @@ int eexec_f(const char *command, const char **variables, uid_t uid,
         if (optx) {
             unsigned int x = 0;
             for (; optx[x]; x++) {
-                if (strmatch(optx[x], "no-pipe")) {
-                    options |= pexec_option_nopipe;
-                } else if (strmatch(optx[x], "dont-close-stdin")) {
+                if (strmatch(optx[x], "dont-close-stdin")) {
                     options |= pexec_option_dont_close_stdin;
                 }
             }
@@ -692,20 +571,6 @@ int eexec_f(const char *command, const char **variables, uid_t uid,
 
     if (strmatch(command, "true")) {
         return status_ok;
-    }
-
-    if (!(options & pexec_option_nopipe)) {
-        if (pipe(pipefderr)) {
-            fbprintf(status, "failed to create pipe: %s", strerror(errno));
-            return status_failed;
-        }
-        /*
-         * make sure the read end won't survive an exec*() 
-         */
-        fcntl(pipefderr[0], F_SETFD, FD_CLOEXEC);
-        fcntl(pipefderr[0], F_SETFL, O_NONBLOCK);
-        fcntl(pipefderr[1], F_SETFD, FD_CLOEXEC);
-        fcntl(pipefderr[1], F_SETFL, O_NONBLOCK);
     }
 
     char **exec_environment;
@@ -743,102 +608,14 @@ int eexec_f(const char *command, const char **variables, uid_t uid,
             close(0);
 
         close(1);
-        if (!(options & pexec_option_nopipe)) {
-            /*
-             * unset this flag after fork()-ing 
-             */
-            fcntl(pipefderr[1], F_SETFD, 0);
-            close(2);
-            close(pipefderr[0]);
-            dup2(pipefderr[1], 1);
-            dup2(pipefderr[1], 2);
-            close(pipefderr[1]);
-        } else {
-            dup2(2, 1);
-        }
+        dup2(2, 1);
 
         execve(exvec[0], exvec, exec_environment);
     } else {
-        FILE *fx;
-
         if (exec_environment)
             efree(exec_environment);
         if (exvec)
             efree(exvec);
-
-        if (!(options & pexec_option_nopipe) && status) {
-            /*
-             * tag the fd as close-on-exec, just in case 
-             */
-            fcntl(pipefderr[1], F_SETFD, FD_CLOEXEC);
-            close(pipefderr[1]);
-            errno = 0;
-
-            if ((fx = fdopen(pipefderr[0], "r"))) {
-                char rxbuffer[BUFFERSIZE];
-                setvbuf(fx, NULL, _IONBF, 0);
-
-                if ((waitpid(child, &pidstatus, WNOHANG) == child)
-                    && (WIFEXITED(pidstatus) || WIFSIGNALED(pidstatus))) {
-                    have_waited = 1;
-                } else
-                    while (!feof(fx)) {
-                        if (!fgets(rxbuffer, BUFFERSIZE, fx)) {
-                            if (errno == EAGAIN) {
-                                usleep(100);
-                                goto skip_read;
-                            }
-                            break;
-                        }
-
-                        char **fbc = str2set('|', rxbuffer), orest = 1;
-                        strtrim(rxbuffer);
-
-                        if (fbc) {
-                            if (strmatch(fbc[0], "feedback")) {
-                                // suppose things are going fine until
-                                // proven otherwise
-                                cs = status_ok;
-
-                                if (strmatch(fbc[1], "notice")) {
-                                    orest = 0;
-                                    fbprintf(status, "%s", fbc[2]);
-                                } else if (strmatch(fbc[1], "success")) {
-                                    orest = 0;
-                                    cs = status_ok;
-                                    fbprintf(status, "%s", fbc[2]);
-                                } else if (strmatch(fbc[1], "failure")) {
-                                    orest = 0;
-                                    cs = status_failed;
-                                    fbprintf(status, "%s", fbc[2]);
-                                }
-                            }
-
-                            efree(fbc);
-                        }
-
-                        if (orest) {
-                            fbprintf(status, "%s", rxbuffer);
-                        }
-
-                        continue;
-
-                      skip_read:
-
-                        if (waitpid(child, &pidstatus, WNOHANG) == child) {
-                            if (WIFEXITED(pidstatus)
-                                || WIFSIGNALED(pidstatus)) {
-                                have_waited = 1;
-                                break;
-                            }
-                        }
-                    }
-
-                efclose(fx);
-            } else {
-                perror("pexec(): open pipe");
-            }
-        }
 
         if (!have_waited) {
             do {
