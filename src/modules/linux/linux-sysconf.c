@@ -348,6 +348,16 @@ void linux_sysconf_sysctl()
     }
 }
 
+void einit_fqdn_set()
+{
+    char *hname, *dname;
+    if ((hname = cfg_getstring("configuration-network-hostname")))
+        sethostname(hname, strlen(hname));
+    if ((dname = cfg_getstring("configuration-network-domainname")))
+        setdomainname(dname, strlen(dname));
+    notice(4, "hostname set to: %s.%s", hname, dname);
+}
+
 void linux_sysconf_boot_devices_available(struct einit_event *ev)
 {
     if (!(coremode & (einit_mode_sandbox | einit_mode_ipconly)))
@@ -355,6 +365,7 @@ void linux_sysconf_boot_devices_available(struct einit_event *ev)
 
     linux_sysconf_sysctl();
     linux_sysconf_hwclock();
+    einit_fqdn_set();
 }
 
 void linux_sysconf_einit_core_mode_switch_done(struct einit_event *ev)
