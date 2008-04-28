@@ -153,7 +153,7 @@ struct cfgnode *einit_module_network_v2_get_option_default(char *interface,
             if (!n || (n && (!n->idattr || !eregcomp(&r, n->idattr)))) {
                 if (!n || !n->idattr
                     || regexec(&r, interface, 0, NULL, 0) != REG_NOMATCH) {
-                    if (n->idattr)
+                    if (n && n->idattr)
                         eregfree(&r);
 
                     struct cfgnode *res =
