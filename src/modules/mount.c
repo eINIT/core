@@ -2539,9 +2539,6 @@ int einit_mount_configure(struct lmodule *r)
                  einit_mount_update_configuration);
     event_listen(einit_boot_devices_available,
                  einit_mount_event_boot_devices_available);
-#if 0
-    event_listen(einit_ipc_request_generic, einit_mount_mount_ipc_handler);
-#endif
 
     function_register("fs-mount", 1, (void *) emount);
     function_register("fs-umount", 1, (void *) eumount);
@@ -2553,13 +2550,9 @@ int einit_mount_configure(struct lmodule *r)
 
     event_listen(einit_core_update_modules, einit_mount_scanmodules);
 
-    einit_mount_update_configuration();
-
     if (!stat("/fastboot", &st)) {
         mount_fastboot = 1;
     }
-
-    einit_mount_scanmodules(NULL);
 
     return 0;
 }
