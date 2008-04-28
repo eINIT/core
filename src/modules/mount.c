@@ -925,40 +925,8 @@ void mount_update_nodes_from_mtab()
         while (cur) {
             struct legacy_fstab_entry *val =
                 (struct legacy_fstab_entry *) cur->value;
-            // add_mtab_entry (val->fs_spec, val->fs_file,
-            // val->fs_vfstype, val->fs_mntops, val->fs_freq,
-            // val->fs_passno);
 
-            // void mount_add_update_fstab (char *mountpoint, char
-            // *device, char *fs, char **options, char *before_mount, char 
-            // 
-            // 
-            // 
-            // 
-            // 
-            // 
-            // 
-            // 
-            // 
-            // 
-            // 
-            // 
-            // *after_mount, char *before_umount, char *after_umount, char 
-            // 
-            // 
-            // 
-            // 
-            // 
-            // 
-            // 
-            // 
-            // 
-            // 
-            // 
-            // 
-            // *manager, char **variables, uint32_t mountflags) {
-
-            if (val->fs_file) {
+            if (val->fs_file && strcmp(val->fs_file, "/")) {
                 struct device_data *dd = NULL;
                 struct stree *t;
                 char **options =
