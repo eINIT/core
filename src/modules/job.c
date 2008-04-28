@@ -86,6 +86,7 @@ struct einit_job {
 struct einit_server {
     const char *name;
     char **need_files;
+    char **environment;
     struct lmodule *module;
 };
 
@@ -192,7 +193,19 @@ void einit_job_add_or_update (struct einit_sexp *s)
 
                         secundus = se_cdr (secundus);
                     }
+                } else if (strmatch(primus->symbol, "environment")) {
+                    while (secundus->type == es_cons) {
+                        primus = se_car (secundus);
+
+                        if (primus->type == es_string) {
+                            s.environment = (char **)set_noa_add
+                                    ((void **)s.environment, (void *)primus->string);
+                        }
+
+                        secundus = se_cdr (secundus);
+                    }
                 }
+
             }
 
             rest = se_cdr (rest);
@@ -216,15 +229,17 @@ void einit_job_add_or_update (struct einit_sexp *s)
         if (einit_servers) {
             struct stree *st = streefind (einit_servers, binary, tree_find_first);
             if (st) {
-                efree (st->luggage);
-                st->luggage = s.need_files;
+                struct einit_server *os = st->value;
+                if (os->need_files) efree (os->need_files);
+                if (os->environment) efree (os->environment);
+
                 memcpy (st->value, &s, sizeof (struct einit_server));
                 return;
             }
         }
 
         einit_servers = streeadd(einit_servers, binary, &s,
-                                 sizeof (struct einit_server), s.need_files);
+                                 sizeof (struct einit_server), NULL);
     }
 }
 
@@ -348,8 +363,15 @@ void einit_server_run(struct einit_server *s, const char *binary)
             cmd[3] = "--sandbox";
         }
 
-        einit_exec_without_shell_with_function_on_process_death(cmd,
-                einit_server_run_dead_process_callback, s->module);
+        struct einit_exec_data *x = ecalloc(1, sizeof(struct einit_exec_data));
+
+        x->command_d = cmd;
+        x->options = einit_exec_no_shell;
+        x->module = s->module;
+        x->handle_dead_process = einit_server_run_dead_process_callback;
+        x->environment = s->environment;
+
+        einit_exec(x);
 
         einit_ipc_connect_client (ipcsocket[1]);
 
