@@ -165,7 +165,7 @@ struct cfgnode *einit_module_network_v2_get_option_default(char *interface,
                         return res;
                     }
                 } else {
-                    if (n->idattr)
+                    if (n && n->idattr)
                         eregfree(&r);
                 }
             }
