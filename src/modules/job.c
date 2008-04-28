@@ -65,7 +65,7 @@ const struct smodule einit_job_self = {
     .eibuild = BUILDNUMBER,
     .version = 1,
     .mode = 0,
-    .name = "eINIT Job Support",
+    .name = "eINIT Job and Server Support",
     .rid = "einit-job",
     .si = {
            .provides = NULL,
@@ -83,8 +83,20 @@ struct einit_job {
     struct lmodule *module;
 };
 
+struct einit_server {
+    const char *name;
+    char **need_files;
+    struct lmodule *module;
+};
+
 struct stree *einit_jobs = NULL;
+struct stree *einit_servers = NULL;
+
 int einit_jobs_running = 0;
+
+char **einit_servers_running = NULL;
+
+void einit_servers_synchronise();
 
 void einit_job_add_or_update (struct einit_sexp *s)
 {
@@ -154,6 +166,65 @@ void einit_job_add_or_update (struct einit_sexp *s)
 
         einit_jobs = streeadd(einit_jobs, binary, &j, sizeof (struct einit_job),
                               j.run_on);
+    } else if ((primus->type == es_symbol) &&
+                strmatch (primus->symbol, "server") &&
+                (secundus->type == es_symbol) && (tertius->type == es_string)) {
+        struct einit_server s = { tertius->string, NULL, NULL };
+        char buffer[BUFFERSIZE];
+        const char *binary;
+
+        snprintf (buffer, BUFFERSIZE, "server-%s", secundus->symbol);
+        binary = str_stabilise(buffer);
+
+        while (rest->type == es_cons) {
+            primus = se_car(se_car(rest));
+            secundus = se_cdr(se_car(rest));
+
+            if (primus->type == es_symbol) {
+                if (strmatch(primus->symbol, "need-files")) {
+                    while (secundus->type == es_cons) {
+                        primus = se_car (secundus);
+
+                        if (primus->type == es_string) {
+                            s.need_files = (char **)set_noa_add
+                                    ((void **)s.need_files, (void *)primus->string);
+                        }
+
+                        secundus = se_cdr (secundus);
+                    }
+                }
+            }
+
+            rest = se_cdr (rest);
+        }
+
+        struct lmodule *lm;
+
+        if (!(lm = mod_lookup_rid (binary))) {
+            struct smodule *sm = ecalloc (1, sizeof (struct smodule));
+
+            sm->name = (char *)s.name;
+            sm->rid = (char *)binary;
+
+            lm = mod_add_or_update(NULL, sm, substitue_and_prune);
+        }
+
+        if (lm) {
+            s.module = lm;
+        }
+
+        if (einit_servers) {
+            struct stree *st = streefind (einit_servers, binary, tree_find_first);
+            if (st) {
+                efree (st->luggage);
+                st->luggage = s.need_files;
+                memcpy (st->value, &s, sizeof (struct einit_server));
+                return;
+            }
+        }
+
+        einit_servers = streeadd(einit_servers, binary, &s,
+                                 sizeof (struct einit_server), s.need_files);
     }
 }
 
@@ -178,6 +249,8 @@ void einit_jobs_update()
             }
         }
     }
+
+    einit_servers_synchronise();
 }
 
 void einit_job_run_dead_process_callback (struct einit_exec_data *d)
@@ -235,6 +308,58 @@ void einit_job_run(struct einit_job *j, const char *binary, const char *event)
     }
 }
 
+void einit_server_run_dead_process_callback (struct einit_exec_data *d)
+{
+    einit_servers_running =
+            strsetdel (einit_servers_running, d->module->module->rid);
+}
+
+void einit_server_run(struct einit_server *s, const char *binary)
+{
+    notice (1, "running server \"%s\"", s->name);
+
+    char *path = joinpath (EINIT_LIB_BASE "/bin/", (char *)binary);
+    if (path) {
+        char *rpath = path;
+        struct stat st;
+        int ipcsocket[2];
+        char sstring[33];
+
+        if (coremode & einit_mode_sandbox) rpath++;
+
+        if (stat (rpath, &st)) {
+            notice (1,
+                    "failed to run server \"%s\": missing "
+                            "binary (%s)", s->name, binary);
+            return;
+        }
+
+        if (socketpair(AF_UNIX, SOCK_STREAM, 0, ipcsocket) == -1) {
+            return;
+        }
+
+        fcntl(ipcsocket[1], F_SETFD, FD_CLOEXEC);
+
+        snprintf (sstring, 33, "%i", ipcsocket[0]);
+
+        char *cmd[] = { rpath, "--socket", sstring, NULL, NULL };
+
+        if (coremode & einit_mode_sandbox) {
+            cmd[3] = "--sandbox";
+        }
+
+        einit_exec_without_shell_with_function_on_process_death(cmd,
+                einit_server_run_dead_process_callback, s->module);
+
+        einit_ipc_connect_client (ipcsocket[1]);
+
+        einit_servers_running =
+                set_str_add_stable (einit_servers_running, (char *)binary);
+
+        efree (path);
+    }
+}
+
 void einit_jobs_run(const char *event)
 {
     struct stree *st = streelinear_prepare (einit_jobs);
@@ -250,9 +375,28 @@ void einit_jobs_run(const char *event)
     }
 }
 
+void einit_servers_synchronise()
+{
+    struct stree *st = streelinear_prepare (einit_servers);
+    while (st) {
+        struct einit_server *s = st->value;
+
+        if (!inset ((const void **)einit_servers_running, st->key,
+                    SET_TYPE_STRING) && 
+            (!s->need_files || check_files(s->need_files))) {
+            einit_server_run (s, st->key);
+        }
+
+        st = streenext (st);
+    }
+}
+
 int einit_job_configure(struct lmodule *irr)
 {
     module_init(irr);
+
+    event_listen(einit_core_update_modules, einit_jobs_update);
+    event_listen(einit_core_update_modules, einit_jobs_update);
 
     einit_jobs_update();
     einit_jobs_run("core-initialisation");

@@ -1,0 +1,2 @@
+(server chicken "eINIT Chicken Scheme Module Support"
+  (need-files "/usr/lib/."))

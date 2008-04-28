@@ -1,5 +1,5 @@
 /*
- *  module-xml.c
+ *  module-simple.c
  *  einit
  *
  *  Created by Magnus Deininger on 16/10/2007.
@@ -66,9 +66,9 @@
 #warning "This module was developed for a different version of eINIT, you might experience problems"
 #endif
 
-int module_xml_v2_configure(struct lmodule *);
+int module_simple_configure(struct lmodule *);
 
-const struct smodule module_xml_v2_self = {
+const struct smodule module_simple_self = {
     .eiversion = EINIT_VERSION,
     .eibuild = BUILDNUMBER,
     .version = 1,
@@ -81,10 +81,10 @@ const struct smodule module_xml_v2_self = {
            .requires = NULL,
            .after = NULL,
            .before = NULL},
-    .configure = module_xml_v2_configure
+    .configure = module_simple_configure
 };
 
-module_register(module_xml_v2_self);
+module_register(module_simple_self);
 
 #define MODULES_PREFIX "services-virtual-module-"
 #define MODULES_PREFIX_LENGTH (sizeof(MODULES_PREFIX) -1)
@@ -92,9 +92,9 @@ module_register(module_xml_v2_self);
 #define MODULES_EXECUTE_NODE_TEMPLATE MODULES_PREFIX "%s-execute"
 #define MODULES_ARBITRARY_NODE_TEMPLATE MODULES_PREFIX "%s-%s"
 
-struct stree *module_xml_v2_modules = NULL;
+struct stree *module_simple_modules = NULL;
 
-struct cfgnode *module_xml_v2_module_get_node(char *name, char *action)
+struct cfgnode *module_simple_module_get_node(char *name, char *action)
 {
     if (name && action) {
         char buffer[BUFFERSIZE];
@@ -120,7 +120,7 @@ struct cfgnode *module_xml_v2_module_get_node(char *name, char *action)
     return NULL;
 }
 
-struct cfgnode *module_xml_v2_module_get_attributive_node(char *name,
+struct cfgnode *module_simple_module_get_attributive_node(char *name,
                                                           char *attribute)
 {
     if (name && attribute) {
@@ -135,21 +135,21 @@ struct cfgnode *module_xml_v2_module_get_attributive_node(char *name,
     return NULL;
 }
 
-char module_xml_v2_module_have_action(char *name, char *action)
+char module_simple_module_have_action(char *name, char *action)
 {
-    if (module_xml_v2_module_get_node(name, action)) {
+    if (module_simple_module_get_node(name, action)) {
         return 1;
     }
 
     return 0;
 }
 
-char module_xml_v2_check_files(char *name)
+char module_simple_check_files(char *name)
 {
     struct cfgnode *node = NULL;
 
     if ((node =
-         module_xml_v2_module_get_attributive_node(name, "need-files"))
+         module_simple_module_get_attributive_node(name, "need-files"))
         && node->svalue) {
         char **files = str2set(':', node->svalue);
 
@@ -164,16 +164,16 @@ char module_xml_v2_check_files(char *name)
     return 1;
 }
 
-int module_xml_v2_module_configure(struct lmodule *pa)
+int module_simple_module_configure(struct lmodule *pa)
 {
-    module_xml_v2_modules =
-        streeadd(module_xml_v2_modules, pa->module->rid, pa, SET_NOALLOC,
+    module_simple_modules =
+            streeadd(module_simple_modules, pa->module->rid, pa, SET_NOALLOC,
                  NULL);
 
     return 0;
 }
 
-char **module_xml_v2_add_fs(char **xt, char *s)
+char **module_simple_add_fs(char **xt, char *s)
 {
     if (s) {
         char **tmp = s[0] == '/' ? str2set('/', s + 1) : str2set('/', s);
@@ -199,7 +199,7 @@ char **module_xml_v2_add_fs(char **xt, char *s)
     return xt;
 }
 
-char *module_xml_v2_generate_defer_fs(char **tmpxt)
+char *module_simple_generate_defer_fs(char **tmpxt)
 {
     char *tmp = NULL;
 
@@ -220,10 +220,10 @@ char *module_xml_v2_generate_defer_fs(char **tmpxt)
     return tmp;
 }
 
-void module_xml_v2_scanmodules(struct einit_event *ev)
+void module_simple_scanmodules(struct einit_event *ev)
 {
     struct stree *modules_to_update =
-        streelinear_prepare(module_xml_v2_modules);
+            streelinear_prepare(module_simple_modules);
     int new_modules = 0;
 
     while (modules_to_update) {
@@ -243,8 +243,8 @@ void module_xml_v2_scanmodules(struct einit_event *ev)
              * MODULES_PREFIX_LENGTH); 
              */
 
-            if ((!module_xml_v2_modules
-                 || !streefind(module_xml_v2_modules,
+            if ((!module_simple_modules
+                  || !streefind(module_simple_modules,
                                node->id + MODULES_PREFIX_LENGTH,
                                tree_find_first)) && node->arbattrs) {
                 int i = 0;
@@ -267,15 +267,15 @@ void module_xml_v2_scanmodules(struct einit_event *ev)
                 }
 
                 if ((xnode =
-                     module_xml_v2_module_get_attributive_node(node->id +
+                     module_simple_module_get_attributive_node(node->id +
                                                                MODULES_PREFIX_LENGTH,
                                                                "pidfile"))
                     && xnode->svalue) {
-                    fs = module_xml_v2_add_fs(fs, xnode->svalue);
+                    fs = module_simple_add_fs(fs, xnode->svalue);
                 }
 
                 if ((xnode =
-                     module_xml_v2_module_get_attributive_node(node->id +
+                     module_simple_module_get_attributive_node(node->id +
                                                                MODULES_PREFIX_LENGTH,
                                                                "need-files"))
                     && xnode->svalue) {
@@ -284,7 +284,7 @@ void module_xml_v2_scanmodules(struct einit_event *ev)
 
                     for (; sx[ix]; ix++) {
                         if (sx[ix][0] == '/') {
-                            fs = module_xml_v2_add_fs(fs, sx[ix]);
+                            fs = module_simple_add_fs(fs, sx[ix]);
                         }
                     }
 
@@ -292,7 +292,7 @@ void module_xml_v2_scanmodules(struct einit_event *ev)
                 }
 
                 if (fs) {
-                    char *a = module_xml_v2_generate_defer_fs(fs);
+                    char *a = module_simple_generate_defer_fs(fs);
 
                     if (a) {
                         after = set_str_add(after, a);
@@ -302,7 +302,7 @@ void module_xml_v2_scanmodules(struct einit_event *ev)
                 }
 
                 if (name && provides
-                    && module_xml_v2_check_files(node->id +
+                    && module_simple_check_files(node->id +
                                                  MODULES_PREFIX_LENGTH)) {
                     struct smodule *new_sm =
                         emalloc(sizeof(struct smodule));
@@ -329,10 +329,10 @@ void module_xml_v2_scanmodules(struct einit_event *ev)
                     if (before)
                         new_sm->si.before = str2set(':', before);
 
-                    new_sm->configure = module_xml_v2_module_configure;
+                    new_sm->configure = module_simple_module_configure;
 
                     if ((node =
-                         module_xml_v2_module_get_attributive_node(new_sm->
+                         module_simple_module_get_attributive_node(new_sm->
                                                                    rid,
                                                                    "options"))
                         && node->svalue) {
@@ -365,18 +365,18 @@ void module_xml_v2_scanmodules(struct einit_event *ev)
 }
 
 
-void module_xml_v2_auto_enable(char *mode)
+void module_simple_auto_enable(char *mode)
 {
     if (!mode)
         return;
 
     char **automod = NULL;
 
-    struct stree *modules = streelinear_prepare(module_xml_v2_modules);
+    struct stree *modules = streelinear_prepare(module_simple_modules);
 
     while (modules) {
         struct cfgnode *s =
-            module_xml_v2_module_get_attributive_node(modules->key,
+                module_simple_module_get_attributive_node(modules->key,
                                                       "auto-enable");
         if (s && s->svalue) {
             char **sp = str2set(':', s->svalue);
@@ -406,19 +406,19 @@ void module_xml_v2_auto_enable(char *mode)
     }
 }
 
-void module_xml_v2_core_event_handler_mode_switching(struct einit_event
+void module_simple_core_event_handler_mode_switching(struct einit_event
                                                      *ev)
 {
     if (ev->para)
-        module_xml_v2_auto_enable(((struct cfgnode *) ev->para)->id);
+        module_simple_auto_enable(((struct cfgnode *) ev->para)->id);
 }
 
-void module_xml_v2_power_event_handler(struct einit_event *ev)
+void module_simple_power_event_handler(struct einit_event *ev)
 {
-    struct stree *modules = streelinear_prepare(module_xml_v2_modules);
+    struct stree *modules = streelinear_prepare(module_simple_modules);
 
     while (modules) {
-        if (module_xml_v2_module_have_action(modules->key, "on-shutdown")) {
+        if (module_simple_module_have_action(modules->key, "on-shutdown")) {
             struct lmodule *mo = modules->value;
             if (mo && (mo->status & status_enabled))
                 mod(einit_module_custom, mo, "on-shutdown");
@@ -427,10 +427,10 @@ void module_xml_v2_power_event_handler(struct einit_event *ev)
     }
 }
 
-void module_xml_v2_core_event_handler_action_execute_step(char *task,
+void module_simple_core_event_handler_action_execute_step(char *task,
                                                           char *rid);
 
-int module_xml_v2_core_event_handler_status(int status)
+int module_simple_core_event_handler_status(int status)
 {
     if (WIFEXITED(status) && (WEXITSTATUS(status) == EXIT_SUCCESS))
         return status_ok;
@@ -438,7 +438,7 @@ int module_xml_v2_core_event_handler_status(int status)
     return status_failed;
 }
 
-void module_xml_v2_core_event_handler_action_false(char *task, char *rid)
+void module_simple_core_event_handler_action_false(char *task, char *rid)
 {
     /*
      * if (strmatch (task, "enable")) { mod_complete (rid,
@@ -453,28 +453,28 @@ void module_xml_v2_core_event_handler_action_false(char *task, char *rid)
     // }
 }
 
-void module_xml_v2_core_event_handler_action_true(char *task, char *rid)
+void module_simple_core_event_handler_action_true(char *task, char *rid)
 {
     if (strmatch(task, "prepare")) {
-        module_xml_v2_core_event_handler_action_execute_step("enable",
+        module_simple_core_event_handler_action_execute_step("enable",
                                                              rid);
     } else if (strmatch(task, "disable")) {
-        module_xml_v2_core_event_handler_action_execute_step("cleanup",
+        module_simple_core_event_handler_action_execute_step("cleanup",
                                                              rid);
     } else if (strmatch(task, "enable")) {
-        if (module_xml_v2_module_have_action(rid, "daemon")) {
+        if (module_simple_module_have_action(rid, "daemon")) {
             struct lmodule *lm;
             struct cfgnode *node;
 
             if ((lm = mod_lookup_rid(rid))
                 && (node =
-                    module_xml_v2_module_get_attributive_node(rid,
+                 module_simple_module_get_attributive_node(rid,
                                                               "pidfile"))
                 && node->svalue) {
                 lm->pidfile = node->svalue;
             }
 
-            module_xml_v2_core_event_handler_action_execute_step("is-up",
+            module_simple_core_event_handler_action_execute_step("is-up",
                                                                  rid);
             return;
         }
@@ -493,21 +493,21 @@ void module_xml_v2_core_event_handler_action_true(char *task, char *rid)
     }
 }
 
-void module_xml_v2_core_event_handler_dead_process(struct einit_exec_data
+void module_simple_core_event_handler_dead_process(struct einit_exec_data
                                                    *x)
 {
     char *a = x->custom;
 
-    // fprintf (stderr, "module_xml_v2_core_event_handler_dead_process(%s, 
+    // fprintf (stderr, "module_simple_core_event_handler_dead_process(%s, 
     // %s, %i)\n", x->custom, x->rid, x->pid);
 
-    if (module_xml_v2_core_event_handler_status(x->status) & status_ok)
-        module_xml_v2_core_event_handler_action_true(a, x->rid);
+    if (module_simple_core_event_handler_status(x->status) & status_ok)
+        module_simple_core_event_handler_action_true(a, x->rid);
     else
-        module_xml_v2_core_event_handler_action_false(a, x->rid);
+        module_simple_core_event_handler_action_false(a, x->rid);
 }
 
-void module_xml_v2_core_event_handler_action_execute_step(char *task,
+void module_simple_core_event_handler_action_execute_step(char *task,
                                                           char *rid)
 {
     struct cfgnode *node = NULL;
@@ -515,11 +515,11 @@ void module_xml_v2_core_event_handler_action_execute_step(char *task,
     char daemonise = 0;
 
     // fprintf (stderr,
-    // "module_xml_v2_core_event_handler_action_execute_step(%s, %s)\n",
+    // "module_simple_core_event_handler_action_execute_step(%s, %s)\n",
     // task, rid);
 
-    if (!module_xml_v2_check_files(rid)) {
-        if ((node = module_xml_v2_module_get_node(rid, task))) {
+    if (!module_simple_check_files(rid)) {
+        if ((node = module_simple_module_get_node(rid, task))) {
             int x = 0;
 
             for (; node->arbattrs[x]; x += 2) {
@@ -530,13 +530,13 @@ void module_xml_v2_core_event_handler_action_execute_step(char *task,
                 }
             }
 
-            module_xml_v2_core_event_handler_action_false(task, rid);
+            module_simple_core_event_handler_action_false(task, rid);
             return;
         }
     }
 
     if ((node =
-         module_xml_v2_module_get_attributive_node(rid, "environment"))
+         module_simple_module_get_attributive_node(rid, "environment"))
         && node->arbattrs) {
         int i = 0;
 
@@ -549,7 +549,7 @@ void module_xml_v2_core_event_handler_action_execute_step(char *task,
 
     char *pidfile = NULL;;
 
-    if ((node = module_xml_v2_module_get_attributive_node(rid, "pidfile"))
+    if ((node = module_simple_module_get_attributive_node(rid, "pidfile"))
         && node->svalue) {
         pidfile = node->svalue;
     }
@@ -565,12 +565,12 @@ void module_xml_v2_core_event_handler_action_execute_step(char *task,
 
     node = NULL;
 
-    if (module_xml_v2_module_have_action(rid, "daemon")) {
+    if (module_simple_module_have_action(rid, "daemon")) {
         if (strmatch(task, "enable")) {
             daemonise = 1;
 
             if ((node =
-                 module_xml_v2_module_get_attributive_node(rid, "options"))
+                 module_simple_module_get_attributive_node(rid, "options"))
                 && node->svalue) {
                 char **opt = str2set(':', node->svalue);
                 uint32_t ri = 0;
@@ -583,7 +583,7 @@ void module_xml_v2_core_event_handler_action_execute_step(char *task,
                 efree(opt);
             }
 
-            node = module_xml_v2_module_get_node(rid, "daemon");
+            node = module_simple_module_get_node(rid, "daemon");
         } else if (strmatch(task, "disable")) {
             pid_t pid = 0;
 
@@ -645,7 +645,7 @@ void module_xml_v2_core_event_handler_action_execute_step(char *task,
         }
     }
 
-    if (node || (node = module_xml_v2_module_get_node(rid, task))) {
+    if (node || (node = module_simple_module_get_node(rid, task))) {
         int x = 0;
         char *code = NULL, *user = NULL, *group = NULL, *options = NULL;
 
@@ -668,7 +668,7 @@ void module_xml_v2_core_event_handler_action_execute_step(char *task,
             } else if (strmatch(code, "false")) {
                 // fprintf (stderr, "code is a plain call to false (%s,
                 // %s)\n", task, rid);
-                module_xml_v2_core_event_handler_action_false(task, rid);
+                module_simple_core_event_handler_action_false(task, rid);
 
                 return;
             }
@@ -679,10 +679,10 @@ void module_xml_v2_core_event_handler_action_execute_step(char *task,
             xd->module = mod_lookup_rid(rid);
             xd->custom = (void *) str_stabilise(task);
             xd->handle_dead_process =
-                module_xml_v2_core_event_handler_dead_process;
+                    module_simple_core_event_handler_dead_process;
 
             struct cfgnode *vnode =
-                module_xml_v2_module_get_attributive_node(rid,
+                    module_simple_module_get_attributive_node(rid,
                                                           "variables");
             char *variables = vnode ? vnode->svalue : NULL;
 
@@ -733,33 +733,33 @@ void module_xml_v2_core_event_handler_action_execute_step(char *task,
     if (myenvironment)
         efree(myenvironment);
 
-    module_xml_v2_core_event_handler_action_true(task, rid);
+  module_simple_core_event_handler_action_true(task, rid);
 }
 
-void module_xml_v2_core_event_handler_action_execute(struct einit_event
+void module_simple_core_event_handler_action_execute(struct einit_event
                                                      *ev)
 {
     if (!ev->rid || !ev->string)
         return;
 
-    if (module_xml_v2_modules
-        && streefind(module_xml_v2_modules, ev->rid, tree_find_first)) {
+    if (module_simple_modules
+        && streefind(module_simple_modules, ev->rid, tree_find_first)) {
         if (strmatch(ev->string, "enable"))
-            module_xml_v2_core_event_handler_action_execute_step("prepare",
+            module_simple_core_event_handler_action_execute_step("prepare",
                                                                  ev->rid);
         else
-            module_xml_v2_core_event_handler_action_execute_step(ev->
+            module_simple_core_event_handler_action_execute_step(ev->
                                                                  string,
                                                                  ev->rid);
     }
 }
 
-void module_xml_v2_einit_process_died(struct einit_event *ev)
+void module_simple_einit_process_died(struct einit_event *ev)
 {
     // fprintf (stderr, "pid has died: %i, %s\n", ev->integer, ev->rid);
 
-    if (ev->rid && module_xml_v2_modules
-        && streefind(module_xml_v2_modules, ev->rid, tree_find_first)) {
+    if (ev->rid && module_simple_modules
+        && streefind(module_simple_modules, ev->rid, tree_find_first)) {
         struct lmodule *lm = mod_lookup_rid(ev->rid);
 
         if (!lm) {              /* err...? */
@@ -769,51 +769,51 @@ void module_xml_v2_einit_process_died(struct einit_event *ev)
         if (lm->status & status_death_pending) {        /* finish the
                                                          * daemon up */
             lm->status &= ~status_death_pending;
-            module_xml_v2_core_event_handler_action_execute_step("cleanup",
+            module_simple_core_event_handler_action_execute_step("cleanup",
                                                                  ev->rid);
         } else {                /* not supposed to die just yet, figure
                                  * out if we should respawn it */
             struct cfgnode *node;
 
             if ((node =
-                 module_xml_v2_module_get_attributive_node(ev->rid,
+                 module_simple_module_get_attributive_node(ev->rid,
                                                            "restart"))
                 && node->flag) {
                 /*
                  * do respawn 
                  */
-                module_xml_v2_core_event_handler_action_execute_step
+                module_simple_core_event_handler_action_execute_step
                     ("enable", ev->rid);
             } else {
                 /*
                  * don't respawn 
                  */
-                module_xml_v2_core_event_handler_action_execute_step
+                module_simple_core_event_handler_action_execute_step
                     ("cleanup", ev->rid);
             }
         }
     }
 }
 
-int module_xml_v2_configure(struct lmodule *pa)
+int module_simple_configure(struct lmodule *pa)
 {
     module_init(pa);
 
-    event_listen(einit_core_update_modules, module_xml_v2_scanmodules);
+    event_listen(einit_core_update_modules, module_simple_scanmodules);
 
     event_listen(einit_power_reset_scheduled,
-                 module_xml_v2_power_event_handler);
+                 module_simple_power_event_handler);
     event_listen(einit_power_down_scheduled,
-                 module_xml_v2_power_event_handler);
+                 module_simple_power_event_handler);
     event_listen(einit_core_mode_switching,
-                 module_xml_v2_core_event_handler_mode_switching);
+                 module_simple_core_event_handler_mode_switching);
 
     event_listen(einit_core_module_action_execute,
-                 module_xml_v2_core_event_handler_action_execute);
+                 module_simple_core_event_handler_action_execute);
 
-    event_listen(einit_process_died, module_xml_v2_einit_process_died);
+    event_listen(einit_process_died, module_simple_einit_process_died);
 
-    module_xml_v2_scanmodules(NULL);
+    module_simple_scanmodules(NULL);
 
     return 0;
 }
