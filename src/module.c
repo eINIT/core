@@ -432,6 +432,12 @@ int mod(enum einit_module_task task, struct lmodule *module,
     struct einit_event *fb;
     unsigned int ret;
 
+    if (module->status & status_working) {
+        notice (3, "%s: cannot change status: already working on this module.",
+                module->module->rid);
+        return status_failed;
+    }
+
     if (task & einit_module_custom) {
         if (!custom_command) {
             return status_failed;
