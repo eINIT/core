@@ -102,7 +102,7 @@ void einit_servers_synchronise();
 
 void einit_job_add_or_update (struct einit_sexp *s)
 {
-    einit_sexp_display (s);
+//    einit_sexp_display (s);
 
     struct einit_sexp *primus = se_car (s);
     struct einit_sexp *secundus = se_car (se_cdr(s));
