@@ -67,7 +67,7 @@
 pid_t send_sigint_pid = 0;
 char is_sandbox = 0;
 
-const char *corefile = EINIT_LIB_BASE "/bin/einit-core";
+const char corefile[] = EINIT_LIB_BASE "/bin/einit-core";
 
 void einit_sigint(int signal, siginfo_t * siginfo, void *context)
 {
@@ -85,7 +85,7 @@ int run_core(int argc, char **argv, char **env, int ipcsocket)
         narg[i] = argv[i];
     }
 
-    if (ipcsocket) {
+    if (ipcsocket != -1) {
         narg[i] = "--socket";
         i++;
 
@@ -105,24 +105,37 @@ int einit_monitor_loop(int argc, char **argv, char **env)
 {
     int ipcsocket[2];
     pid_t core_pid;
+    char dosocket = 1;
 
-    socketpair(AF_UNIX, SOCK_STREAM, 0, ipcsocket);
+    if (socketpair(AF_UNIX, SOCK_STREAM, 0, ipcsocket) == -1) {
+        dosocket = 0;
+    }
 
     core_pid = fork();
 
     switch (core_pid) {
     case 0:
-        close(ipcsocket[1]);
-        run_core(argc, argv, env, ipcsocket[0]);
+        if (dosocket) {
+            close(ipcsocket[1]);
+            run_core(argc, argv, env, ipcsocket[0]);
+        }
+        else {
+            run_core(argc, argv, env, -1);
+        }
     case -1:
         perror("einit-monitor: couldn't fork()");
+        if (dosocket) {
+            close(ipcsocket[0]);
+            close(ipcsocket[1]);
+        }
+
         sleep(1);
-        close(ipcsocket[0]);
-        close(ipcsocket[1]);
 
         return einit_monitor_loop(argc, argv, env);
     default:
-        close(ipcsocket[0]);
+        if (dosocket) {
+            close(ipcsocket[0]);
+        }
         send_sigint_pid = core_pid;
         break;
     }
@@ -134,7 +147,7 @@ int einit_monitor_loop(int argc, char **argv, char **env)
                                                  * ANY process */
 
         if (wpid == core_pid) {
-            close(ipcsocket[1]);
+            if (dosocket) close(ipcsocket[1]);
 
             if (WIFEXITED(rstatus)
                 && (WEXITSTATUS(rstatus) != einit_exit_status_die_respawn)) {
@@ -180,7 +193,7 @@ int einit_monitor_loop(int argc, char **argv, char **env)
             fprintf(stderr, "Respawning secondary eINIT process.\n");
 
             return einit_monitor_loop(argc, argv, env);
-        } else {
+        } else if (dosocket) {
             char buffer[BUFFERSIZE];
             size_t len;
 
@@ -210,8 +223,6 @@ int main(int argc, char **argv, char **env)
             // continue;
         } else if (!strcmp(argv[i], "--sandbox")) {
             is_sandbox = 1;
-        } else if (((i + 1) < argc) && !strcmp(argv[i], "--core-file")) {
-            corefile = argv[i + 1];
         }
 
         argv_mutable[it] = argv[i];
