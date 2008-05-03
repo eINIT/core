@@ -174,45 +174,43 @@ char einit_ipx_sexp_handle_fd(struct einit_sexp_fd_reader *rd)
             efree(s);
         }
 
-        if ((sexp->type == es_cons) && (sexp->primus->type == es_symbol)) {
-            if (strmatch(sexp->primus->symbol, "request")) {
-                if ((sexp->secundus->type == es_cons)
-                    && (sexp->secundus->primus->type == es_symbol)
-                    && (sexp->secundus->secundus->type == es_cons)
-                    && (sexp->secundus->secundus->secundus->type ==
+        if ((sexp->type == es_cons) && (sexp->data.cons.primus->type == es_symbol)) {
+            if (strmatch(sexp->data.cons.primus->data.symbol, "request")) {
+                if ((sexp->data.cons.secundus->type == es_cons)
+                     && (sexp->data.cons.secundus->data.cons.primus->type == es_symbol)
+                     && (sexp->data.cons.secundus->data.cons.secundus->type == es_cons)
+                     && (sexp->data.cons.secundus->data.cons.secundus->data.cons.secundus->type ==
                         es_cons)
-                    && (sexp->secundus->secundus->secundus->secundus->
+                     && (sexp->data.cons.secundus->data.cons.secundus->data.cons.secundus->data.cons.secundus->
                         type == es_list_end)) {
                     struct stree *st = streefind(einit_ipc_handlers,
-                                                 sexp->secundus->primus->
-                                                 symbol,
+                            sexp->data.cons.secundus->data.cons.primus->data.symbol,
                                                  tree_find_first);
                     if (st) {
                         do {
                             struct einit_ipc_handler *h = st->value;
 
                             if (h->handler) {
-                                h->handler(sexp->secundus->secundus->
-                                           secundus->primus,
-                                           sexp->secundus->secundus->
-                                           primus->integer, rd->custom);
+                                h->handler(sexp->data.cons.secundus->data.cons.secundus->data.cons.
+                                        secundus->data.cons.primus,
+                                        sexp->data.cons.secundus->data.cons.secundus->
+                                           data.cons.primus->data.integer, rd->custom);
                             }
                         } while ((st =
                                   streefind(einit_ipc_handlers,
-                                            sexp->secundus->primus->symbol,
+                                            sexp->data.cons.secundus->data.cons.primus->data.symbol,
                                             tree_find_next)));
                     } else {
                         char buffer[BUFFERSIZE];
 
                         snprintf(buffer, BUFFERSIZE, "(%i bad-request)",
-                                 sexp->secundus->secundus->primus->
-                                 integer);
+                                 sexp->data.cons.secundus->data.cons.secundus->data.cons.primus->data.integer);
 
                         einit_ipc_write(buffer, rd);
                     }
                 }
-            } else if (strmatch(sexp->primus->symbol, "event")) {
-                einit_ipc_handle_sexp_event(sexp->secundus);
+            } else if (strmatch(sexp->data.cons.primus->data.symbol, "event")) {
+                einit_ipc_handle_sexp_event(sexp->data.cons.secundus);
             }
         }
     }

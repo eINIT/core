@@ -62,10 +62,9 @@ extern "C" {
 
     struct einit_exec_data {
         enum einit_exec_options options;
-        union {
-            const char *command;
-            char **command_d;
-        };
+
+        const char *command;
+        char **command_d;
 
         uid_t uid;
         gid_t gid;

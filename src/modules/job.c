@@ -109,13 +109,13 @@ void einit_job_add_or_update (struct einit_sexp *s)
     struct einit_sexp *tertius = se_car (se_cdr(se_cdr(s)));
     struct einit_sexp *rest = se_cdr(se_cdr(se_cdr(s)));
 
-    if ((primus->type == es_symbol) && strmatch (primus->symbol, "job") &&
+    if ((primus->type == es_symbol) && strmatch (primus->data.symbol, "job") &&
         (secundus->type == es_symbol) && (tertius->type == es_string)) {
-        struct einit_job j = { tertius->string, NULL, NULL };
+        struct einit_job j = { tertius->data.string, NULL, NULL };
         char buffer[BUFFERSIZE];
         const char *binary;
 
-        snprintf (buffer, BUFFERSIZE, "job-%s", secundus->symbol);
+        snprintf (buffer, BUFFERSIZE, "job-%s", secundus->data.symbol);
         binary = str_stabilise(buffer);
 
         while (rest->type == es_cons) {
@@ -123,13 +123,13 @@ void einit_job_add_or_update (struct einit_sexp *s)
             secundus = se_cdr(se_car(rest));
 
             if (primus->type == es_symbol) {
-                if (strmatch(primus->symbol, "run-on")) {
+                if (strmatch(primus->data.symbol, "run-on")) {
                     while (secundus->type == es_cons) {
                         primus = se_car (secundus);
 
                         if (primus->type == es_symbol) {
                             j.run_on = (char **)set_noa_add
-                                    ((void **)j.run_on, (void *)primus->symbol);
+                                    ((void **)j.run_on, (void *)primus->data.symbol);
                         }
 
                         secundus = se_cdr (secundus);
@@ -169,13 +169,13 @@ void einit_job_add_or_update (struct einit_sexp *s)
         einit_jobs = streeadd(einit_jobs, binary, &j, sizeof (struct einit_job),
                               j.run_on);
     } else if ((primus->type == es_symbol) &&
-                strmatch (primus->symbol, "server") &&
+                strmatch (primus->data.symbol, "server") &&
                 (secundus->type == es_symbol) && (tertius->type == es_string)) {
-        struct einit_server s = { tertius->string, NULL, NULL, 1, NULL };
+                    struct einit_server s = { tertius->data.string, NULL, NULL, 1, NULL };
         char buffer[BUFFERSIZE];
         const char *binary;
 
-        snprintf (buffer, BUFFERSIZE, "server-%s", secundus->symbol);
+        snprintf (buffer, BUFFERSIZE, "server-%s", secundus->data.symbol);
         binary = str_stabilise(buffer);
 
         while (rest->type == es_cons) {
@@ -183,29 +183,29 @@ void einit_job_add_or_update (struct einit_sexp *s)
             secundus = se_cdr(se_car(rest));
 
             if (primus->type == es_symbol) {
-                if (strmatch(primus->symbol, "need-files")) {
+                if (strmatch(primus->data.symbol, "need-files")) {
                     while (secundus->type == es_cons) {
                         primus = se_car (secundus);
 
                         if (primus->type == es_string) {
                             s.need_files = (char **)set_noa_add
-                                    ((void **)s.need_files, (void *)primus->string);
+                                    ((void **)s.need_files, (void *)primus->data.string);
                         }
 
                         secundus = se_cdr (secundus);
                     }
-                } else if (strmatch(primus->symbol, "environment")) {
+                } else if (strmatch(primus->data.symbol, "environment")) {
                     while (secundus->type == es_cons) {
                         primus = se_car (secundus);
 
                         if (primus->type == es_string) {
                             s.environment = (char **)set_noa_add
-                                    ((void **)s.environment, (void *)primus->string);
+                                    ((void **)s.environment, (void *)primus->data.string);
                         }
 
                         secundus = se_cdr (secundus);
                     }
-                } else if (strmatch(primus->symbol, "pass-socket")) {
+                } else if (strmatch(primus->data.symbol, "pass-socket")) {
                     primus = se_car (secundus);
                     s.pass_socket = (primus == sexp_true);
                 }
