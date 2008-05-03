@@ -183,26 +183,13 @@ struct itree *itreeadd(struct itree *tree, signed long key, void *value,
 {
     size_t lsize = sizeof(struct itree);
     struct itree *newnode;
-    size_t ssize = 0;
 
     switch (size) {
     case tree_value_noalloc:
         lsize = sizeof(struct itree);
         break;
-    case tree_value_string:
-        ssize = strlen(value) + 1;
-        lsize =
-            /*
-             * sizeof (struct itree) 
-             */ offsetof(struct itree,
-                         data) + ssize;
-        break;
     default:
-        lsize =
-            /*
-             * sizeof (struct itree) 
-             */ offsetof(struct itree,
-                         data) + size;
+        lsize = sizeof (struct itree);
         break;
     }
 
@@ -214,13 +201,9 @@ struct itree *itreeadd(struct itree *tree, signed long key, void *value,
         // memcpy (newnode->value, value, sizeof (void *));
         newnode->value = value;
         break;
-    case tree_value_string:
-        // newnode->value = ((char *)newnode) + sizeof (struct itree);
-        memcpy(newnode->data, value, ssize);
-        break;
     default:
-        // newnode->value = ((char *)newnode) + sizeof (struct itree);
-        memcpy(newnode->data, value, size);
+        newnode->value = ((char *)newnode) + sizeof (struct itree);
+        memcpy(newnode->value, value, size);
         break;
     }
 

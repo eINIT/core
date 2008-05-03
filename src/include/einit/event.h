@@ -313,7 +313,7 @@ extern "C" {
         einit_laptop_lid_closed = einit_event_subsystem_laptop | 0x002
     };
 
-#define evstaticinit(ttype) { ttype, NULL, NULL, 0, 0, 0, 0, NULL, { NULL }, NULL }
+#define evstaticinit(ttype) { ttype, NULL, NULL, 0, 0, 0, 0, NULL, NULL, NULL }
 #define evstaticdestroy(ev) { }
 
     struct einit_event {
@@ -335,10 +335,7 @@ extern "C" {
         /*
          * ! additional parameters 
          */
-        union {
-            struct cfgnode *node;
-            void *para;
-        };
+        void *para;
 
         char *rid;
     };

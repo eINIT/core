@@ -17,7 +17,9 @@ env = Environment(options = opts,
  CPPPATH = ['#build/headers', '#src/include', '#expat'],
  LDMODULEPREFIX='', LDMODULESUFFIX='.so')
 
-env.Append (CFLAGS = '-Wall')
+# gotta make this work alright:
+#env.Append (CFLAGS = '--std=c99 -Wall -D_POSIX_C_SOURCE=200112L -D_BSD_SOURCE')
+env.Append (CFLAGS = '-Wall -D_POSIX_C_SOURCE=200112L -D_BSD_SOURCE')
 
 if os.environ.has_key('TARGET_PREFIX'):
  env.Prepend (CC = os.environ['TARGET_PREFIX'])

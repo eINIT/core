@@ -93,7 +93,7 @@ void event_emit(struct einit_event *event,
                        tree_find_first);
 
         while (it) {
-            f = ((struct event_function *) it->data);
+            f = ((struct event_function *) it->value);
             handler = f->handler;
 
             it = itreefind(it, einit_event_subsystem_any, tree_find_next);
@@ -105,7 +105,7 @@ void event_emit(struct einit_event *event,
             it = itreefind(event_handlers, event->type, tree_find_first);
 
             while (it) {
-                f = ((struct event_function *) it->data);
+                f = ((struct event_function *) it->value);
                 handler = f->handler;
 
                 it = itreefind(it, event->type, tree_find_next);
@@ -116,7 +116,7 @@ void event_emit(struct einit_event *event,
         it = itreefind(event_handlers, subsystem, tree_find_first);
 
         while (it) {
-            f = ((struct event_function *) it->data);
+            f = ((struct event_function *) it->value);
             handler = f->handler;
 
             it = itreefind(it, subsystem, tree_find_next);
@@ -135,7 +135,7 @@ void event_listen(enum einit_event_subsystems type,
     struct itree *it = event_handlers ? itreefind(event_handlers, type,
                                                   tree_find_first) : NULL;
     while (it) {
-        struct event_function *f = (struct event_function *) it->data;
+        struct event_function *f = (struct event_function *) it->value;
 
         if (f->handler == handler) {
             doadd = 0;
@@ -160,7 +160,7 @@ void event_ignore(enum einit_event_subsystems type,
         it = itreefind(event_handlers, type, tree_find_first);
 
         while (it) {
-            struct event_function *f = (struct event_function *) it->data;
+            struct event_function *f = (struct event_function *) it->value;
             if (f->handler == handler)
                 break;
 
@@ -317,7 +317,7 @@ struct exported_function **function_look_up(const char *name,
             struct exported_function *ef = ha->value;
 
             if (!(ef->name))
-                ef->name = ha->key;
+                ef->name = (char*)ha->key;
 
             if (ef && (ef->version == version))
                 set = (struct exported_function **) set_noa_add((void **)
@@ -345,7 +345,7 @@ struct exported_function **function_look_up(const char *name,
                 struct exported_function *ef = ha->value;
 
                 if (!(ef->name))
-                    ef->name = ha->key;
+                    ef->name = (char*)ha->key;
 
                 if (ef && (ef->version == version))
                     set =

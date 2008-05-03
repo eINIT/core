@@ -44,16 +44,12 @@ enum tree_search_base {
     tree_find_next = 0x2
 };
 
-#define tree_value_string 0
 #define tree_value_noalloc -1
 
 struct itree {
     struct itree *left, *right, *equal, *parent;
     signed long key;
-    union {
-        void *value;
-        char data[0];           /* yeah, this hack is old and dirty... */
-    };
+    void *value;
 };
 
 struct itree *itreeadd(struct itree *tree, signed long key, void *value,

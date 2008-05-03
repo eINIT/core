@@ -44,14 +44,10 @@
 struct btree {
     struct btree *left, *right, *parent;
     signed long key;
-    union {
-        void *value;
-        char data[0];           /* yeah, this hack is old and dirty... */
-    };
+    void *value;
 };
 
-struct btree *btreeadd(struct btree *tree, signed long key, void *value,
-                       ssize_t size);
+struct btree *btreeadd(struct btree *tree, signed long key, void *value);
 struct btree *btreefind(struct btree *tree, signed long key);
 struct btree *btreedel(struct btree *tree);
 struct btree *btreeroot(struct btree *tree);

@@ -58,6 +58,7 @@ extern "C" {
      */
 #include <inttypes.h>
 #include <einit/event.h>
+#include <einit/config.h>
 #include <sys/types.h>
 #include <dirent.h>
 #include <stdio.h>

@@ -53,7 +53,7 @@ struct stree *streeadd(const struct stree *stree, const char *key,
     if (!key)
         return NULL;
 
-    char *stablekey = str_stabilise(key);
+    const char *stablekey = str_stabilise(key);
 
     // fprintf (stderr, "key: %s, hash: %i\n", key, keyhash);
 
@@ -66,8 +66,6 @@ struct stree *streeadd(const struct stree *stree, const char *key,
     case tree_value_noalloc:
         nodesize = sizeof(struct stree);
         break;
-    case tree_value_string:
-        vlen = strlen(value) + 1;
     default:
         nodesize = sizeof(struct stree) + vlen;
         break;
@@ -116,7 +114,7 @@ struct stree *streefind(const struct stree *stree, const char *key,
     if (!key || !stree)
         return NULL;
 
-    char *stablekey = str_stabilise(key);
+    const char *stablekey = str_stabilise(key);
 
     struct itree *it = stree->treenode;
 

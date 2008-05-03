@@ -192,7 +192,7 @@ const char *str_stabilise(const char *s)
     /*
      * we don't really care if we accidentally duplicate the string 
      */
-    i = btreeadd(einit_stable_strings, hash, nv, tree_value_noalloc);
+    i = btreeadd(einit_stable_strings, hash, nv);
 
     einit_stable_strings_reverse =
         vtreeadd(einit_stable_strings_reverse, (long) nv);

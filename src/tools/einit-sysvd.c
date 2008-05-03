@@ -36,8 +36,6 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
  */
 
-#define _BSD_SOURCE
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>

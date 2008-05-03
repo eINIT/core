@@ -150,40 +150,17 @@ struct btree *btree_splay(struct btree *tree)
     return rt;
 }
 
-struct btree *btreeadd(struct btree *tree, signed long key, void *value,
-                       ssize_t size)
+struct btree *btreeadd(struct btree *tree, signed long key, void *value)
 {
     size_t lsize = sizeof(struct btree);
     struct btree *newnode;
-    size_t ssize = 0;
 
-    switch (size) {
-    case tree_value_noalloc:
-        lsize = sizeof(struct btree);
-        break;
-    case tree_value_string:
-        ssize = strlen(value) + 1;
-        lsize = offsetof(struct btree, data) + ssize;
-        break;
-    default:
-        lsize = offsetof(struct btree, data) + size;
-        break;
-    }
+    lsize = sizeof(struct btree);
 
     newnode = emalloc(lsize);
     newnode->key = key;
 
-    switch (size) {
-    case tree_value_noalloc:
-        newnode->value = value;
-        break;
-    case tree_value_string:
-        memcpy(newnode->data, value, ssize);
-        break;
-    default:
-        memcpy(newnode->data, value, size);
-        break;
-    }
+    newnode->value = value;
 
     newnode->left = NULL;
     newnode->right = NULL;

@@ -50,7 +50,7 @@ extern "C" {
 
     struct stree {
         struct itree *treenode;
-        char *key;
+        const char *key;
         void *value;
         void *luggage;
         struct stree *next;

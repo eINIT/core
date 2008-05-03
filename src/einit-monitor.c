@@ -39,8 +39,8 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <signal.h>
 #include <sys/types.h>
+#include <signal.h>
 #include <sys/wait.h>
 #include <sys/socket.h>
 #include <fcntl.h>
