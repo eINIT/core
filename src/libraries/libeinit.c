@@ -815,7 +815,7 @@ char **einit_list_services()
 /* TODO: finish */
 void einit_set_configuration (char *key, char *mode, char **attributes)
 {
-    if (!attributes || !key || !attributes[0]) return;
+    if (!attributes || !key) return;
 
     struct einit_sexp *s;
 

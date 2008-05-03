@@ -484,44 +484,47 @@ void einit_ipc_library_set_configuration(struct einit_sexp *sexp, int id,
 
     struct einit_sexp *primus = se_car(sexp), *rest = se_cdr(sexp), *secundus;
 
-    if ((primus->type == es_symbol) && (rest->type == es_cons)) {
+    if (primus->type == es_symbol) {
         struct cfgnode nnode;
         memset (&nnode, 0, sizeof (struct cfgnode));
 
         nnode.id = (char *)primus->symbol;
 
-        primus = se_car (rest);
-        if (primus->type == es_symbol) {
-            nnode.modename = (char *)primus->symbol;
-            rest = se_cdr (rest);
-        }
+        if (rest->type == es_cons) {
+            primus = se_car (rest);
 
-        do {
-            primus = se_car(se_car(rest));
-            secundus = se_car(se_cdr(se_car(rest)));
-
-            if ((primus->type == es_symbol) && (secundus->type == es_string)) {
-                nnode.arbattrs =
-                        set_str_add_stable (nnode.arbattrs,
-                                            (char *)primus->symbol);
-                nnode.arbattrs =
-                        set_str_add_stable (nnode.arbattrs,
-                                            (char *)secundus->string);
-
-                if (strmatch (primus->symbol, "s")) {
-                    nnode.svalue = (char *)secundus->string;
-                } else if (strmatch (primus->symbol, "i")) {
-                    nnode.value = parse_integer(secundus->string);
-                } else if (strmatch (primus->symbol, "b")) {
-                    nnode.flag = parse_boolean(secundus->string);
-                }
-            } else {
-                einit_ipc_reply_simple(id, "#f", cd);
-                return;
+            if (primus->type == es_symbol) {
+                nnode.modename = (char *)primus->symbol;
+                rest = se_cdr (rest);
             }
 
-            rest = se_cdr(rest);
-        } while (rest->type == es_cons);
+            do {
+                primus = se_car(se_car(rest));
+                secundus = se_car(se_cdr(se_car(rest)));
+
+                if ((primus->type == es_symbol) && (secundus->type == es_string)) {
+                    nnode.arbattrs =
+                            set_str_add_stable (nnode.arbattrs,
+                                                (char *)primus->symbol);
+                    nnode.arbattrs =
+                            set_str_add_stable (nnode.arbattrs,
+                                                (char *)secundus->string);
+
+                    if (strmatch (primus->symbol, "s")) {
+                        nnode.svalue = (char *)secundus->string;
+                    } else if (strmatch (primus->symbol, "i")) {
+                        nnode.value = parse_integer(secundus->string);
+                    } else if (strmatch (primus->symbol, "b")) {
+                        nnode.flag = parse_boolean(secundus->string);
+                    }
+                } else {
+                    einit_ipc_reply_simple(id, "#f", cd);
+                    return;
+                }
+
+                rest = se_cdr(rest);
+            } while (rest->type == es_cons);
+        }
 
         cfg_addnode (&nnode);
 
