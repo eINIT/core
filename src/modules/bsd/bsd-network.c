@@ -73,9 +73,8 @@ char **bsd_network_list_interfaces_ifconfig(int spawn_events)
 {
     char **interfaces = NULL;
     char **new_interfaces = NULL;
-    char buffer[BUFFERSIZE * 4];
 
-    char **pr = pget(command);
+    char **pr = pget("ifconfig -l");
 
     if (pr) {
         if (pr[0][0]) {

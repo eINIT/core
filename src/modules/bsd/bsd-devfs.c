@@ -82,9 +82,7 @@ void bsd_devfs_load_kernel_extensions()
 {
     struct einit_event eml =
         evstaticinit(einit_boot_load_kernel_extensions);
-    event_emit(&eml,
-               einit_event_flag_broadcast |
-               einit_event_flag_spawn_thread_multi_wait);
+    event_emit(&eml, 0);
     evstaticdestroy(eml);
 }
 
@@ -112,15 +110,11 @@ void bsd_devfs_boot_event_handler_early(struct einit_event *ev)
     if (bsd_devfs_run() == status_ok) {
         struct einit_event eml =
             evstaticinit(einit_boot_devices_available);
-        event_emit(&eml,
-                   einit_event_flag_broadcast |
-                   einit_event_flag_spawn_thread_multi_wait);
+        event_emit(&eml, 0);
         evstaticdestroy(eml);
 
         struct einit_event erl = evstaticinit(einit_boot_root_device_ok);
-        event_emit(&erl,
-                   einit_event_flag_broadcast |
-                   einit_event_flag_spawn_thread_multi_wait);
+        event_emit(&erl, 0);
         evstaticdestroy(erl);
     }
 }

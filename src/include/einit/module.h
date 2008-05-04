@@ -86,6 +86,7 @@ extern "C" {
 #include <einit/config.h>
 #include <einit/utility.h>
 #include <einit/event.h>
+#include <sys/select.h>
 
     /*
      * !\ingroup modulemdefinition \{ 
