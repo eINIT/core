@@ -237,7 +237,9 @@ void linux_udev_run()
     char *dm = cfg_getstring("configuration-system-device-manager");
 
     if (dm && strcmp(dm, "udev")) {
-        /* default, if nothing else configured, is to use udev */
+        /*
+         * default, if nothing else configured, is to use udev 
+         */
         return;
     }
 

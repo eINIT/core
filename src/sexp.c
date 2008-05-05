@@ -113,7 +113,8 @@ static struct einit_sexp *einit_parse_string_in_buffer(char *buffer,
             break;
         }
 
-        if (skip) continue;
+        if (skip)
+            continue;
 
         if (sb_pos < (MAX_STRING_SIZE - 1)) {
             stbuffer[sb_pos] = buffer[*index];
@@ -245,7 +246,8 @@ static struct einit_sexp *einit_parse_sexp_in_buffer(char *buffer,
                         }
 
                         if (tmp != sexp_end_of_list) {
-                            ccons->data.cons.secundus = einit_sexp_create(es_cons);
+                            ccons->data.cons.secundus =
+                                einit_sexp_create(es_cons);
                             ccons = ccons->data.cons.secundus;
 
                             if (tmp == sexp_empty_list)
@@ -333,9 +335,9 @@ struct einit_sexp *einit_read_sexp_from_fd_reader(struct
         }
     }
 
-    for (ppos = 0;
-         (ppos < reader->position) && (!(reader->buffer[ppos])
-                                       || isspace(reader->buffer[ppos]));
+    for (ppos = 0; (ppos < reader->position) && (!(reader->buffer[ppos])
+                                                 || isspace(reader->
+                                                            buffer[ppos]));
          ppos++);
     if (ppos == reader->position) {
         reader->position = 0;
@@ -460,7 +462,8 @@ static void einit_sexp_to_string_iterator(struct einit_sexp *sexp,
             // fprintf (stderr, "%i, %i, %i, %c\n", *pos, *len, i,
             // sexp->data.string[i]);
 
-            if ((sexp->data.string[i] == '"') || (sexp->data.string[i] == '\\')) {
+            if ((sexp->data.string[i] == '"')
+                || (sexp->data.string[i] == '\\')) {
                 (*len)++;
                 *buffer = sexp_chunk_realloc(*buffer, *len, cs);
 
@@ -484,8 +487,8 @@ static void einit_sexp_to_string_iterator(struct einit_sexp *sexp,
             (*pos)++;
         }
 
-        einit_sexp_to_string_iterator(sexp->data.cons.primus, buffer, len, pos, 0,
-                                      cs);
+        einit_sexp_to_string_iterator(sexp->data.cons.primus, buffer, len,
+                                      pos, 0, cs);
 
         if (sexp->data.cons.secundus->type != es_list_end) {
             *len += 1;
@@ -495,8 +498,8 @@ static void einit_sexp_to_string_iterator(struct einit_sexp *sexp,
             (*pos)++;
         }
 
-        einit_sexp_to_string_iterator(sexp->data.cons.secundus, buffer, len, pos, 1,
-                                      cs);
+        einit_sexp_to_string_iterator(sexp->data.cons.secundus, buffer,
+                                      len, pos, 1, cs);
 
         break;
 

@@ -75,7 +75,7 @@ struct einit_xml_expat_user_data {
 };
 
 void handler_tag_start(void *userData, const XML_Char * name,
-                               const XML_Char ** atts)
+                       const XML_Char ** atts)
 {
     struct einit_xml_expat_user_data *ud =
         (struct einit_xml_expat_user_data *) userData;
@@ -123,15 +123,14 @@ void handler_tag_start(void *userData, const XML_Char * name,
 
         for (; atts[i] != NULL; i += 2) {
             if (strmatch(atts[i], "id")) {
-                idattr =
-                        (char *) str_stabilise((char *) atts[i + 1]);
+                idattr = (char *) str_stabilise((char *) atts[i + 1]);
             }
         }
 
         if (idattr) {
             ud->mode = idattr;
 
-            einit_set_configuration ("mode", ud->mode, (char **)atts);
+            einit_set_configuration("mode", ud->mode, (char **) atts);
         }
     } else {
         if (!ud->prefix) {
@@ -196,7 +195,7 @@ void handler_tag_start(void *userData, const XML_Char * name,
                 }
             }
         } else {
-            einit_set_configuration (ud->prefix, ud->mode, (char **)atts);
+            einit_set_configuration(ud->prefix, ud->mode, (char **) atts);
         }
     }
 }
@@ -251,7 +250,8 @@ int expat_parse_configuration_file(char *configfile)
     char *confpath = NULL;
     XML_Parser par;
 
-    if (!configfile) return 0;
+    if (!configfile)
+        return 0;
 
     struct einit_xml_expat_user_data expatuserdata = {
         .options = 0,
@@ -266,21 +266,20 @@ int expat_parse_configuration_file(char *configfile)
         par = XML_ParserCreate(NULL);
         if (par != NULL) {
             XML_SetUserData(par, (void *) &expatuserdata);
-            XML_SetElementHandler(par, handler_tag_start,
-                                  handler_tag_end);
+            XML_SetElementHandler(par, handler_tag_start, handler_tag_end);
             if (XML_Parse(par, data, blen - 1, 1) == XML_STATUS_ERROR) {
                 uint32_t line = XML_GetCurrentLineNumber(par);
                 char **tx = str2set('\n', data);
 
                 fprintf(stdout,
-                       "expat_parse_configuration_file(): XML_Parse():\n * in %s, line %i, character %i\n",
-                       configfile, line,
-                       (int) XML_GetCurrentColumnNumber(par));
+                        "expat_parse_configuration_file(): XML_Parse():\n * in %s, line %i, character %i\n",
+                        configfile, line,
+                        (int) XML_GetCurrentColumnNumber(par));
 
                 if (tx) {
                     if (setcount((const void **) tx) >= line) {
                         fprintf(stdout, " * offending line:\n%s\n",
-                               tx[line - 1]);
+                                tx[line - 1]);
                     }
                     efree(tx);
                 }
@@ -300,8 +299,9 @@ int expat_parse_configuration_file(char *configfile)
         efree(data);
 
         if (!recursion) {
-            confpath = einit_get_configuration_string
-                    ("core-settings-configuration-path", NULL);
+            confpath =
+                einit_get_configuration_string
+                ("core-settings-configuration-path", NULL);
 
             if (!confpath)
                 confpath = "/etc/einit/";
@@ -321,15 +321,13 @@ int expat_parse_configuration_file(char *configfile)
 
                     if ((file[0] == '/') || !stat(file, &st)) {
                         recursion++;
-                        expat_parse_configuration_file
-                            (file);
+                        expat_parse_configuration_file(file);
                         recursion--;
                     } else {
                         char *includefile = joinpath(confpath, file);
 
                         recursion++;
-                        expat_parse_configuration_file
-                            (includefile);
+                        expat_parse_configuration_file(includefile);
                         recursion--;
 
                         efree(includefile);
@@ -346,7 +344,7 @@ int expat_parse_configuration_file(char *configfile)
         return 1;
     } else if (errno) {
         fprintf(stdout, "could not read file \"%s\": %s\n", configfile,
-               strerror(errno));
+                strerror(errno));
 
         if (expatuserdata.prefix)
             efree(expatuserdata.prefix);
@@ -362,22 +360,20 @@ int expat_parse_configuration_file(char *configfile)
 
 void config_updated()
 {
-    struct einit_event se =
-            evstaticinit(einit_core_configuration_update);
+    struct einit_event se = evstaticinit(einit_core_configuration_update);
     event_emit(&se, einit_event_flag_remote);
 }
 
 void update_modules()
 {
-    struct einit_event se =
-            evstaticinit(einit_core_update_modules);
+    struct einit_event se = evstaticinit(einit_core_update_modules);
     event_emit(&se, einit_event_flag_remote);
 }
 
 int main(int argc, char **argv)
 {
     if (!einit_connect(&argc, argv)) {
-        fprintf (stdout, "einit_connect() failed\n");
+        fprintf(stdout, "einit_connect() failed\n");
         return 0;
     }
 

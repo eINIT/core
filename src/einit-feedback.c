@@ -52,11 +52,9 @@
 
 #include <einit/einit.h>
 #include <einit/tree.h>
+#include <einit/ipc.h>
 
 #include <curses.h>
-#if 0
-#include <pthread.h>
-#endif
 
 struct module_status {
     enum einit_module_status status;
@@ -84,7 +82,6 @@ enum control_type {
 };
 
 struct textbuffer_entry **textbuffer = NULL;
-char updatesok = 0;
 
 int progress = 0;
 int starting_bufferitem = 0;
@@ -94,7 +91,7 @@ char *mode_to = "(none)";
 char **broken = NULL;
 char **unresolved = NULL;
 
-char show_notices = 1;
+char show_notices = 0;
 
 enum control_type control_mode = control_automatic;
 
@@ -547,9 +544,6 @@ void update_do()
 
 void update()
 {
-    if (!updatesok)
-        return;
-
     update_do();
 }
 
@@ -659,22 +653,50 @@ void event_handler_broken_services(struct einit_event *ev)
     update();
 }
 
-/*
- * void *input_thread (void *ignored) { while (1) { switch (getch ()) {
- * case 'a': control_mode = control_automatic; update(); break;
- * 
- * case 'L': show_notices ^= 1; update(); break;
- * 
- * case 'k': case 'p': case KEY_UP: control_mode = control_manual; if
- * (starting_bufferitem > 0) starting_bufferitem--; update(); break;
- * 
- * case 'j': case 'n': case KEY_DOWN: control_mode = control_manual; if
- * (textbuffer && textbuffer[starting_bufferitem] &&
- * textbuffer[starting_bufferitem+1]) starting_bufferitem++; update();
- * break;
- * 
- * case 'q': endwin (); einit_disconnect(); exit(EXIT_SUCCESS); } } }
- */
+
+void do_input()
+{
+    int rv;
+
+    while ((rv = getch()) != ERR) {
+
+        switch (rv) {
+        case 'a':
+            control_mode = control_automatic;
+            update();
+            break;
+
+        case 'L':
+            show_notices ^= 1;
+            update();
+            break;
+
+        case 'k':
+        case 'p':
+        case KEY_UP:
+            control_mode = control_manual;
+            if (starting_bufferitem > 0)
+                starting_bufferitem--;
+            update();
+            break;
+
+        case 'j':
+        case 'n':
+        case KEY_DOWN:
+            control_mode = control_manual;
+            if (textbuffer && textbuffer[starting_bufferitem]
+                && textbuffer[starting_bufferitem + 1])
+                starting_bufferitem++;
+            update();
+            break;
+
+        case 'q':
+            endwin();
+            einit_disconnect();
+            exit(EXIT_SUCCESS);
+        }
+    }
+}
 
 int main(int argc, char **argv, char **env)
 {
@@ -686,7 +708,6 @@ int main(int argc, char **argv, char **env)
             exit(EXIT_FAILURE);
         }
     }
-    // ethread_spawn_detached (input_thread, NULL);
 
     event_listen(einit_core_mode_switching, event_handler_mode_switching);
     event_listen(einit_core_mode_switch_done,
@@ -709,8 +730,8 @@ int main(int argc, char **argv, char **env)
 
     initscr();
     start_color();
-    cbreak();
     noecho();
+    raw();
 
     init_pair(attr_red, COLOR_RED, COLOR_BLACK);
     init_pair(attr_blue, COLOR_BLUE, COLOR_BLACK);
@@ -721,14 +742,16 @@ int main(int argc, char **argv, char **env)
     nonl();
     intrflush(stdscr, FALSE);
     keypad(stdscr, TRUE);
+    nodelay(stdscr, FALSE);
 
-    updatesok = 1;
+    int fd = einit_event_loop_fd(STDIN_FILENO);
 
-    einit_event_loop();
+    do {
+        do_input();
+        update();
 
-    endwin();
-
-    einit_disconnect();
+        einit_ipc_loop_fd(STDIN_FILENO);
+    } while (1);
 
     return 0;
 }

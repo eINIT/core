@@ -134,6 +134,7 @@ extern "C" {
      * will grab events from eINIT and emit them locally. 
      */
     void einit_event_loop();
+    int einit_event_loop_fd(int fd);
 
     /*
      * !\brief Grab and Handle old Events This will run an event loop
@@ -181,7 +182,7 @@ extern "C" {
     char **einit_list_modules();
     char **einit_list_services();
 
-    void einit_set_configuration (char *key, char *mode, char **attributes);
+    void einit_set_configuration(char *key, char *mode, char **attributes);
 
 #ifdef __cplusplus
 }

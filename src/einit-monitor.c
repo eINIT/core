@@ -118,8 +118,7 @@ int einit_monitor_loop(int argc, char **argv, char **env)
         if (dosocket) {
             close(ipcsocket[1]);
             run_core(argc, argv, env, ipcsocket[0]);
-        }
-        else {
+        } else {
             run_core(argc, argv, env, -1);
         }
     case -1:
@@ -147,7 +146,8 @@ int einit_monitor_loop(int argc, char **argv, char **env)
                                                  * ANY process */
 
         if (wpid == core_pid) {
-            if (dosocket) close(ipcsocket[1]);
+            if (dosocket)
+                close(ipcsocket[1]);
 
             if (WIFEXITED(rstatus)
                 && (WEXITSTATUS(rstatus) != einit_exit_status_die_respawn)) {

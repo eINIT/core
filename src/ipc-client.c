@@ -88,7 +88,8 @@ void einit_ipc_handle_sexp_event(struct einit_sexp *sexp)
         switch (s) {
         case seps_type:
             if (p->type == es_symbol) {
-                enum einit_event_code c = event_string_to_code(p->data.symbol);
+                enum einit_event_code c =
+                    event_string_to_code(p->data.symbol);
 
                 if (c == einit_event_subsystem_custom)
                     return;
@@ -206,11 +207,13 @@ char einit_ipc_loop()
 
         // efree(r);
 
-//        einit_sexp_display(sexp);
+        // einit_sexp_display(sexp);
 
-        if ((sexp->type == es_cons) && (sexp->data.cons.secundus->type == es_cons)) {
+        if ((sexp->type == es_cons)
+            && (sexp->data.cons.secundus->type == es_cons)) {
             if ((sexp->data.cons.primus->type == es_integer)
-                 && (sexp->data.cons.secundus->data.cons.secundus->type == es_list_end)) {
+                && (sexp->data.cons.secundus->data.cons.secundus->type ==
+                    es_list_end)) {
                 /*
                  * 2-tuple and starts with an integer: reply 
                  */
@@ -220,16 +223,23 @@ char einit_ipc_loop()
                 // sexp->data.cons.primus->data.integer);
 
                 einit_ipc_replies =
-                        itreeadd(einit_ipc_replies, sexp->data.cons.primus->data.integer,
-                                 sexp->data.cons.secundus->data.cons.primus, tree_value_noalloc);
+                    itreeadd(einit_ipc_replies,
+                             sexp->data.cons.primus->data.integer,
+                             sexp->data.cons.secundus->data.cons.primus,
+                             tree_value_noalloc);
                 continue;
             }
 
-            if ((sexp->data.cons.secundus->data.cons.secundus->type == es_cons)
-                 && (sexp->data.cons.secundus->data.cons.secundus->data.cons.secundus->type == es_cons)
-                 && (sexp->data.cons.secundus->data.cons.secundus->data.cons.secundus->data.cons.secundus->type ==
-                 es_list_end) && (sexp->data.cons.primus->type == es_symbol)
-                 && (strmatch(sexp->data.cons.primus->data.symbol, "request"))) {
+            if ((sexp->data.cons.secundus->data.cons.secundus->type ==
+                 es_cons)
+                && (sexp->data.cons.secundus->data.cons.secundus->data.
+                    cons.secundus->type == es_cons)
+                && (sexp->data.cons.secundus->data.cons.secundus->data.
+                    cons.secundus->data.cons.secundus->type == es_list_end)
+                && (sexp->data.cons.primus->type == es_symbol)
+                &&
+                (strmatch(sexp->data.cons.primus->data.symbol, "request")))
+            {
                 /*
                  * 4-tuple: must be a request
                  */
@@ -245,7 +255,8 @@ char einit_ipc_loop()
             }
 
             if ((sexp->data.cons.primus->type == es_symbol)
-                 && (strmatch(sexp->data.cons.primus->data.symbol, "event"))) {
+                &&
+                (strmatch(sexp->data.cons.primus->data.symbol, "event"))) {
 
                 // fprintf(stderr, "EVENT, decoding\n");
 
@@ -279,6 +290,31 @@ void einit_ipc_loop_infinite()
 
         if (selectres > 0) {
             einit_ipc_loop();
+        }
+    }
+}
+
+int einit_ipc_loop_fd(int xfd)
+{
+    int fd = einit_ipc_get_fd();
+
+    while (1) {
+        int selectres;
+
+        fd_set rfds;
+
+        FD_ZERO(&rfds);
+        FD_SET(fd, &rfds);
+        FD_SET(xfd, &rfds);
+
+        selectres =
+            select((((fd > xfd) ? fd : xfd) + 1), &rfds, NULL, NULL, 0);
+
+        if (selectres > 0) {
+            if (FD_ISSET(xfd, &rfds))
+                return xfd;
+            if (FD_ISSET(fd, &rfds))
+                einit_ipc_loop();
         }
     }
 }

@@ -167,7 +167,7 @@ char module_simple_check_files(char *name)
 int module_simple_module_configure(struct lmodule *pa)
 {
     module_simple_modules =
-            streeadd(module_simple_modules, pa->module->rid, pa, SET_NOALLOC,
+        streeadd(module_simple_modules, pa->module->rid, pa, SET_NOALLOC,
                  NULL);
 
     return 0;
@@ -223,7 +223,7 @@ char *module_simple_generate_defer_fs(char **tmpxt)
 void module_simple_scanmodules(struct einit_event *ev)
 {
     struct stree *modules_to_update =
-            streelinear_prepare(module_simple_modules);
+        streelinear_prepare(module_simple_modules);
     int new_modules = 0;
 
     while (modules_to_update) {
@@ -244,7 +244,7 @@ void module_simple_scanmodules(struct einit_event *ev)
              */
 
             if ((!module_simple_modules
-                  || !streefind(module_simple_modules,
+                 || !streefind(module_simple_modules,
                                node->id + MODULES_PREFIX_LENGTH,
                                tree_find_first)) && node->arbattrs) {
                 int i = 0;
@@ -376,7 +376,7 @@ void module_simple_auto_enable(char *mode)
 
     while (modules) {
         struct cfgnode *s =
-                module_simple_module_get_attributive_node(modules->key,
+            module_simple_module_get_attributive_node(modules->key,
                                                       "auto-enable");
         if (s && s->svalue) {
             char **sp = str2set(':', s->svalue);
@@ -468,7 +468,7 @@ void module_simple_core_event_handler_action_true(char *task, char *rid)
 
             if ((lm = mod_lookup_rid(rid))
                 && (node =
-                 module_simple_module_get_attributive_node(rid,
+                    module_simple_module_get_attributive_node(rid,
                                                               "pidfile"))
                 && node->svalue) {
                 lm->pidfile = node->svalue;
@@ -499,6 +499,8 @@ void module_simple_core_event_handler_dead_process(struct einit_exec_data
     char *a = x->custom;
 
     // fprintf (stderr, "module_simple_core_event_handler_dead_process(%s, 
+    // 
+    // 
     // %s, %i)\n", x->custom, x->rid, x->pid);
 
     if (module_simple_core_event_handler_status(x->status) & status_ok)
@@ -679,10 +681,10 @@ void module_simple_core_event_handler_action_execute_step(char *task,
             xd->module = mod_lookup_rid(rid);
             xd->custom = (void *) str_stabilise(task);
             xd->handle_dead_process =
-                    module_simple_core_event_handler_dead_process;
+                module_simple_core_event_handler_dead_process;
 
             struct cfgnode *vnode =
-                    module_simple_module_get_attributive_node(rid,
+                module_simple_module_get_attributive_node(rid,
                                                           "variables");
             char *variables = vnode ? vnode->svalue : NULL;
 
@@ -726,14 +728,14 @@ void module_simple_core_event_handler_action_execute_step(char *task,
         // fprintf (stderr, "no code (%s, %s)\n", task, rid);
     }
 
-  handle_nocode:               /* if we dont have code, just assume
+  handle_nocode:               /* if we dont have code, just assume * *
                                  * everything went goody */
     // fprintf (stderr, "no code/true by default (%s, %s)\n", task, rid);
 
     if (myenvironment)
         efree(myenvironment);
 
-  module_simple_core_event_handler_action_true(task, rid);
+    module_simple_core_event_handler_action_true(task, rid);
 }
 
 void module_simple_core_event_handler_action_execute(struct einit_event

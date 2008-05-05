@@ -524,7 +524,8 @@ void core_process_died(struct einit_event *ev)
     }
 }
 
-void core_einit_core_einit_job_all_done(struct einit_event *ev) {
+void core_einit_core_einit_job_all_done(struct einit_event *ev)
+{
     if (do_run_early_bootup) {
         do_run_early_bootup = 0;
 
@@ -565,8 +566,7 @@ int main(int argc, char **argv, char **environ)
                  core_einit_core_module_action_complete);
     event_listen(einit_process_died, core_process_died);
 
-    event_listen(einit_job_all_done,
-                 core_einit_core_einit_job_all_done);
+    event_listen(einit_job_all_done, core_einit_core_einit_job_all_done);
 
     if (argv)
         einit_argv = set_str_dup_stable(argv);

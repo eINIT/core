@@ -112,7 +112,7 @@ void einit_ipc_library_receive_events(struct einit_sexp *sexp, int id,
             if (strmatch(sexp->data.symbol, "replay-only")) {
                 cd->current_event = -1;
             }
-            } else if (strmatch(sexp->data.symbol, "no-backlog")) {
+        } else if (strmatch(sexp->data.symbol, "no-backlog")) {
             for (cd->current_event = 0;
                  einit_event_backlog[cd->current_event];
                  cd->current_event++);
@@ -480,41 +480,43 @@ void einit_ipc_library_service_switch_mode(struct einit_sexp *sexp, int id,
 void einit_ipc_library_set_configuration(struct einit_sexp *sexp, int id,
                                          struct einit_ipc_connection *cd)
 {
-//    einit_sexp_display (sexp);
+    // einit_sexp_display (sexp);
 
-    struct einit_sexp *primus = se_car(sexp), *rest = se_cdr(sexp), *secundus;
+    struct einit_sexp *primus = se_car(sexp), *rest =
+        se_cdr(sexp), *secundus;
 
     if (primus->type == es_symbol) {
         struct cfgnode nnode;
-        memset (&nnode, 0, sizeof (struct cfgnode));
+        memset(&nnode, 0, sizeof(struct cfgnode));
 
-        nnode.id = (char *)primus->data.symbol;
+        nnode.id = (char *) primus->data.symbol;
 
         if (rest->type == es_cons) {
-            primus = se_car (rest);
+            primus = se_car(rest);
 
             if (primus->type == es_symbol) {
-                nnode.modename = (char *)primus->data.symbol;
-                rest = se_cdr (rest);
+                nnode.modename = (char *) primus->data.symbol;
+                rest = se_cdr(rest);
             }
 
             do {
                 primus = se_car(se_car(rest));
                 secundus = se_car(se_cdr(se_car(rest)));
 
-                if ((primus->type == es_symbol) && (secundus->type == es_string)) {
+                if ((primus->type == es_symbol)
+                    && (secundus->type == es_string)) {
                     nnode.arbattrs =
-                            set_str_add_stable (nnode.arbattrs,
-                            (char *)primus->data.symbol);
+                        set_str_add_stable(nnode.arbattrs,
+                                           (char *) primus->data.symbol);
                     nnode.arbattrs =
-                            set_str_add_stable (nnode.arbattrs,
-                            (char *)secundus->data.string);
+                        set_str_add_stable(nnode.arbattrs,
+                                           (char *) secundus->data.string);
 
-                    if (strmatch (primus->data.symbol, "s")) {
-                        nnode.svalue = (char *)secundus->data.string;
-                    } else if (strmatch (primus->data.symbol, "i")) {
+                    if (strmatch(primus->data.symbol, "s")) {
+                        nnode.svalue = (char *) secundus->data.string;
+                    } else if (strmatch(primus->data.symbol, "i")) {
                         nnode.value = parse_integer(secundus->data.string);
-                    } else if (strmatch (primus->data.symbol, "b")) {
+                    } else if (strmatch(primus->data.symbol, "b")) {
                         nnode.flag = parse_boolean(secundus->data.string);
                     }
                 } else {
@@ -526,7 +528,7 @@ void einit_ipc_library_set_configuration(struct einit_sexp *sexp, int id,
             } while (rest->type == es_cons);
         }
 
-        cfg_addnode (&nnode);
+        cfg_addnode(&nnode);
 
         einit_ipc_reply_simple(id, "#t", cd);
     } else {

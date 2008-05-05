@@ -189,7 +189,7 @@ struct itree *itreeadd(struct itree *tree, signed long key, void *value,
         lsize = sizeof(struct itree);
         break;
     default:
-        lsize = sizeof (struct itree);
+        lsize = sizeof(struct itree) + sizeof(struct itree);
         break;
     }
 
@@ -202,7 +202,7 @@ struct itree *itreeadd(struct itree *tree, signed long key, void *value,
         newnode->value = value;
         break;
     default:
-        newnode->value = ((char *)newnode) + sizeof (struct itree);
+        newnode->value = ((char *) newnode) + sizeof(struct itree);
         memcpy(newnode->value, value, size);
         break;
     }

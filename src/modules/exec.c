@@ -497,7 +497,7 @@ int pexec_f(const char *command, const char **variables, uid_t uid,
             close(0);
 
         close(1);
-            dup2(2, 1);
+        dup2(2, 1);
 
         execve(exvec[0], exvec, exec_environment);
     } else {

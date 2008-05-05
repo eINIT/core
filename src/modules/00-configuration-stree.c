@@ -394,9 +394,8 @@ struct cfgnode *cfg_getnode(const char *id)
     mtree = streefind(configuration_by_mode, modename, tree_find_first);
 
     if (mtree) {
-        struct stree *x =
-            streefind((struct stree *) (mtree->value), id,
-                      tree_find_first);
+        struct stree *x = streefind((struct stree *) (mtree->value), id,
+                                    tree_find_first);
         if (x)
             return x->value;
     }

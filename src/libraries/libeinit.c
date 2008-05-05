@@ -353,6 +353,13 @@ void einit_event_loop()
     einit_ipc_loop_infinite();
 }
 
+int einit_event_loop_fd(int fd)
+{
+    einit_ipc_request("receive-events", se_symbol("backlog"));
+    return einit_ipc_loop_fd(fd);
+}
+
+
 void einit_event_loop_skip_old()
 {
     einit_ipc_request("receive-events", se_symbol("no-backlog"));
@@ -720,7 +727,8 @@ static char **sexp2arbattrs(char **rv, struct einit_sexp *s)
             if ((primus->type == es_symbol)
                 && (secundus->type == es_string)) {
                 rv = set_str_add_stable(rv, (char *) primus->data.symbol);
-                rv = set_str_add_stable(rv, (char *) secundus->data.string);
+                rv = set_str_add_stable(rv,
+                                        (char *) secundus->data.string);
             }
 
             p = p->data.cons.secundus;
@@ -758,7 +766,7 @@ char ***einit_get_configuration_prefix(const char *prefix)
 
             if (primus->type == es_symbol) {
                 char **e =
-                        set_str_add_stable(NULL, (char *) primus->data.symbol);
+                    set_str_add_stable(NULL, (char *) primus->data.symbol);
                 e = sexp2arbattrs(e, secundus);
 
                 rv = (char ***) set_noa_add((void **) rv, e);
@@ -812,28 +820,32 @@ char **einit_list_services()
     return einit_list("services");
 }
 
-/* TODO: finish */
-void einit_set_configuration (char *key, char *mode, char **attributes)
+/*
+ * TODO: finish 
+ */
+void einit_set_configuration(char *key, char *mode, char **attributes)
 {
-    if (!attributes || !key) return;
+    if (!attributes || !key)
+        return;
 
     struct einit_sexp *s;
 
-    struct einit_sexp *attrs = (struct einit_sexp *)sexp_end_of_list;
+    struct einit_sexp *attrs = (struct einit_sexp *) sexp_end_of_list;
     int i = 0;
 
-    for (; attributes[i]; i+=2) {
-        attrs = se_cons (se_cons (se_symbol (attributes[i]),
-                         se_cons (se_string (attributes[i+1]),
-                                  (struct einit_sexp *)sexp_end_of_list)),
-                                   attrs);
+    for (; attributes[i]; i += 2) {
+        attrs =
+            se_cons(se_cons
+                    (se_symbol(attributes[i]),
+                     se_cons(se_string(attributes[i + 1]),
+                             (struct einit_sexp *) sexp_end_of_list)),
+                    attrs);
     }
 
     if (mode) {
-        s = se_cons (se_symbol(key),
-            se_cons (se_symbol(mode), attrs));
+        s = se_cons(se_symbol(key), se_cons(se_symbol(mode), attrs));
     } else {
-        s = se_cons (se_symbol(key), attrs);
+        s = se_cons(se_symbol(key), attrs);
     }
 
     einit_ipc_request("set-configuration!", s);

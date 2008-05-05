@@ -317,7 +317,7 @@ struct exported_function **function_look_up(const char *name,
             struct exported_function *ef = ha->value;
 
             if (!(ef->name))
-                ef->name = (char*)ha->key;
+                ef->name = (char *) ha->key;
 
             if (ef && (ef->version == version))
                 set = (struct exported_function **) set_noa_add((void **)
@@ -345,7 +345,7 @@ struct exported_function **function_look_up(const char *name,
                 struct exported_function *ef = ha->value;
 
                 if (!(ef->name))
-                    ef->name = (char*)ha->key;
+                    ef->name = (char *) ha->key;
 
                 if (ef && (ef->version == version))
                     set =

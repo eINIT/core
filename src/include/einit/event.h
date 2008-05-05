@@ -303,7 +303,7 @@ extern "C" {
 
         /*
          * einit_event_subsystem_job: 
-        */
+         */
         einit_job_all_done = einit_event_subsystem_job | 0x001,
 
         /*
