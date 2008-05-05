@@ -49,7 +49,7 @@
 #include <einit/tree.h>
 #include <errno.h>
 #include <time.h>
-#include <wait.h>
+#include <sys/wait.h>
 #include <einit/exec.h>
 
 struct lmodule *mlist = NULL;

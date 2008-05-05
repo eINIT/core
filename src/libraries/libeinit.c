@@ -52,6 +52,8 @@
 #include <sys/wait.h>
 #include <sys/stat.h>
 
+#include <signal.h>
+
 #include <fcntl.h>
 
 #define DEFAULT_EINIT_ADDRESS "/dev/einit"
@@ -82,6 +84,7 @@ struct utsname osinfo = { };
 char **einit_initial_environment = NULL;
 char **einit_global_environment = NULL;
 char **einit_argv = NULL;
+char **einit_event_backlog = NULL;
 
 struct stree *exported_functions = NULL;
 
