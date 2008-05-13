@@ -14,7 +14,6 @@ CodeVTree = ['vtree-splay.c']
 CodeSTree = ['tree-itree.c']
 
 CodeCoreObjects = ['einit-core.c', 'module.c', 'ipc.c', 'exec.c']
-CodeCoreMonitorObjects = ['einit-monitor.c']
 
 CodeLastRites = ['last-rites.c']
 CodeEinitHelper = ['einit-helper.c']
@@ -27,10 +26,11 @@ CodeEinitBootChartD = ['tools/einit-bootchartd.c']
 
 CodeLibEinit = AssemblyFunctions + ['libraries/libeinit.c', 'bitch.c', 'event.c', 'utility.c', 'strings.c', 'sexp.c', 'ipc-client.c'] + CodeSet + CodeSTree + CodeBTree + CodeITree + CodeVTree
 
+# OS-dependant code
+CodeCoreMonitorObjects = [ uname + '/einit-monitor.c' ]
 CodeLibEinit += [ uname + '/process.c' ]
 
 if uname == 'freebsd':
- CodeCoreMonitorObjects = [ 'freebsd/einit-monitor.c' ]
  einitMonitor = env.Program ('einit-monitor', CodeCoreMonitorObjects, LIBS=['util'])
 else:
  einitMonitor = env.Program ('einit-monitor', CodeCoreMonitorObjects)
