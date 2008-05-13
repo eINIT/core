@@ -74,9 +74,9 @@ void einit_sigint(int signal, siginfo_t * siginfo, void *context)
         kill(send_sigint_pid, SIGINT);
 }
 
-int run_core(int argc, char **argv, char **env, int ipcsocket)
+int run_core(int argc, char **argv, int ipcsocket)
 {
-    char *narg[argc + 8];
+    char *narg[argc + 3];
     int i = 0;
     char tmp1[BUFFERSIZE];
 
@@ -95,12 +95,12 @@ int run_core(int argc, char **argv, char **env, int ipcsocket)
 
     narg[i] = 0;
 
-    execve(corefile, narg, env);
+    execv(corefile, narg);
     perror("couldn't execute eINIT");
     return -1;
 }
 
-int einit_monitor_loop(int argc, char **argv, char **env)
+int einit_monitor_loop(int argc, char **argv)
 {
     int ipcsocket[2];
     pid_t core_pid;
@@ -116,9 +116,9 @@ int einit_monitor_loop(int argc, char **argv, char **env)
     case 0:
         if (dosocket) {
             close(ipcsocket[1]);
-            run_core(argc, argv, env, ipcsocket[0]);
+            run_core(argc, argv, ipcsocket[0]);
         } else {
-            run_core(argc, argv, env, -1);
+            run_core(argc, argv, -1);
         }
     case -1:
         perror("einit-monitor: couldn't fork()");
@@ -129,7 +129,7 @@ int einit_monitor_loop(int argc, char **argv, char **env)
 
         sleep(1);
 
-        return einit_monitor_loop(argc, argv, env);
+        return einit_monitor_loop(argc, argv);
     default:
         if (dosocket) {
             close(ipcsocket[0]);
@@ -176,7 +176,7 @@ int einit_monitor_loop(int argc, char **argv, char **env)
                     fprintf(stderr,
                             "Respawning secondary eINIT process.\n");
 
-                    return einit_monitor_loop(argc, argv, env);
+                    return einit_monitor_loop(argc, argv);
                 }
 
                 exit(EXIT_SUCCESS);
@@ -189,7 +189,7 @@ int einit_monitor_loop(int argc, char **argv, char **env)
             while ((n = sleep(n)));
             fprintf(stderr, "Respawning secondary eINIT process.\n");
 
-            return einit_monitor_loop(argc, argv, env);
+            return einit_monitor_loop(argc, argv);
         } else if (dosocket) {
             char buffer[BUFFERSIZE];
             size_t len;
@@ -204,10 +204,10 @@ int einit_monitor_loop(int argc, char **argv, char **env)
     }
 }
 
-int main(int argc, char **argv, char **env)
+int main(int argc, char **argv)
 {
     char *argv_mutable[argc + 1];
-    int i = 0, it = 0;
+    int i = 0;
     char do_init = (getpid() == 1);
 
 #if defined(__linux__) && defined(PR_SET_NAME)
@@ -215,29 +215,9 @@ int main(int argc, char **argv, char **env)
 #endif
 
     for (; i < argc; i++) {
-        argv_mutable[it] = argv[i];
-        argv_mutable[it + 1] = 0;
-        it++;
+        argv_mutable[i] = argv[i];
     }
-
-    i = 0;
-    if (env) {
-        for (; env[i]; i++);
-    }
-
-    char *pimped_env[i + 2];
-    i = 0;
-    if (env) {
-        for (; env[i]; i++)
-            pimped_env[i] = env[i];
-    }
-    pimped_env[i] =
-        "PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:/usr/local/sbin:/opt/bin:/opt/sbin";
-    pimped_env[i + 1] = NULL;
-
-    setenv("PATH",
-           "/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:/usr/local/sbin:/opt/bin:/opt/sbin",
-           1);
+    argv_mutable[i] = 0;
 
     if (do_init) {
         struct sigaction action;
@@ -259,14 +239,13 @@ int main(int argc, char **argv, char **env)
         if (sigaction(SIGPIPE, &action, NULL))
             perror("calling sigaction() failed");
 
-        return einit_monitor_loop(it, argv_mutable, pimped_env);
+        return einit_monitor_loop(argc, argv_mutable);
     }
 
     /*
      * non-ipc, non-core 
      */
-    // argv_mutable[0] = EINIT_LIB_BASE "/bin/einit-helper";
-    execve(EINIT_LIB_BASE "/bin/einit-helper", argv_mutable, pimped_env);
+    execv(EINIT_LIB_BASE "/bin/einit-helper", argv_mutable);
     perror("couldn't execute " EINIT_LIB_BASE "/bin/einit-helper");
     return -1;
 }
