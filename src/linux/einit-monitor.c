@@ -65,7 +65,6 @@
 #define PID_TERMINATED_EVENT "(event process/died %i 0 0 0 \"\" () einit-monitor)"
 
 pid_t send_sigint_pid = 0;
-char is_sandbox = 0;
 
 const char corefile[] = EINIT_LIB_BASE "/bin/einit-core";
 
@@ -159,20 +158,18 @@ int einit_monitor_loop(int argc, char **argv, char **env)
                             "eINIT has quit, let's see if it left a message for us (%i)...\n",
                             WEXITSTATUS(rstatus));
 
-                if (!is_sandbox) {
-                    if (WEXITSTATUS(rstatus) ==
-                        einit_exit_status_last_rites_halt) {
-                        execl(EINIT_LIB_BASE "/bin/last-rites",
-                              EINIT_LIB_BASE "/bin/last-rites", "h", NULL);
-                    } else if (WEXITSTATUS(rstatus) ==
-                               einit_exit_status_last_rites_reboot) {
-                        execl(EINIT_LIB_BASE "/bin/last-rites",
-                              EINIT_LIB_BASE "/bin/last-rites", "r", NULL);
-                    } else if (WEXITSTATUS(rstatus) ==
-                               einit_exit_status_last_rites_kexec) {
-                        execl(EINIT_LIB_BASE "/bin/last-rites",
-                              EINIT_LIB_BASE "/bin/last-rites", "k", NULL);
-                    }
+                if (WEXITSTATUS(rstatus) ==
+                    einit_exit_status_last_rites_halt) {
+                    execl(EINIT_LIB_BASE "/bin/last-rites",
+                          EINIT_LIB_BASE "/bin/last-rites", "h", NULL);
+                } else if (WEXITSTATUS(rstatus) ==
+                           einit_exit_status_last_rites_reboot) {
+                    execl(EINIT_LIB_BASE "/bin/last-rites",
+                          EINIT_LIB_BASE "/bin/last-rites", "r", NULL);
+                } else if (WEXITSTATUS(rstatus) ==
+                           einit_exit_status_last_rites_kexec) {
+                    execl(EINIT_LIB_BASE "/bin/last-rites",
+                          EINIT_LIB_BASE "/bin/last-rites", "k", NULL);
                 }
 
                 if (WEXITSTATUS(rstatus) == einit_exit_status_exit_respawn) {
@@ -211,20 +208,13 @@ int main(int argc, char **argv, char **env)
 {
     char *argv_mutable[argc + 1];
     int i = 0, it = 0;
-    char force_init = (getpid() == 1);
+    char do_init = (getpid() == 1);
 
 #if defined(__linux__) && defined(PR_SET_NAME)
     prctl(PR_SET_NAME, "einit [monitor]", 0, 0, 0);
 #endif
 
     for (; i < argc; i++) {
-        if (!strcmp(argv[i], "--force-init")) {
-            force_init = 1;
-            // continue;
-        } else if (!strcmp(argv[i], "--sandbox")) {
-            is_sandbox = 1;
-        }
-
         argv_mutable[it] = argv[i];
         argv_mutable[it + 1] = 0;
         it++;
@@ -249,7 +239,7 @@ int main(int argc, char **argv, char **env)
            "/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:/usr/local/sbin:/opt/bin:/opt/sbin",
            1);
 
-    if (force_init) {
+    if (do_init) {
         struct sigaction action;
 
         /*
