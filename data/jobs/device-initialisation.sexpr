@@ -1,0 +1,3 @@
+(job devices "eINIT Device Initialisation"
+  (run-on core-initialisation)
+  (restrict-to real-init))

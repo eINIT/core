@@ -123,7 +123,22 @@ void einit_job_add_or_update(struct einit_sexp *s)
             secundus = se_cdr(se_car(rest));
 
             if (primus->type == es_symbol) {
-                if (strmatch(primus->data.symbol, "run-on")) {
+                if (strmatch(primus->data.symbol, "restrict-to")) {
+                    while (secundus->type == es_cons) {
+                        primus = se_car(secundus);
+
+                        if (primus->type == es_string) {
+                            if (strmatch (primus->data.string, "real-init")) {
+                                if (coremode & (einit_mode_sandbox |
+                                                einit_mode_ipconly)) {
+                                    return;
+                                }
+                            }
+                        }
+
+                        secundus = se_cdr(secundus);
+                    }
+                } else if (strmatch(primus->data.symbol, "run-on")) {
                     while (secundus->type == es_cons) {
                         primus = se_car(secundus);
 
@@ -189,7 +204,22 @@ void einit_job_add_or_update(struct einit_sexp *s)
             secundus = se_cdr(se_car(rest));
 
             if (primus->type == es_symbol) {
-                if (strmatch(primus->data.symbol, "need-files")) {
+                if (strmatch(primus->data.symbol, "restrict-to")) {
+                    while (secundus->type == es_cons) {
+                        primus = se_car(secundus);
+
+                        if (primus->type == es_string) {
+                            if (strmatch (primus->data.string, "real-init")) {
+                                if (coremode & (einit_mode_sandbox |
+                                                einit_mode_ipconly)) {
+                                    return;
+                                }
+                            }
+                        }
+
+                        secundus = se_cdr(secundus);
+                    }
+                } else if (strmatch(primus->data.symbol, "need-files")) {
                     while (secundus->type == es_cons) {
                         primus = se_car(secundus);
 

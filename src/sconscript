@@ -29,6 +29,7 @@ CodeLibEinit = AssemblyFunctions + ['libraries/libeinit.c', 'bitch.c', 'event.c'
 # OS-dependant code
 CodeCoreMonitorObjects = [ uname + '/einit-monitor.c' ]
 CodeLibEinit += [ uname + '/process.c' ]
+CodeDeviceManager = [ 'jobs/' + uname + '/devices.c' ]
 
 if uname == 'freebsd':
  einitMonitor = env.Program ('einit-monitor', CodeCoreMonitorObjects, LIBS=['util'])
@@ -57,6 +58,7 @@ cenv.Install (InstallDirLibBin, cenv.Program ('einit-wtf', ['tools/einit-wtf.c']
 cenv.Install (InstallDirLibBin, cenv.Program ('einit-test',  ['tools/einit-test.c']))
 
 cenv.Install (InstallDirLibBin, cenv.Program ('job-xml-expat',  ['jobs/xml-expat.c'] + ExpatObjects))
+cenv.Install (InstallDirLibBin, cenv.Program ('job-devices',  CodeDeviceManager))
 
 cenv.Install (InstallDirLibBin, cenv.Program ('einit-helper', CodeEinitHelper))
 cenv.Install (InstallDirLibBin, cenv.Program ('last-rites', CodeLastRites))
