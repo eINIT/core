@@ -127,8 +127,8 @@ void einit_job_add_or_update(struct einit_sexp *s)
                     while (secundus->type == es_cons) {
                         primus = se_car(secundus);
 
-                        if (primus->type == es_string) {
-                            if (strmatch (primus->data.string, "real-init")) {
+                        if (primus->type == es_symbol) {
+                            if (strmatch (primus->data.symbol, "real-init")) {
                                 if (coremode & (einit_mode_sandbox |
                                                 einit_mode_ipconly)) {
                                     return;
@@ -208,8 +208,8 @@ void einit_job_add_or_update(struct einit_sexp *s)
                     while (secundus->type == es_cons) {
                         primus = se_car(secundus);
 
-                        if (primus->type == es_string) {
-                            if (strmatch (primus->data.string, "real-init")) {
+                        if (primus->type == es_symbol) {
+                            if (strmatch (primus->data.symbol, "real-init")) {
                                 if (coremode & (einit_mode_sandbox |
                                                 einit_mode_ipconly)) {
                                     return;
@@ -494,12 +494,23 @@ void einit_servers_synchronise()
     }
 }
 
+void einit_jobs_configuration_update ()
+{
+    einit_jobs_run("configuration-update");
+}
+
+void einit_jobs_early_boot ()
+{
+    einit_jobs_run("early-boot");
+}
+
 int einit_job_configure(struct lmodule *irr)
 {
     module_init(irr);
 
     event_listen(einit_core_update_modules, einit_jobs_update);
-    event_listen(einit_core_update_modules, einit_jobs_update);
+    event_listen(einit_core_configuration_update, einit_jobs_configuration_update);
+    event_listen(einit_boot_early, einit_jobs_early_boot);
 
     einit_jobs_update();
     einit_jobs_run("core-initialisation");
