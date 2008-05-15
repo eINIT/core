@@ -49,13 +49,7 @@
 #include <einit/configuration.h>
 #include <einit/configuration-static.h>
 
-#if defined(__linux__)
 #include <sys/prctl.h>
-#endif
-
-#ifdef __FreeBSD__
-#include <libutil.h>
-#endif
 
 /*
  * (define-record einit:event type integer status task flag string
@@ -63,10 +57,9 @@
  */
 
 #define PID_TERMINATED_EVENT "(event process/died %i 0 0 0 \"\" () einit-monitor)"
+#define COREFILE EINIT_LIB_BASE "/bin/einit-core"
 
 pid_t send_sigint_pid = 0;
-
-const char corefile[] = EINIT_LIB_BASE "/bin/einit-core";
 
 void einit_sigint(int signal, siginfo_t * siginfo, void *context)
 {
@@ -95,12 +88,12 @@ int run_core(int argc, char **argv, int ipcsocket)
 
     narg[i] = 0;
 
-    execv(corefile, narg);
+    execv(COREFILE, narg);
     perror("couldn't execute eINIT");
     return -1;
 }
 
-int einit_monitor_loop(int argc, char **argv)
+void einit_monitor_loop(int argc, char **argv)
 {
     int ipcsocket[2];
     pid_t core_pid;
@@ -120,6 +113,8 @@ int einit_monitor_loop(int argc, char **argv)
         } else {
             run_core(argc, argv, -1);
         }
+        perror ("einit-monitor: programme execution error");
+        _exit(EXIT_FAILURE);
     case -1:
         perror("einit-monitor: couldn't fork()");
         if (dosocket) {
@@ -128,14 +123,12 @@ int einit_monitor_loop(int argc, char **argv)
         }
 
         sleep(1);
-
-        return einit_monitor_loop(argc, argv);
+        return;
     default:
         if (dosocket) {
             close(ipcsocket[0]);
         }
         send_sigint_pid = core_pid;
-        break;
     }
 
     while (1) {
@@ -175,8 +168,6 @@ int einit_monitor_loop(int argc, char **argv)
                 if (WEXITSTATUS(rstatus) == einit_exit_status_exit_respawn) {
                     fprintf(stderr,
                             "Respawning secondary eINIT process.\n");
-
-                    return einit_monitor_loop(argc, argv);
                 }
 
                 exit(EXIT_SUCCESS);
@@ -188,8 +179,7 @@ int einit_monitor_loop(int argc, char **argv)
 
             while ((n = sleep(n)));
             fprintf(stderr, "Respawning secondary eINIT process.\n");
-
-            return einit_monitor_loop(argc, argv);
+            return;
         } else if (dosocket) {
             char buffer[BUFFERSIZE];
             size_t len;
@@ -208,9 +198,8 @@ int main(int argc, char **argv)
 {
     char *argv_mutable[argc + 1];
     int i = 0;
-    char do_init = (getpid() == 1);
 
-#if defined(__linux__) && defined(PR_SET_NAME)
+#if defined(PR_SET_NAME)
     prctl(PR_SET_NAME, "einit [monitor]", 0, 0, 0);
 #endif
 
@@ -219,7 +208,7 @@ int main(int argc, char **argv)
     }
     argv_mutable[i] = 0;
 
-    if (do_init) {
+    if (getpid() == 1) {
         struct sigaction action;
 
         /*
@@ -239,7 +228,11 @@ int main(int argc, char **argv)
         if (sigaction(SIGPIPE, &action, NULL))
             perror("calling sigaction() failed");
 
-        return einit_monitor_loop(argc, argv_mutable);
+        do {
+            einit_monitor_loop(argc, argv_mutable);
+        } while(1);
+
+        /* will not exit in this mode */
     }
 
     /*
