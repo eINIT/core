@@ -184,17 +184,30 @@ char job_check_required_config(struct required_config **q) {
     for (; q[i]; i++) {
         switch (q[i]->type) {
             case rqc_boolean_true:
-                if (!cfg_getboolean(q[i]->key)) return 0;
+                if (!cfg_getboolean(q[i]->key)) {
+                    notice(1, "job config check failed: boolean is false: %s", q[i]->key);
+                    return 0;
+                }
                 break;
             case rqc_boolean_false:
-                if (cfg_getboolean(q[i]->key)) return 0;
+                if (cfg_getboolean(q[i]->key)) {
+                    notice(1, "job config check failed: boolean is true: %s", q[i]->key);
+                    return 0;
+                }
                 break;
             case rqc_string_match:
-                if (!q[i]->value) return 0;
+                if (!q[i]->value) {
+                    notice(1, "job config check failed: string missing");
+                    return 0;
+                }
                 char *c = cfg_getstring(q[i]->key);
-                if (strcmp(c, q[i]->value)) return 0;
+                if (strcmp(c, q[i]->value)) {
+                    notice(1, "job config check failed: strings dont match: '%s' != '%s'", c, q[i]->value);
+                    return 0;
+                }
                 break;
             default:
+                notice(1, "job config check failed: unknown type");
                 return 0;
         }
     }
