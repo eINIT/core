@@ -662,20 +662,22 @@ void einit_jobs_run(const char *event)
 void einit_jobs_terminate(const char *event)
 {
     notice (4, "killing jobs for event %s", event);
+    if (!einit_terminate_pids) {
+        notice (4, "nothing to kill");
+        return;
+    }
 
-    struct stree *st = streelinear_prepare(einit_terminate_pids);
+    struct stree *st = streefind (einit_terminate_pids, event, tree_find_first);
     while (st) {
-        if (strmatch (st->key, event)) {
-            pid_t pid = (pid_t)(intptr_t)st->value;
+        pid_t pid = (pid_t)(intptr_t)st->value;
 
-            if (pid > 0) {
-                kill (pid, SIGTERM);
-                notice (4, "killing pid %i", pid);
-                st->value = (void *)(intptr_t)0;
-            }
+        if (pid > 0) {
+            kill (pid, SIGTERM);
+            notice (4, "killing pid %i", pid);
+            st->value = (void *)(intptr_t)0;
         }
 
-        st = streenext(st);
+        st = streefind (einit_terminate_pids, event, tree_find_next);
     }
 }
 

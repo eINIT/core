@@ -701,6 +701,7 @@ void do_input()
     int rv;
 
     in_ipc_loop = 0;
+    update();
 
     while ((rv = getch()) != ERR) {
         switch (rv) {
