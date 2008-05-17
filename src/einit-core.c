@@ -212,6 +212,7 @@ void sched_handle_timers()
     time_t next_tick = scheduler_get_next_tick(now);
 
     if (!next_tick) {
+        insert_timer_event (now + 60);
         // notice (1, "no more timers left.\n");
 
         return;

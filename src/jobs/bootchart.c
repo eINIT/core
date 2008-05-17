@@ -229,6 +229,8 @@ int einit_bootchart()
     char *buffer_ps = NULL;
     char *buffer_st = NULL;
 
+    fprintf (stdout, "tracking boot...\n");
+
     while (bootchartd_active || (extra_wait > 0)) {
         size_t log_size = 0;
         char *uptime = bootchartd_get_uptime();
