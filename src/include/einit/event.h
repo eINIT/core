@@ -186,6 +186,8 @@ extern "C" {
             einit_event_subsystem_feedback | 0x022,
         einit_feedback_switch_progress =
             einit_event_subsystem_feedback | 0x030,
+        einit_feedback_services_to_be_changed =
+            einit_event_subsystem_feedback | 0x023,
 
         /*
          * einit_event_subsystem_power: 

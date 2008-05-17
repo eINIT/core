@@ -1024,6 +1024,12 @@ struct lmodule **module_logic_find_things_to_enable()
     if (services_level1)
         efree(services_level1);
 
+    if (module_logic_list_enable) {
+        struct einit_event nev = evstaticinit(einit_feedback_services_to_be_changed);
+        nev.stringset = module_logic_list_enable;
+        event_emit (&nev, 0);
+    }
+
     return rv;
 }
 
@@ -1449,6 +1455,12 @@ struct lmodule **module_logic_find_things_to_disable()
         }
 
         efree(candidates_level2);
+    }
+
+    if (module_logic_list_disable) {
+        struct einit_event nev = evstaticinit(einit_feedback_services_to_be_changed);
+        nev.stringset = module_logic_list_disable;
+        event_emit (&nev, 0);
     }
 
     return rv;

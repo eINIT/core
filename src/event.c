@@ -450,6 +450,8 @@ char *event_code_to_string(const uint32_t code)
         return "feedback/broken-services";
     case einit_feedback_unresolved_services:
         return "feedback/unresolved-services";
+    case einit_feedback_services_to_be_changed:
+        return "feedback/services-to-be-changed";
 
     case einit_feedback_switch_progress:
         return "feedback/switch-progress";
@@ -693,6 +695,8 @@ uint32_t event_string_to_code(const char *code)
                     ret = einit_feedback_broken_services;
                 else if (strmatch(tcode[1], "unresolved-services"))
                     ret = einit_feedback_unresolved_services;
+                else if (strmatch(tcode[1], "services-to-be-changed"))
+                    ret = einit_feedback_services_to_be_changed;
 
                 else if (strmatch(tcode[1], "switch-progress"))
                     ret = einit_feedback_switch_progress;

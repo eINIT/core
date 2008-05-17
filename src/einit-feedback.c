@@ -91,6 +91,7 @@ char *mode_to = "(none)";
 
 char **broken = NULL;
 char **unresolved = NULL;
+char **to_be_changed = NULL;
 
 char show_notices = 0;
 
@@ -437,6 +438,19 @@ void update_do()
         attroff(COLOR_PAIR(attr_red));
     }
 
+    if (to_be_changed) {
+        attron(COLOR_PAIR(attr_yellow));
+
+        int i = 0;
+        for (; to_be_changed[i]; i++) {
+            addch(' ');
+            addstr(to_be_changed[i]);
+        }
+
+        addch('\n');
+        attroff(COLOR_PAIR(attr_yellow));
+    }
+
     if (textbuffer) {
         int i;
 
@@ -568,6 +582,10 @@ void event_handler_mode_switching(struct einit_event *ev)
         efree(unresolved);
         unresolved = NULL;
     }
+    if (to_be_changed) {
+        efree(to_be_changed);
+        to_be_changed = NULL;
+    }
 
     update();
 }
@@ -606,6 +624,7 @@ void event_handler_feedback_notice(struct einit_event *ev)
 
 void event_handler_update_service_enabled(struct einit_event *ev)
 {
+    if (ev->string) to_be_changed = strsetdel(to_be_changed, ev->string);
     /*
      * char buffer[BUFFERSIZE]; snprintf (buffer, BUFFERSIZE, "enabled:
      * %s\n", ev->string); addstr (buffer);
@@ -616,6 +635,7 @@ void event_handler_update_service_enabled(struct einit_event *ev)
 
 void event_handler_update_service_disabled(struct einit_event *ev)
 {
+    if (ev->string) to_be_changed = strsetdel(to_be_changed, ev->string);
     /*
      * char buffer[BUFFERSIZE]; snprintf (buffer, BUFFERSIZE, "disabled:
      * %s\n", ev->string); addstr (buffer);
@@ -661,6 +681,20 @@ void event_handler_broken_services(struct einit_event *ev)
     update();
 }
 
+void event_handler_services_to_be_changed(struct einit_event *ev)
+{
+    if (ev->stringset) {
+        int i = 0;
+        for (; ev->stringset[i]; i++) {
+            if (!to_be_changed
+                 || !inset((const void **) to_be_changed, ev->stringset[i],
+                            SET_TYPE_STRING))
+                to_be_changed = set_str_add_stable(to_be_changed, ev->stringset[i]);
+        }
+    }
+
+    update();
+}
 
 void do_input()
 {
@@ -740,6 +774,8 @@ int main(int argc, char **argv, char **env)
                  event_handler_broken_services);
     event_listen(einit_feedback_unresolved_services,
                  event_handler_unresolved_services);
+    event_listen(einit_feedback_services_to_be_changed,
+                 event_handler_services_to_be_changed);
 
     initscr();
     start_color();
