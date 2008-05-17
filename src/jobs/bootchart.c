@@ -46,7 +46,6 @@
 #include <time.h>
 
 #include <einit/einit.h>
-#include <syslog.h>
 
 char **bootchartd_argv = NULL;
 int bootchartd_argc = 0;
@@ -257,13 +256,13 @@ int einit_bootchart()
             log_size += strlen(buffer_st);
 
         if (log_size > max_log_size) {
-            syslog(LOG_ERR,
+            fprintf (stdout,
                    "boot log exceeded maximum log size, stopping log.");
             break;
         }
     }
 
-    syslog(LOG_ERR, "generating bootchart data.");
+    fprintf (stdout, "generating bootchart data.");
 
     mkdir("/tmp/bootchart.einit", 0755);
 
@@ -362,7 +361,7 @@ int einit_bootchart()
     snprintf(buffer, BUFFERSIZE,
              "cd /tmp/bootchart.einit; tar czf %s *; cd /; rm -Rf /tmp/bootchart.einit",
              save_to);
-    syslog(LOG_NOTICE, buffer);
+    fprintf (stdout, buffer);
     system(buffer);
 
     // unlink_recursive ("/tmp/bootchart.einit/", 1);
@@ -381,7 +380,7 @@ int einit_bootchart()
     snprintf(buffer, BUFFERSIZE, "bootchart -o %s -f %s %s", di, fo,
              save_to);
 
-    syslog(LOG_NOTICE, buffer);
+    fprintf (stdout, buffer);
 
     system(buffer);
 
@@ -391,7 +390,7 @@ int einit_bootchart()
 int main(int argc, char **argv)
 {
     if (!einit_connect(&argc, argv)) {
-        syslog(LOG_ERR, "could not connect to einit: %m.\n");
+        fprintf (stdout, "could not connect to einit: %m.\n");
         _exit(EXIT_FAILURE);
     }
 
