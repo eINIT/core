@@ -736,7 +736,13 @@ void do_input()
             exit(EXIT_SUCCESS);
 
         case 'c':
+            nodelay(stdscr, TRUE);
             return;
+        case 'v':
+            nodelay(stdscr, FALSE);
+            in_ipc_loop = 0;
+            update();
+            break;
         }
 
         update();
@@ -789,7 +795,7 @@ int main(int argc, char **argv, char **env)
     nonl();
     intrflush(stdscr, FALSE);
     keypad(stdscr, TRUE);
-    nodelay(stdscr, FALSE);
+    nodelay(stdscr, TRUE);
 
     int fd = einit_event_loop_fd(STDIN_FILENO);
 
