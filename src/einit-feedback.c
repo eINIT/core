@@ -703,16 +703,13 @@ void do_input()
     in_ipc_loop = 0;
 
     while ((rv = getch()) != ERR) {
-
         switch (rv) {
         case 'a':
             control_mode = control_automatic;
-            update();
             break;
 
         case 'L':
             show_notices ^= 1;
-            update();
             break;
 
         case 'k':
@@ -721,7 +718,6 @@ void do_input()
             control_mode = control_manual;
             if (starting_bufferitem > 0)
                 starting_bufferitem--;
-            update();
             break;
 
         case 'j':
@@ -731,7 +727,6 @@ void do_input()
             if (textbuffer && textbuffer[starting_bufferitem]
                 && textbuffer[starting_bufferitem + 1])
                 starting_bufferitem++;
-            update();
             break;
 
         case 'q':
@@ -742,6 +737,8 @@ void do_input()
         case 'c':
             return;
         }
+
+        update();
     }
 }
 
