@@ -470,6 +470,8 @@ void einit_job_run_dead_process_callback(struct einit_exec_data *d)
 
 void job_track_pid_for_killing (pid_t new_pid, const char *event)
 {
+    notice (4, "tracking pid %i to kill with event %s", new_pid, event);
+
     struct stree *st = streelinear_prepare(einit_terminate_pids);
     while (st) {
         if (strmatch (st->key, event)) {
@@ -659,6 +661,8 @@ void einit_jobs_run(const char *event)
 
 void einit_jobs_terminate(const char *event)
 {
+    notice (4, "killing jobs for event %s", event);
+
     struct stree *st = streelinear_prepare(einit_terminate_pids);
     while (st) {
         if (strmatch (st->key, event)) {
@@ -666,6 +670,7 @@ void einit_jobs_terminate(const char *event)
 
             if (pid > 0) {
                 kill (pid, SIGTERM);
+                notice (4, "killing pid %i", pid);
                 st->value = (void *)(intptr_t)0;
             }
         }
