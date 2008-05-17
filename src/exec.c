@@ -445,6 +445,8 @@ pid_t einit_exec_without_shell_with_function_on_process_death(char **c,
     x->command_d = c;
     x->options = einit_exec_no_shell;
     x->module = module;
+    if (module)
+        x->rid = module->module->rid;
     x->handle_dead_process = handle_dead_process;
 
     pid_t p = einit_exec(x);

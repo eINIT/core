@@ -47,9 +47,6 @@
 
 #include <einit/einit.h>
 
-char **bootchartd_argv = NULL;
-int bootchartd_argc = 0;
-
 char bootchartd_active = 1;
 stack_t signalstack;
 
@@ -257,12 +254,12 @@ int einit_bootchart()
 
         if (log_size > max_log_size) {
             fprintf (stdout,
-                   "boot log exceeded maximum log size, stopping log.");
+                   "boot log exceeded maximum log size, stopping log.\n");
             break;
         }
     }
 
-    fprintf (stdout, "generating bootchart data.");
+    fprintf (stdout, "generating bootchart data.\n");
 
     mkdir("/tmp/bootchart.einit", 0755);
 
@@ -359,7 +356,7 @@ int einit_bootchart()
 
     char buffer[BUFFERSIZE];
     snprintf(buffer, BUFFERSIZE,
-             "cd /tmp/bootchart.einit; tar czf %s *; cd /; rm -Rf /tmp/bootchart.einit",
+             "cd /tmp/bootchart.einit; tar czf %s *; cd /; rm -Rf /tmp/bootchart.einit\n",
              save_to);
     fprintf (stdout, buffer);
     system(buffer);
@@ -377,7 +374,7 @@ int einit_bootchart()
         di = "/var/log";
     if (!fo)
         fo = "png";
-    snprintf(buffer, BUFFERSIZE, "bootchart -o %s -f %s %s", di, fo,
+    snprintf(buffer, BUFFERSIZE, "bootchart -o %s -f %s %s\n", di, fo,
              save_to);
 
     fprintf (stdout, buffer);
@@ -393,9 +390,6 @@ int main(int argc, char **argv)
         fprintf (stdout, "could not connect to einit: %m.\n");
         _exit(EXIT_FAILURE);
     }
-
-    bootchartd_argv = argv;
-    bootchartd_argc = argc;
 
     struct sigaction action;
 
