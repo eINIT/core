@@ -446,7 +446,7 @@ struct smodule *einit_decode_module_from_sexpr(struct einit_sexp *sexp)
     enum sexp_module_parsing_stage s = smps_rid;
 
     while ((s != smps_done) && (sexp->type == es_cons)) {
-        struct einit_sexp *p = sexp->data.cons.primus;
+        struct einit_sexp *p = sexp->primus;
 
         switch (s) {
         case smps_rid:
@@ -454,7 +454,7 @@ struct smodule *einit_decode_module_from_sexpr(struct einit_sexp *sexp)
                 sm = emalloc(sizeof(struct smodule));
                 memset(sm, 0, sizeof(struct smodule));
 
-                sm->rid = (char *) (p->data.symbol);
+                sm->rid = (char *) (p->symbol);
             } else {
                 return NULL;
             }
@@ -462,7 +462,7 @@ struct smodule *einit_decode_module_from_sexpr(struct einit_sexp *sexp)
 
         case smps_name:
             if (p->type == es_string) {
-                sm->name = (char *) (p->data.string);
+                sm->name = (char *) (p->string);
             } else {
                 efree(sm);
                 return NULL;
@@ -471,88 +471,88 @@ struct smodule *einit_decode_module_from_sexpr(struct einit_sexp *sexp)
 
         case smps_provides:
             while (p->type == es_cons) {
-                struct einit_sexp *pp = p->data.cons.primus;
+                struct einit_sexp *pp = p->primus;
 
                 if (pp->type == es_symbol) {
                     sm->si.provides =
                         set_str_add_stable(sm->si.provides,
-                                           (char *) pp->data.symbol);
+                                           (char *) pp->symbol);
                 } else {
                     efree(sm);
                     return NULL;
                 }
 
-                p = p->data.cons.secundus;
+                p = p->secundus;
             }
             break;
 
         case smps_requires:
             while (p->type == es_cons) {
-                struct einit_sexp *pp = p->data.cons.primus;
+                struct einit_sexp *pp = p->primus;
 
                 if (pp->type == es_symbol) {
                     sm->si.requires =
                         set_str_add_stable(sm->si.requires,
-                                           (char *) pp->data.symbol);
+                                           (char *) pp->symbol);
                 } else {
                     efree(sm);
                     return NULL;
                 }
 
-                p = p->data.cons.secundus;
+                p = p->secundus;
             }
             break;
 
         case smps_before:
             while (p->type == es_cons) {
-                struct einit_sexp *pp = p->data.cons.primus;
+                struct einit_sexp *pp = p->primus;
 
                 if (pp->type == es_string) {
                     sm->si.before =
                         set_str_add_stable(sm->si.before,
-                                           (char *) pp->data.string);
+                                           (char *) pp->string);
                 } else {
                     efree(sm);
                     return NULL;
                 }
 
-                p = p->data.cons.secundus;
+                p = p->secundus;
             }
             break;
 
         case smps_after:
             while (p->type == es_cons) {
-                struct einit_sexp *pp = p->data.cons.primus;
+                struct einit_sexp *pp = p->primus;
 
                 if (pp->type == es_string) {
                     sm->si.after =
                         set_str_add_stable(sm->si.after,
-                                           (char *) pp->data.string);
+                                           (char *) pp->string);
                 } else {
                     efree(sm);
 
                     return NULL;
                 }
 
-                p = p->data.cons.secundus;
+                p = p->secundus;
             }
             break;
 
         case smps_uses:
             while (p->type == es_cons) {
-                struct einit_sexp *pp = p->data.cons.primus;
+                struct einit_sexp *pp = p->primus;
 
                 if (pp->type == es_symbol) {
                     sm->si.uses =
                         set_str_add_stable(sm->si.uses,
-                                           (char *) pp->data.symbol);
+                                           (char *) pp->symbol);
                 } else {
                     efree(sm);
 
                     return NULL;
                 }
 
-                p = p->data.cons.secundus;
+                p = p->secundus;
             }
             break;
 
@@ -572,7 +572,7 @@ struct smodule *einit_decode_module_from_sexpr(struct einit_sexp *sexp)
         }
 
         s++;
-        sexp = sexp->data.cons.secundus;
+        sexp = sexp->secundus;
     }
 
     if (sm) {
@@ -686,7 +686,7 @@ char *einit_get_configuration_string(const char *key,
 
     if (s) {
         if (s->type == es_string) {
-            rv = (char *) s->data.string;
+            rv = (char *) s->string;
         }
 
         einit_sexp_destroy(s);
@@ -729,12 +729,12 @@ static char **sexp2arbattrs(char **rv, struct einit_sexp *s)
 
             if ((primus->type == es_symbol)
                 && (secundus->type == es_string)) {
-                rv = set_str_add_stable(rv, (char *) primus->data.symbol);
+                rv = set_str_add_stable(rv, (char *) primus->symbol);
                 rv = set_str_add_stable(rv,
-                                        (char *) secundus->data.string);
+                                        (char *) secundus->string);
             }
 
-            p = p->data.cons.secundus;
+            p = p->secundus;
         }
     }
 
@@ -769,13 +769,13 @@ char ***einit_get_configuration_prefix(const char *prefix)
 
             if (primus->type == es_symbol) {
                 char **e =
-                    set_str_add_stable(NULL, (char *) primus->data.symbol);
+                    set_str_add_stable(NULL, (char *) primus->symbol);
                 e = sexp2arbattrs(e, secundus);
 
                 rv = (char ***) set_noa_add((void **) rv, e);
             }
 
-            p = p->data.cons.secundus;
+            p = p->secundus;
         }
 
         einit_sexp_destroy(s);
@@ -794,10 +794,10 @@ char **einit_list(char *r)
         return NULL;
 
     while (p->type == es_cons) {
-        struct einit_sexp *pp = p->data.cons.primus;
+        struct einit_sexp *pp = p->primus;
 
         if (pp->type == es_symbol) {
-            rv = set_str_add_stable(rv, (char *) pp->data.symbol);
+            rv = set_str_add_stable(rv, (char *) pp->symbol);
         } else {
             efree(rv);
             einit_sexp_destroy(s);
@@ -805,7 +805,7 @@ char **einit_list(char *r)
             return NULL;
         }
 
-        p = p->data.cons.secundus;
+        p = p->secundus;
     }
 
     einit_sexp_destroy(s);

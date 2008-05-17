@@ -77,9 +77,24 @@ const struct smodule einit_job_self = {
 
 module_register(einit_job_self);
 
+enum required_config_type {
+    rqc_none,
+    rqc_boolean_true,
+    rqc_boolean_false,
+    rqc_string_match
+};
+
+struct required_config {
+    enum required_config_type type;
+    const char *key;
+    const char *attribute;
+    const char *value;
+};
+
 struct einit_job {
     const char *name;
     char **run_on;
+    struct required_config **required_config;
     struct lmodule *module;
 };
 
@@ -88,6 +103,7 @@ struct einit_server {
     char **need_files;
     char **environment;
     char pass_socket;
+    struct required_config **required_config;
     struct lmodule *module;
 };
 
@@ -100,6 +116,92 @@ char **einit_servers_running = NULL;
 
 void einit_servers_synchronise();
 
+enum rq_pass {
+    rq_type,
+    rq_key,
+    rq_value
+};
+
+struct required_config **job_parse_required_config(struct einit_sexp *s)
+{
+    struct required_config **rv = NULL;
+
+    while (s->type == es_cons) {
+        struct einit_sexp *p = s->primus;
+        struct required_config q = { rqc_none, NULL, NULL };
+        enum rq_pass pass = rq_type;
+
+        while (p->type == es_cons) {
+            if ((pass != rq_type) && (q.type == rqc_none)) {
+                break;
+            }
+
+            switch (pass) {
+                case rq_type:
+                    if (p->type == es_symbol) {
+                        if (strmatch (p->symbol, "boolean-true")) {
+                            q.type = rqc_boolean_true;
+                        } else if (strmatch (p->symbol, "boolean-false")) {
+                            q.type = rqc_boolean_false;
+                        } else if (strmatch (p->symbol, "string-match")) {
+                            q.type = rqc_string_match;
+                        }
+                    }
+                    break;
+                case rq_key:
+                    if (p->type == es_symbol) {
+                        q.key = p->symbol;
+                    }
+                    break;
+                case rq_value:
+                    if (p->type == es_string) {
+                        q.key = p->string;
+                    }
+                    break;
+
+                default: break;
+            }
+
+            pass++;
+            p = p->secundus;
+        }
+
+        if ((q.type != rqc_none) || !(q.key)) {
+            rv = (struct required_config**)
+                    set_fix_add((void **)rv, &q, sizeof(struct required_config));
+        }
+
+        s = s->secundus;
+    }
+
+    return rv;
+}
+
+char job_check_required_config(struct required_config **q) {
+    if (!q) return 1;
+    int i = 0;
+
+    for (; q[i]; i++) {
+        switch (q[i]->type) {
+            case rqc_boolean_true:
+                if (!cfg_getboolean(q[i]->key)) return 0;
+                break;
+            case rqc_boolean_false:
+                if (cfg_getboolean(q[i]->key)) return 0;
+                break;
+            case rqc_string_match:
+                if (!q[i]->value) return 0;
+                char *c = cfg_getstring(q[i]->key);
+                if (strcmp(c, q[i]->value)) return 0;
+                break;
+            default:
+                return 0;
+        }
+    }
+
+    return 1;
+}
+
 void einit_job_add_or_update(struct einit_sexp *s)
 {
     // einit_sexp_display (s);
@@ -109,13 +211,13 @@ void einit_job_add_or_update(struct einit_sexp *s)
     struct einit_sexp *tertius = se_car(se_cdr(se_cdr(s)));
     struct einit_sexp *rest = se_cdr(se_cdr(se_cdr(s)));
 
-    if ((primus->type == es_symbol) && strmatch(primus->data.symbol, "job")
+    if ((primus->type == es_symbol) && strmatch(primus->symbol, "job")
         && (secundus->type == es_symbol) && (tertius->type == es_string)) {
-        struct einit_job j = { tertius->data.string, NULL, NULL };
+        struct einit_job j = { tertius->string, NULL, NULL };
         char buffer[BUFFERSIZE];
         const char *binary;
 
-        snprintf(buffer, BUFFERSIZE, "job-%s", secundus->data.symbol);
+        snprintf(buffer, BUFFERSIZE, "job-%s", secundus->symbol);
         binary = str_stabilise(buffer);
 
         while (rest->type == es_cons) {
@@ -123,12 +225,14 @@ void einit_job_add_or_update(struct einit_sexp *s)
             secundus = se_cdr(se_car(rest));
 
             if (primus->type == es_symbol) {
-                if (strmatch(primus->data.symbol, "restrict-to")) {
+                if (strmatch(primus->symbol, "require-configuration")) {
+                    j.required_config = job_parse_required_config(secundus);
+                } else if (strmatch(primus->symbol, "restrict-to")) {
                     while (secundus->type == es_cons) {
                         primus = se_car(secundus);
 
                         if (primus->type == es_symbol) {
-                            if (strmatch (primus->data.symbol, "real-init")) {
+                            if (strmatch (primus->symbol, "real-init")) {
                                 if (coremode & (einit_mode_sandbox |
                                                 einit_mode_ipconly)) {
                                     return;
@@ -138,7 +242,7 @@ void einit_job_add_or_update(struct einit_sexp *s)
 
                         secundus = se_cdr(secundus);
                     }
-                } else if (strmatch(primus->data.symbol, "run-on")) {
+                } else if (strmatch(primus->symbol, "run-on")) {
                     while (secundus->type == es_cons) {
                         primus = se_car(secundus);
 
@@ -146,7 +250,7 @@ void einit_job_add_or_update(struct einit_sexp *s)
                             j.run_on =
                                 (char **) set_noa_add((void **) j.run_on,
                                                       (void *) primus->
-                                                      data.symbol);
+                                                      symbol);
                         }
 
                         secundus = se_cdr(secundus);
@@ -188,15 +292,15 @@ void einit_job_add_or_update(struct einit_sexp *s)
             streeadd(einit_jobs, binary, &j, sizeof(struct einit_job),
                      j.run_on);
     } else if ((primus->type == es_symbol)
-               && strmatch(primus->data.symbol, "server")
+               && strmatch(primus->symbol, "server")
                && (secundus->type == es_symbol)
                && (tertius->type == es_string)) {
         struct einit_server s =
-            { tertius->data.string, NULL, NULL, 1, NULL };
+            { tertius->string, NULL, NULL, 1, NULL };
         char buffer[BUFFERSIZE];
         const char *binary;
 
-        snprintf(buffer, BUFFERSIZE, "server-%s", secundus->data.symbol);
+        snprintf(buffer, BUFFERSIZE, "server-%s", secundus->symbol);
         binary = str_stabilise(buffer);
 
         while (rest->type == es_cons) {
@@ -204,12 +308,14 @@ void einit_job_add_or_update(struct einit_sexp *s)
             secundus = se_cdr(se_car(rest));
 
             if (primus->type == es_symbol) {
-                if (strmatch(primus->data.symbol, "restrict-to")) {
+                if (strmatch(primus->symbol, "require-configuration")) {
+                    s.required_config = job_parse_required_config(secundus);
+                } else if (strmatch(primus->symbol, "restrict-to")) {
                     while (secundus->type == es_cons) {
                         primus = se_car(secundus);
 
                         if (primus->type == es_symbol) {
-                            if (strmatch (primus->data.symbol, "real-init")) {
+                            if (strmatch (primus->symbol, "real-init")) {
                                 if (coremode & (einit_mode_sandbox |
                                                 einit_mode_ipconly)) {
                                     return;
@@ -219,7 +325,7 @@ void einit_job_add_or_update(struct einit_sexp *s)
 
                         secundus = se_cdr(secundus);
                     }
-                } else if (strmatch(primus->data.symbol, "need-files")) {
+                } else if (strmatch(primus->symbol, "need-files")) {
                     while (secundus->type == es_cons) {
                         primus = se_car(secundus);
 
@@ -228,12 +334,12 @@ void einit_job_add_or_update(struct einit_sexp *s)
                                 (char **) set_noa_add((void **) s.
                                                       need_files,
                                                       (void *) primus->
-                                                      data.string);
+                                                      string);
                         }
 
                         secundus = se_cdr(secundus);
                     }
-                } else if (strmatch(primus->data.symbol, "environment")) {
+                } else if (strmatch(primus->symbol, "environment")) {
                     while (secundus->type == es_cons) {
                         primus = se_car(secundus);
 
@@ -242,12 +348,12 @@ void einit_job_add_or_update(struct einit_sexp *s)
                                 (char **) set_noa_add((void **) s.
                                                       environment,
                                                       (void *) primus->
-                                                      data.string);
+                                                      string);
                         }
 
                         secundus = se_cdr(secundus);
                     }
-                } else if (strmatch(primus->data.symbol, "pass-socket")) {
+                } else if (strmatch(primus->symbol, "pass-socket")) {
                     primus = se_car(secundus);
                     s.pass_socket = (primus == sexp_true);
                 }
@@ -469,6 +575,7 @@ void einit_jobs_run(const char *event)
         struct einit_job *j = st->value;
 
         if (j->run_on
+            && job_check_required_config(j->required_config)
             && inset((const void **) j->run_on, event, SET_TYPE_STRING)) {
             einit_job_run(j, st->key, event);
         }
@@ -483,9 +590,9 @@ void einit_servers_synchronise()
     while (st) {
         struct einit_server *s = st->value;
 
-        if (!inset
-            ((const void **) einit_servers_running, st->key,
-             SET_TYPE_STRING) && (!s->need_files
+        if (!inset ((const void **) einit_servers_running, st->key,
+             SET_TYPE_STRING) && job_check_required_config(s->required_config)
+                              && (!s->need_files
                                   || check_files(s->need_files))) {
             einit_server_run(s, st->key);
         }

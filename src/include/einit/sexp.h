@@ -59,7 +59,7 @@ struct einit_sexp {
         struct {                /* for conses */
             struct einit_sexp *primus;
             struct einit_sexp *secundus;
-        } cons;
+        };
 
         int integer;
 
@@ -68,7 +68,7 @@ struct einit_sexp {
          */
         const char *string;
         const char *symbol;
-    } data;
+    };
 };
 
 struct einit_sexp_fd_reader {
@@ -104,9 +104,9 @@ const struct einit_sexp *const sexp_empty_list;
 const struct einit_sexp *const sexp_bad;
 
 #define se_car(sexp)\
- (struct einit_sexp *)(((sexp)->type == es_cons) ? (sexp)->data.cons.primus : sexp_nil)
+ (struct einit_sexp *)(((sexp)->type == es_cons) ? (sexp)->primus : sexp_nil)
 #define se_cdr(sexp)\
- (struct einit_sexp *)(((sexp)->type == es_cons) ? (sexp)->data.cons.secundus : sexp_nil)
+ (struct einit_sexp *)(((sexp)->type == es_cons) ? (sexp)->secundus : sexp_nil)
 
 struct einit_sexp *se_cons(struct einit_sexp *car, struct einit_sexp *cdr);
 struct einit_sexp *se_integer(int);

@@ -102,7 +102,7 @@ static struct einit_sexp *einit_parse_string_in_buffer(char *buffer,
             stbuffer[sb_pos] = 0;
 
             struct einit_sexp *rv = einit_sexp_create(es_string);
-            rv->data.string = str_stabilise(stbuffer);
+            rv->string = str_stabilise(stbuffer);
 
             (*index)++;
 
@@ -149,7 +149,7 @@ static struct einit_sexp *einit_parse_symbol_in_buffer(char *buffer,
                 }
             } else {
                 rv = einit_sexp_create(es_symbol);
-                rv->data.symbol = str_stabilise(stbuffer);
+                rv->symbol = str_stabilise(stbuffer);
 
                 return rv;
             }
@@ -179,7 +179,7 @@ static struct einit_sexp *einit_parse_number_in_buffer(char *buffer,
             struct einit_sexp *rv;
 
             rv = einit_sexp_create(es_integer);
-            rv->data.integer = atoi(stbuffer);
+            rv->integer = atoi(stbuffer);
 
             return rv;
         }
@@ -229,7 +229,7 @@ static struct einit_sexp *einit_parse_sexp_in_buffer(char *buffer,
 
                 if (tmp != sexp_end_of_list) {
                     rv = einit_sexp_create(es_cons);
-                    rv->data.cons.primus = tmp;
+                    rv->primus = tmp;
 
                     struct einit_sexp *ccons = rv;
 
@@ -239,24 +239,24 @@ static struct einit_sexp *einit_parse_sexp_in_buffer(char *buffer,
                                                        stop);
 
                         if (!tmp) {     /* catch incompletely read sexprs */
-                            ccons->data.cons.secundus =
+                            ccons->secundus =
                                 (struct einit_sexp *) sexp_end_of_list;
                             einit_sexp_destroy(rv);
                             return NULL;
                         }
 
                         if (tmp != sexp_end_of_list) {
-                            ccons->data.cons.secundus =
+                            ccons->secundus =
                                 einit_sexp_create(es_cons);
-                            ccons = ccons->data.cons.secundus;
+                            ccons = ccons->secundus;
 
                             if (tmp == sexp_empty_list)
                                 tmp =
                                     (struct einit_sexp *) sexp_end_of_list;
 
-                            ccons->data.cons.primus = tmp;
+                            ccons->primus = tmp;
                         } else {
-                            ccons->data.cons.secundus = tmp;
+                            ccons->secundus = tmp;
 
                             return rv;
                         }
@@ -378,8 +378,8 @@ void einit_sexp_destroy(struct einit_sexp *sexp)
         && (sexp != sexp_bad)) {
         switch (sexp->type) {
         case es_cons:
-            einit_sexp_destroy(sexp->data.cons.primus);
-            einit_sexp_destroy(sexp->data.cons.secundus);
+            einit_sexp_destroy(sexp->primus);
+            einit_sexp_destroy(sexp->secundus);
         default:
             efree(sexp);
         }
@@ -453,17 +453,17 @@ static void einit_sexp_to_string_iterator(struct einit_sexp *sexp,
 
     switch (sexp->type) {
     case es_string:
-        *len += strlen(sexp->data.string) + 2;
+        *len += strlen(sexp->string) + 2;
         *buffer = sexp_chunk_realloc(*buffer, *len, cs);
 
         (*buffer)[(*pos)] = '"';
 
-        for (i = 0, (*pos)++; sexp->data.string[i]; (*pos)++, i++) {
+        for (i = 0, (*pos)++; sexp->string[i]; (*pos)++, i++) {
             // fprintf (stderr, "%i, %i, %i, %c\n", *pos, *len, i,
-            // sexp->data.string[i]);
+            // sexp->string[i]);
 
-            if ((sexp->data.string[i] == '"')
-                || (sexp->data.string[i] == '\\')) {
+            if ((sexp->string[i] == '"')
+                || (sexp->string[i] == '\\')) {
                 (*len)++;
                 *buffer = sexp_chunk_realloc(*buffer, *len, cs);
 
@@ -471,7 +471,7 @@ static void einit_sexp_to_string_iterator(struct einit_sexp *sexp,
                 (*pos)++;
             }
 
-            (*buffer)[(*pos)] = sexp->data.string[i];
+            (*buffer)[(*pos)] = sexp->string[i];
         }
         (*buffer)[(*pos)] = '"';
         (*pos)++;
@@ -487,10 +487,10 @@ static void einit_sexp_to_string_iterator(struct einit_sexp *sexp,
             (*pos)++;
         }
 
-        einit_sexp_to_string_iterator(sexp->data.cons.primus, buffer, len,
+        einit_sexp_to_string_iterator(sexp->primus, buffer, len,
                                       pos, 0, cs);
 
-        if (sexp->data.cons.secundus->type != es_list_end) {
+        if (sexp->secundus->type != es_list_end) {
             *len += 1;
             *buffer = sexp_chunk_realloc(*buffer, *len, cs);
 
@@ -498,7 +498,7 @@ static void einit_sexp_to_string_iterator(struct einit_sexp *sexp,
             (*pos)++;
         }
 
-        einit_sexp_to_string_iterator(sexp->data.cons.secundus, buffer,
+        einit_sexp_to_string_iterator(sexp->secundus, buffer,
                                       len, pos, 1, cs);
 
         break;
@@ -544,12 +544,12 @@ static void einit_sexp_to_string_iterator(struct einit_sexp *sexp,
         break;
 
     case es_integer:
-        snprintf(numbuffer, 33, "%d", sexp->data.integer);
+        snprintf(numbuffer, 33, "%d", sexp->integer);
         symbuffer = numbuffer;
         goto print_symbol;
 
     case es_symbol:
-        symbuffer = (char *) sexp->data.symbol;
+        symbuffer = (char *) sexp->symbol;
 
       print_symbol:
 
@@ -615,15 +615,15 @@ char *einit_sexp_to_string(struct einit_sexp *sexp)
 struct einit_sexp *se_cons(struct einit_sexp *car, struct einit_sexp *cdr)
 {
     struct einit_sexp *r = einit_sexp_create(es_cons);
-    r->data.cons.primus = car;
-    r->data.cons.secundus = cdr;
+    r->primus = car;
+    r->secundus = cdr;
     return r;
 }
 
 struct einit_sexp *se_integer(int i)
 {
     struct einit_sexp *r = einit_sexp_create(es_integer);
-    r->data.integer = i;
+    r->integer = i;
     return r;
 }
 
@@ -632,9 +632,9 @@ struct einit_sexp *se_string(const char *s)
 {
     struct einit_sexp *r = einit_sexp_create(es_string);
     if (s)
-        r->data.string = s;
+        r->string = s;
     else
-        r->data.string = "";
+        r->string = "";
     return r;
 }
 
@@ -642,9 +642,9 @@ struct einit_sexp *se_symbol(const char *s)
 {
     struct einit_sexp *r = einit_sexp_create(es_symbol);
     if (s)
-        r->data.symbol = s;
+        r->symbol = s;
     else
-        r->data.symbol = "einit-core";
+        r->symbol = "einit-core";
     return r;
 }
 
@@ -658,10 +658,10 @@ struct einit_sexp *se_stringset_to_list(char **s)
     struct einit_sexp *v = r;
 
     for (; s[i]; i++) {
-        v->data.cons.secundus =
+        v->secundus =
             se_cons(se_string(str_stabilise(s[i])),
                     (struct einit_sexp *) sexp_end_of_list);
-        v = v->data.cons.secundus;
+        v = v->secundus;
     }
 
     return r;
@@ -677,10 +677,10 @@ struct einit_sexp *se_symbolset_to_list(char **s)
     struct einit_sexp *v = r;
 
     for (; s[i]; i++) {
-        v->data.cons.secundus =
+        v->secundus =
             se_cons(se_symbol(str_stabilise(s[i])),
                     (struct einit_sexp *) sexp_end_of_list);
-        v = v->data.cons.secundus;
+        v = v->secundus;
     }
 
     return r;

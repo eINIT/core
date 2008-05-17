@@ -82,13 +82,13 @@ void einit_ipc_handle_sexp_event(struct einit_sexp *sexp)
     struct einit_event *ev = NULL;
 
     while ((s != seps_done) && (sexp->type == es_cons)) {
-        struct einit_sexp *p = sexp->data.cons.primus;
+        struct einit_sexp *p = sexp->primus;
 
         switch (s) {
         case seps_type:
             if (p->type == es_symbol) {
                 enum einit_event_code c =
-                    event_string_to_code(p->data.symbol);
+                    event_string_to_code(p->symbol);
 
                 if (c == einit_event_subsystem_custom)
                     return;
@@ -101,7 +101,7 @@ void einit_ipc_handle_sexp_event(struct einit_sexp *sexp)
             break;
         case seps_integer:
             if (p->type == es_integer) {
-                ev->integer = p->data.integer;
+                ev->integer = p->integer;
             } else {
                 efree(ev);
                 return;
@@ -109,7 +109,7 @@ void einit_ipc_handle_sexp_event(struct einit_sexp *sexp)
             break;
         case seps_status:
             if (p->type == es_integer) {
-                ev->status = p->data.integer;
+                ev->status = p->integer;
             } else {
                 efree(ev);
                 return;
@@ -117,7 +117,7 @@ void einit_ipc_handle_sexp_event(struct einit_sexp *sexp)
             break;
         case seps_task:
             if (p->type == es_integer) {
-                ev->task = p->data.integer;
+                ev->task = p->integer;
             } else {
                 efree(ev);
                 return;
@@ -125,7 +125,7 @@ void einit_ipc_handle_sexp_event(struct einit_sexp *sexp)
             break;
         case seps_flag:
             if (p->type == es_integer) {
-                ev->flag = p->data.integer;
+                ev->flag = p->integer;
             } else {
                 efree(ev);
                 return;
@@ -133,8 +133,8 @@ void einit_ipc_handle_sexp_event(struct einit_sexp *sexp)
             break;
         case seps_string:
             if (p->type == es_string) {
-                if (p->data.string[0])
-                    ev->string = (char *) p->data.string;
+                if (p->string[0])
+                    ev->string = (char *) p->string;
                 else
                     ev->string = NULL;
             } else {
@@ -144,23 +144,23 @@ void einit_ipc_handle_sexp_event(struct einit_sexp *sexp)
             break;
         case seps_stringset:
             while (p->type == es_cons) {
-                struct einit_sexp *pp = p->data.cons.primus;
+                struct einit_sexp *pp = p->primus;
 
                 if (pp->type == es_string) {
                     ev->stringset =
                         set_str_add_stable(ev->stringset,
-                                           (char *) pp->data.string);
+                                           (char *) pp->string);
                 } else {
                     efree(ev);
                     return;
                 }
 
-                p = p->data.cons.secundus;
+                p = p->secundus;
             }
             break;
         case seps_module:
             if (p->type == es_symbol) {
-                ev->rid = (char *) p->data.symbol;
+                ev->rid = (char *) p->symbol;
             } else {
                 efree(ev);
                 return;
@@ -172,7 +172,7 @@ void einit_ipc_handle_sexp_event(struct einit_sexp *sexp)
         }
 
         s++;
-        sexp = sexp->data.cons.secundus;
+        sexp = sexp->secundus;
     }
 
     if (ev) {
@@ -209,9 +209,9 @@ char einit_ipc_loop()
         // einit_sexp_display(sexp);
 
         if ((sexp->type == es_cons)
-            && (sexp->data.cons.secundus->type == es_cons)) {
-            if ((sexp->data.cons.primus->type == es_integer)
-                && (sexp->data.cons.secundus->data.cons.secundus->type ==
+            && (sexp->secundus->type == es_cons)) {
+            if ((sexp->primus->type == es_integer)
+                && (sexp->secundus->secundus->type ==
                     es_list_end)) {
                 /*
                  * 2-tuple and starts with an integer: reply 
@@ -219,25 +219,25 @@ char einit_ipc_loop()
                 // fprintf(stderr, "REPLY!\n");
 
                 // fprintf (stderr, "storing reply with id=%i\n",
-                // sexp->data.cons.primus->data.integer);
+                // sexp->primus->integer);
 
                 einit_ipc_replies =
                     itreeadd(einit_ipc_replies,
-                             sexp->data.cons.primus->data.integer,
-                             sexp->data.cons.secundus->data.cons.primus,
+                             sexp->primus->integer,
+                             sexp->secundus->primus,
                              tree_value_noalloc);
                 continue;
             }
 
-            if ((sexp->data.cons.secundus->data.cons.secundus->type ==
+            if ((sexp->secundus->secundus->type ==
                  es_cons)
-                && (sexp->data.cons.secundus->data.cons.secundus->data.
-                    cons.secundus->type == es_cons)
-                && (sexp->data.cons.secundus->data.cons.secundus->data.
-                    cons.secundus->data.cons.secundus->type == es_list_end)
-                && (sexp->data.cons.primus->type == es_symbol)
+                && (sexp->secundus->secundus->
+                    secundus->type == es_cons)
+                && (sexp->secundus->secundus->
+                    secundus->secundus->type == es_list_end)
+                && (sexp->primus->type == es_symbol)
                 &&
-                (strmatch(sexp->data.cons.primus->data.symbol, "request")))
+                (strmatch(sexp->primus->symbol, "request")))
             {
                 /*
                  * 4-tuple: must be a request
@@ -253,13 +253,13 @@ char einit_ipc_loop()
                 continue;
             }
 
-            if ((sexp->data.cons.primus->type == es_symbol)
+            if ((sexp->primus->type == es_symbol)
                 &&
-                (strmatch(sexp->data.cons.primus->data.symbol, "event"))) {
+                (strmatch(sexp->primus->symbol, "event"))) {
 
                 // fprintf(stderr, "EVENT, decoding\n");
 
-                einit_ipc_handle_sexp_event(sexp->data.cons.secundus);
+                einit_ipc_handle_sexp_event(sexp->secundus);
                 einit_sexp_destroy(sexp);
 
                 continue;
@@ -362,7 +362,7 @@ struct einit_sexp *einit_ipc_request_sexp_raw(struct einit_sexp *request)
 {
     if (!einit_ipc_client_rd)
         return NULL;
-    int id = (se_car(se_cdr(se_cdr(request))))->data.integer;
+    int id = (se_car(se_cdr(se_cdr(request))))->integer;
 
     int fd = einit_ipc_client_rd->fd;
 

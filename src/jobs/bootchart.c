@@ -1,5 +1,5 @@
 /*
- *  einit-bootchartd.c
+ *  einit-bootchart.c
  *  einit
  *
  *  Created by Magnus Deininger on 30/03/2008.
@@ -48,8 +48,6 @@
 #include <einit/einit.h>
 #include <syslog.h>
 
-#define PIDFILE "/dev/einit-bootchartd.pid"
-
 char **bootchartd_argv = NULL;
 int bootchartd_argc = 0;
 
@@ -65,14 +63,6 @@ void signal_sigterm(int signal, siginfo_t * siginfo, void *context)
     bootchartd_active = 0;
 
     return;
-}
-
-void connect_or_terminate()
-{
-    if (!einit_connect(&bootchartd_argc, bootchartd_argv)) {
-        syslog(LOG_ERR, "could not connect to einit: %m.\n");
-        _exit(EXIT_FAILURE);
-    }
 }
 
 char *bootchartd_get_uptime()
@@ -400,7 +390,10 @@ int einit_bootchart()
 
 int main(int argc, char **argv)
 {
-    FILE *pidfile;
+    if (!einit_connect(&argc, argv)) {
+        syslog(LOG_ERR, "could not connect to einit: %m.\n");
+        _exit(EXIT_FAILURE);
+    }
 
     bootchartd_argv = argv;
     bootchartd_argc = argc;
@@ -419,19 +412,6 @@ int main(int argc, char **argv)
     if (sigaction(SIGTERM, &action, NULL)) {
         perror("could not set SIGTERM handler");
     }
-
-    if (daemon(0, 0)) {
-        perror("could not daemonise");
-        return EXIT_FAILURE;
-    }
-
-    pidfile = fopen(PIDFILE, "w");
-    if (pidfile) {
-        fprintf(pidfile, "%d\n", getpid());
-        fclose(pidfile);
-    }
-
-    connect_or_terminate();
 
     return einit_bootchart();
 }

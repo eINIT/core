@@ -1,0 +1,4 @@
+(job bootchart "eINIT bootchart"
+  (run-on early-boot)
+  (restrict-to real-init)
+  (require-configuration (boolean-true configuration-bootchart-active)))

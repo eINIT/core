@@ -78,7 +78,6 @@ module_register(dispatcher_self);
 char dispatcher_psplash = 0;
 char dispatcher_usplash = 0;
 char dispatcher_exquisite = 0;
-char dispatcher_bootchart = 0;
 
 void dispatcher_psplash_boot_devices_ok()
 {
@@ -88,29 +87,6 @@ void dispatcher_psplash_boot_devices_ok()
 
     event_emit(&eml, einit_event_flag_remote);
     evstaticdestroy(eml);
-}
-
-void dispatcher_bootchart_boot_devices_ok()
-{
-    struct einit_event eml = evstaticinit(einit_core_manipulate_services);
-    eml.stringset = set_str_add(NULL, "bootchartd");
-    eml.task = einit_module_enable;
-
-    event_emit(&eml, 0);
-    evstaticdestroy(eml);
-}
-
-void dispatcher_bootchart_switch(struct einit_event *ev)
-{
-    if (strmatch(ev->string, "default")) {
-        struct einit_event eml =
-            evstaticinit(einit_core_manipulate_services);
-        eml.stringset = set_str_add(NULL, "bootchartd");
-        eml.task = einit_module_disable;
-
-        event_emit(&eml, 0);
-        evstaticdestroy(eml);
-    }
 }
 
 void dispatcher_usplash_boot_devices_ok()
@@ -157,13 +133,6 @@ int dispatcher_configure(struct lmodule *pa)
                 }
             }
         }
-
-        struct cfgnode *node;
-
-        dispatcher_bootchart =
-            ((node =
-              cfg_getnode("configuration-bootchart-active")) ? node->
-             flag : 0);
     }
 
     if (dispatcher_psplash) {
@@ -175,13 +144,6 @@ int dispatcher_configure(struct lmodule *pa)
     } else if (dispatcher_exquisite) {
         event_listen(einit_boot_root_device_ok,
                      dispatcher_exquisite_boot_devices_ok);
-    }
-
-    if (dispatcher_bootchart) {
-        event_listen(einit_boot_dev_writable,
-                     dispatcher_bootchart_boot_devices_ok);
-        event_listen(einit_core_mode_switch_done,
-                     dispatcher_bootchart_switch);
     }
 
     return 0;

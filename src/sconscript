@@ -22,7 +22,6 @@ CodeEinitFeedbackD = ['einit-feedback.c']
 CodeEinitLogD = ['einit-log.c']
 
 CodeEinitSysVD = ['tools/einit-sysvd.c']
-CodeEinitBootChartD = ['tools/einit-bootchartd.c']
 
 CodeLibEinit = AssemblyFunctions + ['libraries/libeinit.c', 'bitch.c', 'event.c', 'utility.c', 'strings.c', 'sexp.c', 'ipc-client.c'] + CodeSet + CodeSTree + CodeBTree + CodeITree + CodeVTree
 
@@ -58,13 +57,13 @@ cenv.Install (InstallDirLibBin, cenv.Program ('einit-wtf', ['tools/einit-wtf.c']
 cenv.Install (InstallDirLibBin, cenv.Program ('einit-test',  ['tools/einit-test.c']))
 
 cenv.Install (InstallDirLibBin, cenv.Program ('job-xml-expat',  ['jobs/xml-expat.c'] + ExpatObjects))
+cenv.Install (InstallDirLibBin, cenv.Program ('job-bootchart',  ['jobs/bootchart.c']))
 cenv.Install (InstallDirLibBin, cenv.Program ('job-devices',  CodeDeviceManager))
 
 cenv.Install (InstallDirLibBin, cenv.Program ('einit-helper', CodeEinitHelper))
 cenv.Install (InstallDirLibBin, cenv.Program ('last-rites', CodeLastRites))
 
 cenv.Install (InstallDirLibBin, cenv.Program ('einit-log', CodeEinitLogD))
-cenv.Install (InstallDirLibBin, cenv.Program ('einit-bootchartd', CodeEinitBootChartD))
 
 env.InstallAs (InstallDirSbin + '/einit', einitMonitor)
 cenv.Install (InstallDirSbin, cenv.Program ('einit-sysvd', CodeEinitSysVD))
