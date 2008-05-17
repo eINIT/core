@@ -70,6 +70,7 @@ struct module_status {
 #define attr_white 5
 
 struct stree *status_tree = NULL;
+char in_ipc_loop = 1;
 
 struct textbuffer_entry {
     char *rid;
@@ -394,6 +395,13 @@ void update_do()
     char **have_status = NULL;
     char *lastrid = NULL;
 
+    if (!in_ipc_loop)
+    {
+        attron(COLOR_PAIR(attr_red));
+        addstr(" [ PAUSED ] ");
+        attroff(COLOR_PAIR(attr_red));
+    }
+
     if (strmatch(mode, mode_to)) {
         progressbar(mode, progress);
     } else {
@@ -658,6 +666,8 @@ void do_input()
 {
     int rv;
 
+    in_ipc_loop = 0;
+
     while ((rv = getch()) != ERR) {
 
         switch (rv) {
@@ -694,6 +704,9 @@ void do_input()
             endwin();
             einit_disconnect();
             exit(EXIT_SUCCESS);
+
+        case 'c':
+            return;
         }
     }
 }
@@ -750,6 +763,8 @@ int main(int argc, char **argv, char **env)
         do_input();
         update();
 
+        in_ipc_loop = 1;
+        update();
         einit_ipc_loop_fd(STDIN_FILENO);
     } while (1);
 
