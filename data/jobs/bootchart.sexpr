@@ -1,4 +1,5 @@
 (job bootchart "eINIT bootchart"
   (run-on early-boot)
+  (terminate-on boot-complete)
   (restrict-to real-init)
   (require-configuration (boolean-true configuration-bootchart-active)))

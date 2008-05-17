@@ -51,6 +51,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <sys/socket.h>
+#include <signal.h>
 
 #define EXPECTED_EIV 1
 
@@ -94,6 +95,7 @@ struct required_config {
 struct einit_job {
     const char *name;
     char **run_on;
+    char **terminate_on;
     struct required_config **required_config;
     struct lmodule *module;
 };
@@ -109,6 +111,7 @@ struct einit_server {
 
 struct stree *einit_jobs = NULL;
 struct stree *einit_servers = NULL;
+struct stree *einit_terminate_pids = NULL;
 
 int einit_jobs_running = 0;
 
@@ -228,7 +231,7 @@ void einit_job_add_or_update(struct einit_sexp *s)
 
     if ((primus->type == es_symbol) && strmatch(primus->symbol, "job")
         && (secundus->type == es_symbol) && (tertius->type == es_string)) {
-        struct einit_job j = { tertius->string, NULL, NULL };
+        struct einit_job j = { tertius->string, NULL, NULL, NULL, NULL };
         char buffer[BUFFERSIZE];
         const char *binary;
 
@@ -266,6 +269,19 @@ void einit_job_add_or_update(struct einit_sexp *s)
                                 (char **) set_noa_add((void **) j.run_on,
                                                       (void *) primus->
                                                       symbol);
+                        }
+
+                        secundus = se_cdr(secundus);
+                    }
+                } else if (strmatch(primus->symbol, "terminate-on")) {
+                    while (secundus->type == es_cons) {
+                        primus = se_car(secundus);
+
+                        if (primus->type == es_symbol) {
+                            j.terminate_on =
+                                    (char **) set_noa_add((void **) j.terminate_on,
+                                     (void *) primus->
+                                             symbol);
                         }
 
                         secundus = se_cdr(secundus);
@@ -311,7 +327,7 @@ void einit_job_add_or_update(struct einit_sexp *s)
                && (secundus->type == es_symbol)
                && (tertius->type == es_string)) {
         struct einit_server s =
-            { tertius->string, NULL, NULL, 1, NULL };
+            { tertius->string, NULL, NULL, 1, NULL, NULL };
         char buffer[BUFFERSIZE];
         const char *binary;
 
@@ -452,6 +468,41 @@ void einit_job_run_dead_process_callback(struct einit_exec_data *d)
     }
 }
 
+void job_track_pid_for_killing (pid_t new_pid, const char *event)
+{
+    struct stree *st = streelinear_prepare(einit_terminate_pids);
+    while (st) {
+        if (strmatch (st->key, event)) {
+            pid_t pid = (pid_t)(intptr_t)st->value;
+            if (pid <= 0) {
+                st->value = (void *)(intptr_t)pid;
+
+                return;
+            }
+        }
+
+        st = streenext(st);
+    }
+
+    einit_terminate_pids =
+            streeadd(einit_terminate_pids, event, (void *)(intptr_t)new_pid, SET_NOALLOC, NULL);
+}
+
+void job_stop_tracking_pid (pid_t old_pid)
+{
+    struct stree *st = streelinear_prepare(einit_terminate_pids);
+    while (st) {
+        pid_t pid = (pid_t)(intptr_t)st->value;
+        if (pid <= old_pid) {
+            st->value = (void *)(intptr_t)0;
+
+            return;
+        }
+
+        st = streenext(st);
+    }
+}
+
 void einit_job_run(struct einit_job *j, const char *binary,
                    const char *event)
 {
@@ -489,7 +540,7 @@ void einit_job_run(struct einit_job *j, const char *binary,
             cmd[4] = "--sandbox";
         }
 
-        einit_exec_without_shell_with_function_on_process_death(cmd,
+        pid_t p = einit_exec_without_shell_with_function_on_process_death(cmd,
                                                                 einit_job_run_dead_process_callback,
                                                                 j->module);
 
@@ -497,6 +548,13 @@ void einit_job_run(struct einit_job *j, const char *binary,
         einit_jobs_running++;
 
         efree(path);
+
+        if (j->terminate_on) {
+            int i = 0;
+            for (; j->terminate_on[i]; i++) {
+                job_track_pid_for_killing (p, j->terminate_on[i]);
+            }
+        }
     }
 }
 
@@ -599,6 +657,23 @@ void einit_jobs_run(const char *event)
     }
 }
 
+void einit_jobs_terminate(const char *event)
+{
+    struct stree *st = streelinear_prepare(einit_terminate_pids);
+    while (st) {
+        if (strmatch (st->key, event)) {
+            pid_t pid = (pid_t)(intptr_t)st->value;
+
+            if (pid > 0) {
+                kill (pid, SIGTERM);
+                st->value = (void *)(intptr_t)0;
+            }
+        }
+
+        st = streenext(st);
+    }
+}
+
 void einit_servers_synchronise()
 {
     struct stree *st = streelinear_prepare(einit_servers);
@@ -619,11 +694,29 @@ void einit_servers_synchronise()
 void einit_jobs_configuration_update ()
 {
     einit_jobs_run("configuration-update");
+    einit_jobs_terminate("configuration-update");
 }
 
 void einit_jobs_early_boot ()
 {
     einit_jobs_run("early-boot");
+    einit_jobs_terminate("early-boot");
+}
+
+void einit_jobs_mode_switch_done (struct einit_event *ev)
+{
+    einit_jobs_run("mode-switch-done");
+    einit_jobs_terminate("mode-switch-done");
+
+    if (ev->string && strmatch(ev->string, "default")) {
+        einit_jobs_run("boot-complete");
+        einit_jobs_terminate("boot-complete");
+    }
+}
+
+void einit_jobs_process_died (struct einit_event *ev)
+{
+    job_stop_tracking_pid (ev->integer);
 }
 
 int einit_job_configure(struct lmodule *irr)
@@ -633,6 +726,8 @@ int einit_job_configure(struct lmodule *irr)
     event_listen(einit_core_update_modules, einit_jobs_update);
     event_listen(einit_core_configuration_update, einit_jobs_configuration_update);
     event_listen(einit_boot_early, einit_jobs_early_boot);
+    event_listen(einit_core_mode_switch_done, einit_jobs_mode_switch_done);
+    event_listen(einit_process_died, einit_jobs_process_died);
 
     einit_jobs_update();
     einit_jobs_run("core-initialisation");
