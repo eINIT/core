@@ -220,14 +220,6 @@ int main(int argc, char **argv)
         if (sigaction(SIGINT, &action, NULL))
             perror("calling sigaction() failed");
 
-        /*
-         * ignore sigpipe 
-         */
-        action.sa_sigaction = (void (*)(int, siginfo_t *, void *)) SIG_IGN;
-
-        if (sigaction(SIGPIPE, &action, NULL))
-            perror("calling sigaction() failed");
-
         do {
             einit_monitor_loop(argc, argv_mutable);
         } while(1);
