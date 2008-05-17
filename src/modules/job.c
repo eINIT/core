@@ -492,10 +492,12 @@ void job_track_pid_for_killing (pid_t new_pid, const char *event)
 
 void job_stop_tracking_pid (pid_t old_pid)
 {
+    notice (4, "no longer tracking pid", old_pid);
+
     struct stree *st = streelinear_prepare(einit_terminate_pids);
     while (st) {
         pid_t pid = (pid_t)(intptr_t)st->value;
-        if (pid <= old_pid) {
+        if (pid == old_pid) {
             st->value = (void *)(intptr_t)0;
 
             return;
