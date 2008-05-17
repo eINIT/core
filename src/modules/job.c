@@ -127,11 +127,13 @@ struct required_config **job_parse_required_config(struct einit_sexp *s)
     struct required_config **rv = NULL;
 
     while (s->type == es_cons) {
-        struct einit_sexp *p = s->primus;
+        struct einit_sexp *l = s->primus;
         struct required_config q = { rqc_none, NULL, NULL };
         enum rq_pass pass = rq_type;
 
-        while (p->type == es_cons) {
+        while (l->type == es_cons) {
+            struct einit_sexp *p = l->primus;
+
             if ((pass != rq_type) && (q.type == rqc_none)) {
                 break;
             }
@@ -163,7 +165,7 @@ struct required_config **job_parse_required_config(struct einit_sexp *s)
             }
 
             pass++;
-            p = p->secundus;
+            l = l->secundus;
         }
 
         if ((q.type != rqc_none) || !(q.key)) {
