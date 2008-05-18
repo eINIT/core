@@ -253,11 +253,6 @@ void einit_job_add_or_update(struct einit_sexp *s)
                             if (strmatch (primus->symbol, "real-init")) {
                                 if (coremode & (einit_mode_sandbox |
                                                 einit_mode_ipconly)) {
-
-                                    if (j.terminate_on) efree (j.terminate_on);
-                                    if (j.run_on) efree (j.run_on);
-                                    if (j.required_config) efree (j.required_config);
-
                                     return;
                                 }
                             }
@@ -354,11 +349,6 @@ void einit_job_add_or_update(struct einit_sexp *s)
                             if (strmatch (primus->symbol, "real-init")) {
                                 if (coremode & (einit_mode_sandbox |
                                                 einit_mode_ipconly)) {
-
-                                    if (s.need_files) efree (s.need_files);
-                                    if (s.environment) efree (s.environment);
-                                    if (s.required_config) efree (s.required_config);
-
                                     return;
                                 }
                             }
@@ -503,6 +493,8 @@ void job_track_pid_for_killing (pid_t new_pid, const char *event)
 
 void job_stop_tracking_pid (pid_t old_pid)
 {
+    notice (4, "no longer tracking pid", old_pid);
+
     struct stree *st = streelinear_prepare(einit_terminate_pids);
     while (st) {
         pid_t pid = (pid_t)(intptr_t)st->value;

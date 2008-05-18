@@ -303,7 +303,6 @@ pid_t einit_exec(struct einit_exec_data * x)
          * c[i]); }
          */
     } else if (!(x->options & einit_exec_fork_only)) {
-        if (environment) efree (environment);
         return -1;
         // fprintf (stderr, "no command?\n");
     }
@@ -318,8 +317,6 @@ pid_t einit_exec(struct einit_exec_data * x)
 
         perror("couldn't fork");
 
-        if (environment) efree (environment);
-        if (c) efree (c);
         return -1;
     }
 
@@ -359,8 +356,6 @@ pid_t einit_exec(struct einit_exec_data * x)
                 /*
                  * return 0, like fork() would 
                  */
-                if (environment) efree (environment);
-                if (c) efree (c);
                 return 0;
             } else {
                 execve(c[0], c, environment);
@@ -419,9 +414,6 @@ pid_t einit_exec(struct einit_exec_data * x)
                                                                  x);
 
     einit_ping_core();
-
-    if (environment) efree (environment);
-    if (c) efree (c);
 
     return p;
 }
