@@ -38,8 +38,6 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
  */
 
-#ifdef __linux__
-
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -435,17 +433,3 @@ int main(int argc, char **argv)
 
     return 0;
 }
-
-#else
-
-#include <stdio.h>
-
-int main(int argc, char **argv)
-{
-    fprintf(stderr, "last-rites (%c), only supported on linux, sorry.\n",
-            argv[1] ? argv[1][0] : '?');
-
-    return 0;
-}
-
-#endif

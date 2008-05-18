@@ -15,7 +15,6 @@ CodeSTree = ['tree-itree.c']
 
 CodeCoreObjects = ['einit-core.c', 'module.c', 'ipc.c', 'exec.c']
 
-CodeLastRites = ['last-rites.c']
 CodeEinitHelper = ['einit-helper.c']
 
 CodeEinitFeedbackD = ['einit-feedback.c']
@@ -29,6 +28,7 @@ CodeLibEinit = AssemblyFunctions + ['libraries/libeinit.c', 'bitch.c', 'event.c'
 CodeCoreMonitorObjects = [ uname + '/einit-monitor.c' ]
 CodeLibEinit += [ uname + '/process.c' ]
 CodeDeviceManager = [ 'jobs/' + uname + '/devices.c' ]
+CodeLastRites = [ uname + '/last-rites.c']
 
 if uname == 'freebsd':
  einitMonitor = env.Program ('einit-monitor', CodeCoreMonitorObjects, LIBS=['util'])
