@@ -113,7 +113,7 @@ void linux_hotplug_hotplug_event_handler(struct einit_event *ev)
 
                     switch (n) {
                     case 0:
-                        esprintf(buffer, BUFFERSIZE,
+                        snprintf(buffer, BUFFERSIZE,
                                  "/etc/einit/hotplug.d/%s/", subsystem);
                         tbuffer = buffer;
                         break;
@@ -162,7 +162,7 @@ void linux_hotplug_hotplug_event_handler(struct einit_event *ev)
                     int len = blen + strlen(commands[i]);
                     char *t = emalloc(len);
 
-                    esprintf(t, len, "%s %s", commands[i], subsystem);
+                    snprintf(t, len, "%s %s", commands[i], subsystem);
                     cd = set_str_add(cd, t);
                     efree(t);
                 }
@@ -194,9 +194,9 @@ void linux_hotplug_hotplug_event_handler(struct einit_event *ev)
 
             notice(2, "need firmware: %s", firmware);
 
-            esprintf(buffer, BUFFERSIZE, FIRMWARE_DIR "/%s", firmware);
+            snprintf(buffer, BUFFERSIZE, FIRMWARE_DIR "/%s", firmware);
             if (stat(buffer, &st)) {
-                esprintf(targetbuffer, tblen, SYS_DIR "/%s/loading",
+                snprintf(targetbuffer, tblen, SYS_DIR "/%s/loading",
                          devpath);
                 if ((f = fopen(targetbuffer, "w"))) {
                     fputs("-1\n", f);
@@ -205,14 +205,14 @@ void linux_hotplug_hotplug_event_handler(struct einit_event *ev)
 
                 notice(3, "can't locate firmware: %s", buffer);
             } else {
-                esprintf(targetbuffer, tblen, SYS_DIR "/%s/loading",
+                snprintf(targetbuffer, tblen, SYS_DIR "/%s/loading",
                          devpath);
                 if ((f = fopen(targetbuffer, "w"))) {
                     fputs("1\n", f);
                     fclose(f);
                 }
 
-                esprintf(targetbuffer, tblen, SYS_DIR "/%s/data", devpath);
+                snprintf(targetbuffer, tblen, SYS_DIR "/%s/data", devpath);
 
                 ssize_t ll = 0;
                 char *firmware_data = readfile_l(buffer, &ll);
@@ -236,7 +236,7 @@ void linux_hotplug_hotplug_event_handler(struct einit_event *ev)
                         fclose(f);
                     }
 
-                    esprintf(targetbuffer, tblen, SYS_DIR "/%s/loading",
+                    snprintf(targetbuffer, tblen, SYS_DIR "/%s/loading",
                              devpath);
                     if ((f = fopen(targetbuffer, "w"))) {
                         fputs("0\n", f);
@@ -245,7 +245,7 @@ void linux_hotplug_hotplug_event_handler(struct einit_event *ev)
 
                     notice(3, "firmware loaded okay: %s", buffer);
                 } else {
-                    esprintf(targetbuffer, tblen, SYS_DIR "/%s/loading",
+                    snprintf(targetbuffer, tblen, SYS_DIR "/%s/loading",
                              devpath);
                     if ((f = fopen(targetbuffer, "w"))) {
                         fputs("-1\n", f);

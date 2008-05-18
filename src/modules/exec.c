@@ -141,11 +141,6 @@ char *apply_envfile_f(char *command, const char **environment)
     if (variables) {
         command = apply_variables(command, (const char **) variables);
 
-#ifdef DEBUG
-        write(2, command, strlen(command));
-        write(2, "\n", 1);
-#endif
-
         efree(variables);
     }
 
@@ -194,10 +189,10 @@ char **check_variables_f(const char *id, const char **variables,
         }
 
         if (!node_found) {
-            eprintf(output, " * module: %s: undefined node: %s\n", id,
+            fprintf(output, " * module: %s: undefined node: %s\n", id,
                     x[0]);
         } else if (!variable_matches) {
-            eprintf(output, " * module: %s: undefined variable: %s\n", id,
+            fprintf(output, " * module: %s: undefined variable: %s\n", id,
                     e);
         }
 
@@ -479,8 +474,6 @@ int pexec_f(const char *command, const char **variables, uid_t uid,
         sched_yield();
 #endif
 
-        disable_core_dumps();
-
         /*
          * cause segfault 
          */
@@ -597,8 +590,6 @@ int eexec_f(const char *command, const char **variables, uid_t uid,
             status->string = strerror(errno);
         return status_failed;
     } else if (child == 0) {
-        disable_core_dumps();
-
         if (gid && (setgid(gid) == -1))
             perror("setting gid");
         if (uid && (setuid(uid) == -1))
@@ -848,8 +839,6 @@ int start_daemon_f(struct dexecinfo *shellcmd, struct einit_event *status)
             case 0:
                 {
                     close(cpipes[1]);
-
-                    disable_core_dumps();
 
                     if (gid && (setgid(gid) == -1))
                         perror("setting gid");

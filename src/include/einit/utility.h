@@ -224,61 +224,12 @@ extern "C" {
 
     char *escape_xml(const char *input);
 
-#ifdef DEBUG
-    /*
-     * some stdio wrappers with error reporting 
-     */
-#define efopen(filename, mode)\
- exfopen(filename, mode, __FILE__, __LINE__, __func__)
-
-#define eopendir(name)\
- exopendir(name, __FILE__, __LINE__, __func__)
-
-#define ereaddir(dir)\
- exreaddir(dir, __FILE__, __LINE__, __func__)
-
-#define eopen(filename, mode)\
- exopen(filename, mode, __FILE__, __LINE__, __func__)
-
-    FILE *exfopen(const char *filename, const char *mode, const char *file,
-                  const int line, const char *function);
-    DIR *exopendir(const char *name, const char *file, const int line,
-                   const char *function);
-    struct dirent *exreaddir(DIR * dir, const char *file, const int line,
-                             const char *function);
-
-    int exopen(const char *pathname, int mode, const char *file,
-               const int line, const char *function);
-
-#else
-#define efopen(filename, mode)\
- fopen(filename, mode)
-
-#define eopendir(name)\
- opendir(name)
-
-#define ereaddir(dir)\
- readdir(dir)
-
-#define eopen(filename, mode)\
- open(filename, mode)
-
-#endif
-
     /*
      * NOTE: matching "" against "" will result in undefined behaviour...
      * so just never try to match a string against "" :D 
      */
     char strmatch(const char *, const char *);
     char strprefix(const char *, const char *);
-
-#ifdef DEBUG
-    void enable_core_dumps();
-    void disable_core_dumps();
-#else
-#define enable_core_dumps()
-#define disable_core_dumps()
-#endif
 
     char *joinpath(char *path1, char *path2);
     char **getpath_filter(char *filter);

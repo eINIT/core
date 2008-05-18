@@ -138,8 +138,6 @@ uint32_t StrSuperFastHash(const char *data, int *len)
 struct btree *einit_stable_strings = NULL;
 struct vtree *einit_stable_strings_reverse = NULL;
 
-#undef DEBUG
-
 const char *str_stabilise(const char *s)
 {
     if (!s)

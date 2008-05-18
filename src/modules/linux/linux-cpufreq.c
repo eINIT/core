@@ -81,7 +81,7 @@ void linux_cpufreq_set_governor_data(char *gd, int cpus)
             FILE *f;
             notice(4, "setting cpufreq data: %s (cpu %i)", gd, i);
 
-            esprintf(tmp, BUFFERSIZE,
+            snprintf(tmp, BUFFERSIZE,
                      "/sys/devices/system/cpu/cpu%i/cpufreq/scaling_governor",
                      i);
 

@@ -215,7 +215,7 @@ char **linux_kernel_modules_get_from_node(char *node, char *dwait)
     char *buffer = emalloc(len);
     struct cfgnode *n;
 
-    esprintf(buffer, len, MPREFIX "%s", node);
+    snprintf(buffer, len, MPREFIX "%s", node);
 
     n = cfg_getnode(buffer);
     if (n) {
@@ -463,7 +463,7 @@ void linux_kernel_modules_scanmodules_add_subsystem(char *subsystem)
     struct lmodule *m = NULL;
     struct smodule *sm;
 
-    esprintf(tmp, BUFFERSIZE, "linux-kernel-modules-%s", subsystem);
+    snprintf(tmp, BUFFERSIZE, "linux-kernel-modules-%s", subsystem);
 
     if ((m = mod_lookup_rid(tmp))) {
         mod_update(m);
@@ -475,7 +475,7 @@ void linux_kernel_modules_scanmodules_add_subsystem(char *subsystem)
 
     sm->rid = (char *) str_stabilise(tmp);
 
-    esprintf(tmp, BUFFERSIZE, "Linux Kernel Modules (%s)", subsystem);
+    snprintf(tmp, BUFFERSIZE, "Linux Kernel Modules (%s)", subsystem);
     sm->name = (char *) str_stabilise(tmp);
 
     sm->eiversion = EINIT_VERSION;
@@ -483,7 +483,7 @@ void linux_kernel_modules_scanmodules_add_subsystem(char *subsystem)
     sm->mode =
         einit_module | einit_feedback_job | einit_module_fork_actions;
 
-    esprintf(tmp, BUFFERSIZE, "kern-%s", subsystem);
+    snprintf(tmp, BUFFERSIZE, "kern-%s", subsystem);
     sm->si.provides = set_str_add(sm->si.provides, tmp);
 
     sm->configure = linux_kernel_modules_module_configure;

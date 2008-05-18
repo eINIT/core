@@ -171,7 +171,7 @@ void linux_sysconf_make_timezone_symlink(void)
     char *zoneinfo = cfg_getstring("configuration-system-timezone");
     if (zoneinfo) {
         char tmp[BUFFERSIZE];
-        esprintf(tmp, BUFFERSIZE, "/usr/share/zoneinfo/%s", zoneinfo);
+        snprintf(tmp, BUFFERSIZE, "/usr/share/zoneinfo/%s", zoneinfo);
         remove("/etc/localtime");
         symlink(tmp, "/etc/localtime");
     }
@@ -232,7 +232,7 @@ void linux_sysconf_fix_ttys()
                             tmp =
                                 freopen("einit-panic-stdout", "a", stderr);
                         if (tmp)
-                            eprintf(stderr,
+                            fprintf(stderr,
                                     "\n%i: eINIT: visualiser einit-vis-text activated.\n",
                                     (int) time(NULL));
                     } else {
@@ -298,7 +298,7 @@ void linux_sysconf_sysctl()
          cfg_getstring("configuration-services-sysctl/config"))) {
         notice(4, "doing system configuration via %s.", sfilename);
 
-        if ((sfile = efopen(sfilename, "r"))) {
+        if ((sfile = fopen(sfilename, "r"))) {
             char buffer[BUFFERSIZE], *cptr;
             while (fgets(buffer, BUFFERSIZE, sfile)) {
                 switch (buffer[0]) {
@@ -332,9 +332,9 @@ void linux_sysconf_sysctl()
                                     sizeof(tarbuffer) - strlen(tarbuffer) +
                                     1);
 
-                            if ((ofile = efopen(tarbuffer, "w"))) {
-                                eputs(cptr, ofile);
-                                efclose(ofile);
+                            if ((ofile = fopen(tarbuffer, "w"))) {
+                                fputs(cptr, ofile);
+                                fclose(ofile);
                             }
                         }
                     }
@@ -343,7 +343,7 @@ void linux_sysconf_sysctl()
                 }
             }
 
-            efclose(sfile);
+            fclose(sfile);
         }
     }
 }

@@ -101,7 +101,7 @@ struct exported_function *einit_function_macro_data = NULL;
 
 int print_usage_info()
 {
-    eputs("eINIT " EINIT_VERSION_LITERAL
+    fputs("eINIT " EINIT_VERSION_LITERAL
           "\nCopyright (c) 2006-2008, Magnus Deininger\n" "Usage:\n"
           " einit [options]\n" "\n" "Options:\n"
           "-h, --help            display this text\n"
@@ -591,10 +591,10 @@ int main(int argc, char **argv, char **environ)
                 suppress_version = 1;
                 break;
             case 'v':
-                eputs("eINIT " EINIT_VERSION_LITERAL "\n", stdout);
+                fputs("eINIT " EINIT_VERSION_LITERAL "\n", stdout);
                 return 0;
             case 'L':
-                eputs("eINIT " EINIT_VERSION_LITERAL
+                fputs("eINIT " EINIT_VERSION_LITERAL
                       "\nThis Program is Free Software, released under the terms of this (BSD) License:\n"
                       "--------------------------------------------------------------------------------\n"
                       "Copyright (c) 2006-2008, Magnus Deininger\n"
@@ -706,8 +706,6 @@ int main(int argc, char **argv, char **environ)
         einit_startup_configuration_files =
             einit_default_startup_configuration_files;
 
-    enable_core_dumps();
-
     sched_reset_event_handlers();
     einit_exec_setup();
 
@@ -715,7 +713,7 @@ int main(int argc, char **argv, char **environ)
      * actual system initialisation 
      */
     if (!suppress_version) {
-        eprintf(stdout,
+        fprintf(stdout,
                 "eINIT " EINIT_VERSION_LITERAL ": Initialising: %s\n",
                 osinfo.sysname);
     }
@@ -727,12 +725,12 @@ int main(int argc, char **argv, char **environ)
         uint32_t cp = 0;
 
         if (!suppress_version)
-            eputs(" >> initialising in-core modules:", stdout);
+            fputs(" >> initialising in-core modules:", stdout);
 
         for (; coremodules[cp]; cp++) {
             struct lmodule *lmm;
             if (!suppress_version)
-                eprintf(stdout, " [%s]", (*coremodules[cp])->rid);
+                fprintf(stdout, " [%s]", (*coremodules[cp])->rid);
             lmm = mod_add(NULL, (*coremodules[cp]));
 
             if (lmm) {
@@ -741,7 +739,7 @@ int main(int argc, char **argv, char **environ)
         }
 
         if (!suppress_version)
-            eputs(" OK\n", stdout);
+            fputs(" OK\n", stdout);
     }
 
     if (!pipe(alarm_pipe)) {

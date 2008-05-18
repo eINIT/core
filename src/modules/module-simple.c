@@ -99,7 +99,7 @@ struct cfgnode *module_simple_module_get_node(char *name, char *action)
     if (name && action) {
         char buffer[BUFFERSIZE];
 
-        esprintf(buffer, BUFFERSIZE, MODULES_EXECUTE_NODE_TEMPLATE, name);
+        snprintf(buffer, BUFFERSIZE, MODULES_EXECUTE_NODE_TEMPLATE, name);
 
         struct cfgnode **st = cfg_match(buffer);
         if (st) {
@@ -126,7 +126,7 @@ struct cfgnode *module_simple_module_get_attributive_node(char *name,
     if (name && attribute) {
         char buffer[BUFFERSIZE];
 
-        esprintf(buffer, BUFFERSIZE, MODULES_ARBITRARY_NODE_TEMPLATE, name,
+        snprintf(buffer, BUFFERSIZE, MODULES_ARBITRARY_NODE_TEMPLATE, name,
                  attribute);
 
         return cfg_getnode(buffer);
@@ -211,7 +211,7 @@ char *module_simple_generate_defer_fs(char **tmpxt)
     }
 
     if (tmpx) {
-        esprintf(tmp, BUFFERSIZE, "^fs-(root|%s)$", tmpx);
+        snprintf(tmp, BUFFERSIZE, "^fs-(root|%s)$", tmpx);
         efree(tmpx);
     }
 

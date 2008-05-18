@@ -134,9 +134,9 @@ char **readdirfilter(struct cfgnode const *node, const char *default_dir,
     }
 
     mplen += 4;
-    dir = eopendir(path);
+    dir = opendir(path);
     if (dir != NULL) {
-        while ((entry = ereaddir(dir))) {
+        while ((entry = readdir(dir))) {
 
             if (haveallowpattern
                 && regexec(&allowpattern, entry->d_name, 0, NULL, 0))
@@ -193,7 +193,7 @@ char **readdirfilter(struct cfgnode const *node, const char *default_dir,
           cleanup_continue:
             efree(tmp);
         }
-        eclosedir(dir);
+        closedir(dir);
     }
 
     if (haveallowpattern) {
@@ -295,7 +295,7 @@ char *readfile_l(const char *filename, ssize_t * rl)
         || ((st.st_size <= 0) && (!strprefix(filename, "/proc/"))))
         return NULL;
 
-    fd = eopen(filename, O_RDONLY);
+    fd = open(filename, O_RDONLY);
 
     if (fd != -1) {
         if ((st.st_size > 0)
@@ -303,7 +303,7 @@ char *readfile_l(const char *filename, ssize_t * rl)
             ((buf =
               mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd,
                    0)) != MAP_FAILED)) {
-            eclose(fd);
+            close(fd);
             data = emalloc(st.st_size + 1);
             memcpy(data, buf, st.st_size);
             munmap(buf, st.st_size);
@@ -314,7 +314,7 @@ char *readfile_l(const char *filename, ssize_t * rl)
                 *rl = st.st_size;
         } else {
             data = readfd_l(fd, rl);
-            eclose(fd);
+            close(fd);
         }
     }
 
@@ -716,28 +716,6 @@ char strprefix(const char *str1, const char *str2)
 }
 #endif
 
-#ifdef DEBUG
-void enable_core_dumps()
-{
-    struct rlimit infinite = {
-        .rlim_cur = RLIM_INFINITY,
-        .rlim_max = RLIM_INFINITY
-    };
-
-    setrlimit(RLIMIT_CORE, &infinite);
-}
-
-void disable_core_dumps()
-{
-    struct rlimit zero = {
-        .rlim_cur = 0,
-        .rlim_max = 0
-    };
-
-    setrlimit(RLIMIT_CORE, &zero);
-}
-#endif
-
 char **getpath_filter(char *filter)
 {
     char **rv = NULL;
@@ -754,12 +732,12 @@ char *joinpath(char *path1, char *path2)
         tlen += strlen(path2) + 1;
         rv = emalloc(tlen);
 
-        esprintf(rv, tlen, "%s%s", path1, path2);
+        snprintf(rv, tlen, "%s%s", path1, path2);
     } else {
         tlen += strlen(path2) + 2;
         rv = emalloc(tlen);
 
-        esprintf(rv, tlen, "%s/%s", path1, path2);
+        snprintf(rv, tlen, "%s/%s", path1, path2);
     }
 
     return rv;
@@ -845,9 +823,9 @@ int unlink_recursive(const char *file, char self)
         DIR *d;
         struct dirent *e;
 
-        d = eopendir(file);
+        d = opendir(file);
         if (d != NULL) {
-            while ((e = ereaddir(d))) {
+            while ((e = readdir(d))) {
                 if (strmatch(e->d_name, ".") || strmatch(e->d_name, "..")) {
                     continue;
                 }
@@ -868,7 +846,7 @@ int unlink_recursive(const char *file, char self)
                 }
             }
 
-            eclosedir(d);
+            closedir(d);
         }
     }
 
@@ -1035,7 +1013,7 @@ char *utility_generate_defer_fs(char **tmpxt)
     }
 
     if (tmpx) {
-        esprintf(tmp, BUFFERSIZE, "^fs-(root|%s)$", tmpx);
+        snprintf(tmp, BUFFERSIZE, "^fs-(root|%s)$", tmpx);
         efree(tmpx);
     }
 

@@ -266,7 +266,7 @@ void linux_udev_run()
     for (; min < 24; min++) {
         ldev = (4 << 8) | min;
         char buffer[BUFFERSIZE];
-        esprintf(buffer, BUFFERSIZE, "/dev/tty%d", min);
+        snprintf(buffer, BUFFERSIZE, "/dev/tty%d", min);
         mknod(buffer, S_IFCHR, ldev);
     }
 

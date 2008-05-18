@@ -135,7 +135,7 @@ void einit_tty_watcher(pid_t pid)
     if (node) {
         if (node->id) {
             char tmp[BUFFERSIZE];
-            esprintf(tmp, BUFFERSIZE, "einit-tty: restarting: %s\n",
+            snprintf(tmp, BUFFERSIZE, "einit-tty: restarting: %s\n",
                      node->id);
             notice(6, tmp);
         }
@@ -185,7 +185,7 @@ int einit_tty_texec(struct cfgnode *node)
             struct stat statbuf;
             if (lstat(cmds[0], &statbuf)) {
                 char cret[BUFFERSIZE];
-                esprintf(cret, BUFFERSIZE, "%s: not forking, %s: %s",
+                snprintf(cret, BUFFERSIZE, "%s: not forking, %s: %s",
                          (node->id ? node->id : "unknown node"), cmds[0],
                          strerror(errno));
                 notice(2, cret);
@@ -227,10 +227,8 @@ int einit_tty_texec(struct cfgnode *node)
 
                             setsid();
 
-                            disable_core_dumps();
-
                             if (device) {
-                                int newfd = eopen(device, O_RDWR);
+                                int newfd = open(device, O_RDWR);
                                 if (newfd > 0) {
                                     close(0);
                                     close(1);

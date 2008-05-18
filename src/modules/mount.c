@@ -167,11 +167,11 @@ struct stree *mount_critical_filesystems = NULL;
   if (tmpmtab) {\
    unlink (mount_mtab_file);\
 \
-   FILE *mtabfile = efopen (mount_mtab_file, "w");\
+   FILE *mtabfile = fopen (mount_mtab_file, "w");\
 \
    if (mtabfile) {\
-    eputs (tmpmtab, mtabfile);\
-    efclose (mtabfile);\
+    fputs (tmpmtab, mtabfile);\
+    fclose (mtabfile);\
 }\
 \
    efree (tmpmtab);\
@@ -205,7 +205,7 @@ char *generate_legacy_mtab()
                     char *tset = set2str(',', (const char **) mp->options);
 
                     if (tset)
-                        esprintf(tmp, BUFFERSIZE, "%s %s %s %s,%s 0 0\n",
+                        snprintf(tmp, BUFFERSIZE, "%s %s %s %s,%s 0 0\n",
                                  dd->device, mp->mountpoint, mp->fs,
 #ifdef MS_RDONLY
                                  mp->mountflags & MS_RDONLY
@@ -214,7 +214,7 @@ char *generate_legacy_mtab()
 #endif
                                  ? "ro" : "rw", tset);
                     else
-                        esprintf(tmp, BUFFERSIZE, "%s %s %s %s 0 0\n",
+                        snprintf(tmp, BUFFERSIZE, "%s %s %s %s 0 0\n",
                                  dd->device, mp->mountpoint, mp->fs,
 #ifdef MS_RDONLY
                                  mp->mountflags & MS_RDONLY
@@ -550,9 +550,9 @@ void mount_add_update_fstab_data(struct device_data *dd, char *mountpoint,
 
     if (!st) {
         /*
-         * eprintf (stderr, " >> have mountpoint_data node for %s, device
+         * fprintf (stderr, " >> have mountpoint_data node for %s, device
          * %s, fs %s: updating\n", mountpoint, device, fs); } else {
-         * eprintf (stderr, " >> inserting new mountpoint_data node for
+        * fprintf (stderr, " >> inserting new mountpoint_data node for
          * %s, device %s, fs %s\n", mountpoint, device, fs);
          */
 
@@ -609,7 +609,7 @@ void mount_add_update_fstab(char *mountpoint, char *device, char *fs,
             // d->device = (char *)str_stabilise (device);
             d->device = device;
         }
-        // eprintf (stderr, " >> inserting new device_data node for %s,
+        // fprintf (stderr, " >> inserting new device_data node for %s,
         // device %s\n", mountpoint, device);
 
         d->device_status =
@@ -645,7 +645,7 @@ struct stree *read_fsspec_file(char *file)
     if (!file)
         return NULL;
 
-    if ((fp = efopen(file, "r"))) {
+    if ((fp = fopen(file, "r"))) {
         char buffer[BUFFERSIZE];
         errno = 0;
         while (!errno) {
@@ -736,7 +736,7 @@ struct stree *read_fsspec_file(char *file)
             }
         }
       done_parsing_file:
-        efclose(fp);
+        fclose(fp);
     }
 
     return workstree;
@@ -792,13 +792,13 @@ void mount_update_fstab_nodes()
                     else if (strmatch(node->arbattrs[i], "label")) {
                         char tmp[BUFFERSIZE];
 
-                        esprintf(tmp, BUFFERSIZE, "/dev/disk/by-label/%s",
+                        snprintf(tmp, BUFFERSIZE, "/dev/disk/by-label/%s",
                                  node->arbattrs[i + 1]);
                         device = (char *) str_stabilise(tmp);
                     } else if (strmatch(node->arbattrs[i], "uuid")) {
                         char tmp[BUFFERSIZE];
 
-                        esprintf(tmp, BUFFERSIZE, "/dev/disk/by-uuid/%s",
+                        snprintf(tmp, BUFFERSIZE, "/dev/disk/by-uuid/%s",
                                  node->arbattrs[i + 1]);
                         device = (char *) str_stabilise(tmp);
                     } else if (strmatch(node->arbattrs[i], "before"))
@@ -875,13 +875,13 @@ void mount_update_fstab_nodes_from_fstab()
                     if (strprefix(val->fs_spec, "UUID=")) {
                         char tmp[BUFFERSIZE];
 
-                        esprintf(tmp, BUFFERSIZE, "/dev/disk/by-uuid/%s",
+                        snprintf(tmp, BUFFERSIZE, "/dev/disk/by-uuid/%s",
                                  val->fs_spec + 5);
                         fs_spec = (char *) str_stabilise(tmp);
                     } else if (strprefix(val->fs_spec, "LABEL=")) {
                         char tmp[BUFFERSIZE];
 
-                        esprintf(tmp, BUFFERSIZE, "/dev/disk/by-label/%s",
+                        snprintf(tmp, BUFFERSIZE, "/dev/disk/by-label/%s",
                                  val->fs_spec + 6);
                         fs_spec = (char *) str_stabilise(tmp);
                     } else {
@@ -1253,7 +1253,7 @@ void einit_mount_scanmodules_mountpoints()
             }
 
             if (tmpx) {
-                esprintf(tmp, BUFFERSIZE, "^(device-mapper|fs-(%s))$",
+                snprintf(tmp, BUFFERSIZE, "^(device-mapper|fs-(%s))$",
                          tmpx);
                 after = set_str_add_stable(after, (void *) tmp);
                 efree(tmpx);
@@ -1267,7 +1267,7 @@ void einit_mount_scanmodules_mountpoints()
         }
 
         /*
-         * eprintf (stderr, "need to create module for mountpoint %s, aka
+        * fprintf (stderr, "need to create module for mountpoint %s, aka
          * service %s, with regex %s.\n", s->key, servicename, after ?
          * after[0] : "(none)");
          */
@@ -1384,7 +1384,7 @@ void einit_mount_scanmodules_mountpoints()
         if (strmatch(s->key, "/")) {
             snprintf(tmp, BUFFERSIZE, "mount-root");
         } else {
-            esprintf(tmp, BUFFERSIZE, "mount%s", s->key);
+            snprintf(tmp, BUFFERSIZE, "mount%s", s->key);
             int tx = 0;
             for (; tmp[tx]; tx++) {
                 if (tmp[tx] == '/') {
@@ -1399,14 +1399,14 @@ void einit_mount_scanmodules_mountpoints()
         newmodule->version = 1;
         newmodule->mode = einit_module | einit_module_fork_actions;
 
-        // esprintf (tmp, BUFFERSIZE, "mount-%s", s->key);
+        // snprintf (tmp, BUFFERSIZE, "mount-%s", s->key);
         newmodule->rid = (char *) str_stabilise(tmp);
 
         newmodule->si.provides =
             set_str_add_stable(newmodule->si.provides,
                                (void *) servicename);
 
-        esprintf(tmp, BUFFERSIZE, "Filesystem ( %s )", s->key);
+        snprintf(tmp, BUFFERSIZE, "Filesystem ( %s )", s->key);
         newmodule->name = (char *) str_stabilise(tmp);
 
         newmodule->si.after = after;
@@ -1512,7 +1512,7 @@ void einit_mount_scanmodules_fscks()
             }
 
             if (tmpx) {
-                esprintf(tmp, BUFFERSIZE, "^(device-mapper|fs-(%s))$",
+                snprintf(tmp, BUFFERSIZE, "^(device-mapper|fs-(%s))$",
                          tmpx);
                 after = set_str_add_stable(after, (void *) tmp);
                 efree(tmpx);
@@ -1530,7 +1530,7 @@ void einit_mount_scanmodules_fscks()
         if (strmatch(s->key, "/")) {
             snprintf(tmp, BUFFERSIZE, "mount-fsck-root");
         } else {
-            esprintf(tmp, BUFFERSIZE, "mount-fsck%s", s->key);
+            snprintf(tmp, BUFFERSIZE, "mount-fsck%s", s->key);
             int tx = 0;
             for (; tmp[tx]; tx++) {
                 if (tmp[tx] == '/') {
@@ -1546,14 +1546,14 @@ void einit_mount_scanmodules_fscks()
         newmodule->mode =
             einit_module | einit_feedback_job | einit_module_fork_actions;
 
-        // esprintf (tmp, BUFFERSIZE, "mount-%s", s->key);
+        // snprintf (tmp, BUFFERSIZE, "mount-%s", s->key);
         newmodule->rid = (char *) str_stabilise(tmp);
 
         newmodule->si.provides =
             set_str_add_stable(newmodule->si.provides,
                                (void *) servicename);
 
-        esprintf(tmp, BUFFERSIZE, "fsck ( %s )", s->key);
+        snprintf(tmp, BUFFERSIZE, "fsck ( %s )", s->key);
         newmodule->name = (char *) str_stabilise(tmp);
 
         newmodule->si.after = after;
@@ -1881,18 +1881,18 @@ char **mount_generate_mount_function_suffixes(char *fs)
     char tmp[BUFFERSIZE];
 
 #ifdef __linux__
-    esprintf(tmp, BUFFERSIZE, "linux-%s", fs);
+    snprintf(tmp, BUFFERSIZE, "linux-%s", fs);
     ret = set_str_add_stable(ret, tmp);
 #endif
-    esprintf(tmp, BUFFERSIZE, "%s-%s", osinfo.sysname, fs);
+    snprintf(tmp, BUFFERSIZE, "%s-%s", osinfo.sysname, fs);
     ret = set_str_add_stable(ret, tmp);
-    esprintf(tmp, BUFFERSIZE, "generic-%s", fs);
+    snprintf(tmp, BUFFERSIZE, "generic-%s", fs);
     ret = set_str_add_stable(ret, tmp);
 
 #ifdef __linux__
     ret = set_str_add_stable(ret, "linux-any");
 #endif
-    esprintf(tmp, BUFFERSIZE, "%s-any", osinfo.sysname);
+    snprintf(tmp, BUFFERSIZE, "%s-any", osinfo.sysname);
     ret = set_str_add_stable(ret, tmp);
     ret = set_str_add_stable(ret, "generic-any");
 
@@ -1905,18 +1905,18 @@ char **mount_generate_mount_function_suffixes(char *fs)
      * with this 
      */
 #ifdef __linux__
-    esprintf(tmp, BUFFERSIZE, "linux-%s-backup", fs);
+    snprintf(tmp, BUFFERSIZE, "linux-%s-backup", fs);
     ret = set_str_add_stable(ret, tmp);
 #endif
-    esprintf(tmp, BUFFERSIZE, "%s-%s-backup", osinfo.sysname, fs);
+    snprintf(tmp, BUFFERSIZE, "%s-%s-backup", osinfo.sysname, fs);
     ret = set_str_add_stable(ret, tmp);
-    esprintf(tmp, BUFFERSIZE, "generic-%s-backup", fs);
+    snprintf(tmp, BUFFERSIZE, "generic-%s-backup", fs);
     ret = set_str_add_stable(ret, tmp);
 
 #ifdef __linux__
     ret = set_str_add_stable(ret, "linux-any-backup");
 #endif
-    esprintf(tmp, BUFFERSIZE, "%s-any-backup", osinfo.sysname);
+    snprintf(tmp, BUFFERSIZE, "%s-any-backup", osinfo.sysname);
     ret = set_str_add_stable(ret, tmp);
     ret = set_str_add_stable(ret, "generic-any-backup");
 

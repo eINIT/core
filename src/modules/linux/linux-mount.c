@@ -103,7 +103,7 @@ int linux_mount_do_umount_swap(char *, char *, char, struct device_data *,
 
 unsigned char find_block_devices_proc(struct mount_control_block *mcb)
 {
-    FILE *f = efopen("/proc/partitions", "r");
+    FILE *f = fopen("/proc/partitions", "r");
     char tmp[BUFFERSIZE];
     uint32_t line = 0, device_major = 0, device_minor = 0, device_size =
         0, field = 0;
@@ -120,11 +120,11 @@ unsigned char find_block_devices_proc(struct mount_control_block *mcb)
                 errno = 0;
                 break;
             case 0:
-                efclose(f);
+                fclose(f);
                 return 1;
             default:
                 bitch(bitch_stdio, 0, "fgets() failed.");
-                efclose(f);
+                fclose(f);
                 return 1;
             }
         } else {
@@ -192,7 +192,7 @@ unsigned char find_block_devices_proc(struct mount_control_block *mcb)
         }
     }
 
-    efclose(f);
+    fclose(f);
     return 0;
 }
 
@@ -247,10 +247,10 @@ int linux_mount_do_mount_real(char *mountpoint, char *fs,
     }
 
     if (fsdata) {
-        esprintf(command, BUFFERSIZE, "/bin/mount %s %s -t %s -o %s",
+        snprintf(command, BUFFERSIZE, "/bin/mount %s %s -t %s -o %s",
                  dd->device, mountpoint, fs, fsdata);
     } else {
-        esprintf(command, BUFFERSIZE, "/bin/mount %s %s -t %s", dd->device,
+        snprintf(command, BUFFERSIZE, "/bin/mount %s %s -t %s", dd->device,
                  mountpoint, fs);
     }
 
@@ -308,10 +308,10 @@ int linux_mount_do_mount_ntfs_3g(char *mountpoint, char *fs,
     }
 
     if (fsdata) {
-        esprintf(command, BUFFERSIZE, "/bin/ntfs-3g %s %s -t %s -o %s",
+        snprintf(command, BUFFERSIZE, "/bin/ntfs-3g %s %s -t %s -o %s",
                  dd->device, mountpoint, fs, fsdata);
     } else {
-        esprintf(command, BUFFERSIZE, "/bin/ntfs-3g %s %s -t %s",
+        snprintf(command, BUFFERSIZE, "/bin/ntfs-3g %s %s -t %s",
                  dd->device, mountpoint, fs);
     }
 

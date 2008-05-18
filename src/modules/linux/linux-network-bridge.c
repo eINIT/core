@@ -97,7 +97,7 @@ void linux_network_bridge_interface_construct(struct einit_event *ev)
 
             if (elements) {
                 for (i = 0; elements[i]; i++) {
-                    esprintf(buffer, BUFFERSIZE, "carrier-%s",
+                    snprintf(buffer, BUFFERSIZE, "carrier-%s",
                              elements[i]);
 
                     if (!inset
@@ -136,7 +136,7 @@ void linux_network_bridge_verify_carrier(struct einit_event *ev)
         }
 
         if (d->action == interface_up) {
-            esprintf(buffer, BUFFERSIZE, "brctl addbr %s", ev->string);
+            snprintf(buffer, BUFFERSIZE, "brctl addbr %s", ev->string);
 
             if (buffer[0]) {
                 if (pexec
@@ -152,10 +152,10 @@ void linux_network_bridge_verify_carrier(struct einit_event *ev)
         if (elements) {
             for (i = 0; elements[i]; i++) {
                 if (d->action == interface_up) {
-                    esprintf(buffer, BUFFERSIZE, "brctl addif %s %s",
+                    snprintf(buffer, BUFFERSIZE, "brctl addif %s %s",
                              ev->string, elements[i]);
                 } else {
-                    esprintf(buffer, BUFFERSIZE, "brctl delif %s %s",
+                    snprintf(buffer, BUFFERSIZE, "brctl delif %s %s",
                              ev->string, elements[i]);
                 }
 
@@ -178,7 +178,7 @@ void linux_network_bridge_verify_carrier(struct einit_event *ev)
         }
 
         if (d->action == interface_down) {
-            esprintf(buffer, BUFFERSIZE, "brctl delbr %s", ev->string);
+            snprintf(buffer, BUFFERSIZE, "brctl delbr %s", ev->string);
 
             if (buffer[0]) {
                 if (pexec
@@ -202,7 +202,7 @@ void linux_network_bridge_verify_carrier(struct einit_event *ev)
                 efree(ip_binary);
 
                 if (d->action == interface_up) {
-                    esprintf(buffer, BUFFERSIZE, "ip link set %s up",
+                    snprintf(buffer, BUFFERSIZE, "ip link set %s up",
                              ev->string);
                 }
             } else {
@@ -212,7 +212,7 @@ void linux_network_bridge_verify_carrier(struct einit_event *ev)
                  */
 
                 if (d->action == interface_up) {
-                    esprintf(buffer, BUFFERSIZE, "ifconfig %s up",
+                    snprintf(buffer, BUFFERSIZE, "ifconfig %s up",
                              ev->string);
                 }
             }

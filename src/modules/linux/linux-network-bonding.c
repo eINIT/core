@@ -100,7 +100,7 @@ void linux_network_bonding_interface_construct(struct einit_event *ev)
 
             if (elements) {
                 for (i = 0; elements[i]; i++) {
-                    esprintf(buffer, BUFFERSIZE, "carrier-%s",
+                    snprintf(buffer, BUFFERSIZE, "carrier-%s",
                              elements[i]);
 
                     if (!inset
@@ -190,12 +190,12 @@ void linux_network_bonding_verify_carrier(struct einit_event *ev)
         }
 
         if (d->action == interface_up) {
-            esprintf(buffer, BUFFERSIZE, "/sys/class/net/%s", ev->string);
+            snprintf(buffer, BUFFERSIZE, "/sys/class/net/%s", ev->string);
             if (stat(buffer, &st)) {
                 FILE *f = fopen("/sys/class/net/bonding_masters", "w");
 
                 if (f) {
-                    esprintf(buffer, BUFFERSIZE, "+%s\n", ev->string);
+                    snprintf(buffer, BUFFERSIZE, "+%s\n", ev->string);
 
                     fputs(buffer, f);
                     fclose(f);
@@ -212,7 +212,7 @@ void linux_network_bonding_verify_carrier(struct einit_event *ev)
                      */
                     efree(ip_binary);
 
-                    esprintf(buffer, BUFFERSIZE, "ip link set %s up",
+                    snprintf(buffer, BUFFERSIZE, "ip link set %s up",
                              ev->string);
                 } else {
                     /*
@@ -220,7 +220,7 @@ void linux_network_bonding_verify_carrier(struct einit_event *ev)
                      * only one ip address per interface 
                      */
 
-                    esprintf(buffer, BUFFERSIZE, "ifconfig %s up",
+                    snprintf(buffer, BUFFERSIZE, "ifconfig %s up",
                              ev->string);
                 }
 
@@ -239,7 +239,7 @@ void linux_network_bonding_verify_carrier(struct einit_event *ev)
             for (i = 0; elements[i]; i++) {
                 if ((d->action == interface_up)
                     || (d->action == interface_down)) {
-                    esprintf(buffer, BUFFERSIZE,
+                    snprintf(buffer, BUFFERSIZE,
                              "/sys/class/net/%s/bonding/slaves",
                              ev->string);
                     FILE *f = fopen(buffer, "w");
@@ -252,11 +252,11 @@ void linux_network_bonding_verify_carrier(struct einit_event *ev)
                                 if (ip_binary) {
                                     efree(ip_binary);
 
-                                    esprintf(buffer, BUFFERSIZE,
+                                    snprintf(buffer, BUFFERSIZE,
                                              "ip link set %s down",
                                              elements[i]);
                                 } else {
-                                    esprintf(buffer, BUFFERSIZE,
+                                    snprintf(buffer, BUFFERSIZE,
                                              "ifconfig %s down",
                                              elements[i]);
                                 }
@@ -273,10 +273,10 @@ void linux_network_bonding_verify_carrier(struct einit_event *ev)
                                 }
                             }
 
-                            esprintf(buffer, BUFFERSIZE, "+%s\n",
+                            snprintf(buffer, BUFFERSIZE, "+%s\n",
                                      elements[i]);
                         } else if (d->action == interface_down) {
-                            esprintf(buffer, BUFFERSIZE, "-%s\n",
+                            snprintf(buffer, BUFFERSIZE, "-%s\n",
                                      elements[i]);
                         }
 
@@ -293,12 +293,12 @@ void linux_network_bonding_verify_carrier(struct einit_event *ev)
             /*
              * remove bond 
              */
-            esprintf(buffer, BUFFERSIZE, "/sys/class/net/%s", ev->string);
+            snprintf(buffer, BUFFERSIZE, "/sys/class/net/%s", ev->string);
             if (!stat(buffer, &st)) {
                 FILE *f = fopen("/sys/class/net/bonding_masters", "w");
 
                 if (f) {
-                    esprintf(buffer, BUFFERSIZE, "-%s\n", ev->string);
+                    snprintf(buffer, BUFFERSIZE, "-%s\n", ev->string);
 
                     fputs(buffer, f);
                     fclose(f);

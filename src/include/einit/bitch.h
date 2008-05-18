@@ -84,49 +84,6 @@ extern "C" {
                     const int line, const char *function, int error,
                     const char *reason);
 
-#ifdef DEBUG
-
-#define eprintf(file, format, ...)\
- ((fprintf(file, format, __VA_ARGS__) < 0) ? (bitch_macro (bitch_stdio, __FILE__, __LINE__, __func__ , 0, "fprintf() failed."), errno) : 0)
-
-#define esprintf(buffer, size, format, ...)\
- (snprintf(buffer, size, format, __VA_ARGS__) < 0 ? (bitch_macro (bitch_stdio, __FILE__, __LINE__, __func__ , 0, "snprintf() failed."), errno) : 0)
-
-#define eputs(text, file)\
- (fputs(text, file) < 0 ? (bitch_macro (bitch_stdio, __FILE__, __LINE__, __func__ , 0, "fputs() failed."), errno) : 0)
-
-#define efclose(stream)\
- ((fclose(stream) == EOF) ? (bitch_macro (bitch_stdio, __FILE__, __LINE__, __func__ , errno, "fclose() failed"), EOF): 0)
-
-#define eclosedir(dir)\
- (closedir(dir) ? (bitch_macro (bitch_stdio, __FILE__, __LINE__, __func__ , errno, "closedir() failed"), -1): 0)
-
-#define eclose(fd)\
- (close(fd) ? (bitch_macro (bitch_stdio, __FILE__, __LINE__, __func__ , errno, "close() failed"), -1): 0)
-
-#else
-
-
-#define eprintf(file, format, ...)\
- fprintf(file, format, __VA_ARGS__)
-
-#define esprintf(buffer, size, format, ...)\
- snprintf(buffer, size, format, __VA_ARGS__)
-
-#define eputs(text, file)\
- fputs(text, file)
-
-#define efclose(stream)\
- fclose(stream)
-
-#define eclosedir(dir)\
- closedir(dir)
-
-#define eclose(fd)\
- close(fd)
-
-#endif
-
 #define eregcomp(target, pattern)\
  ((errno = eregcomp_cache(target, (pattern), REG_EXTENDED)) ? (bitch_macro (bitch_regex, __FILE__, __LINE__, __func__ , errno, "could not compile regular expression."), errno) : 0)
 

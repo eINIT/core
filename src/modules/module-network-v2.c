@@ -108,7 +108,7 @@ int einit_module_network_v2_have_options(char *interface)
 {
     char buffer[BUFFERSIZE];
 
-    esprintf(buffer, BUFFERSIZE, INTERFACES_PREFIX "-%s", interface);
+    snprintf(buffer, BUFFERSIZE, INTERFACES_PREFIX "-%s", interface);
 
     return cfg_getnode(buffer) ? 1 : 0;
 }
@@ -118,7 +118,7 @@ struct cfgnode *einit_module_network_v2_get_option_default_r(char *r,
 {
     char buffer[BUFFERSIZE];
 
-    esprintf(buffer, BUFFERSIZE, INTERFACE_DEFAULTS_PREFIX "-%s-%s", r,
+    snprintf(buffer, BUFFERSIZE, INTERFACE_DEFAULTS_PREFIX "-%s-%s", r,
              option);
 
     return cfg_getnode(buffer);
@@ -128,7 +128,7 @@ struct cfgnode *einit_module_network_v2_get_option_global(char *option)
 {
     char buffer[BUFFERSIZE];
 
-    esprintf(buffer, BUFFERSIZE, GLOBAL_DEFAULTS_PREFIX "-%s", option);
+    snprintf(buffer, BUFFERSIZE, GLOBAL_DEFAULTS_PREFIX "-%s", option);
 
     return cfg_getnode(buffer);
 }
@@ -145,7 +145,7 @@ struct cfgnode *einit_module_network_v2_get_option_default(char *interface,
             struct cfgnode *n;
             char buffer[BUFFERSIZE];
             regex_t r;
-            esprintf(buffer, BUFFERSIZE, INTERFACE_DEFAULTS_PREFIX "-%s",
+            snprintf(buffer, BUFFERSIZE, INTERFACE_DEFAULTS_PREFIX "-%s",
                      set[i]);
 
             n = cfg_getnode(buffer);
@@ -183,7 +183,7 @@ struct cfgnode *einit_module_network_v2_get_option(char *interface,
     char buffer[BUFFERSIZE];
     struct cfgnode *node;
 
-    esprintf(buffer, BUFFERSIZE, INTERFACES_PREFIX "-%s-%s", interface,
+    snprintf(buffer, BUFFERSIZE, INTERFACES_PREFIX "-%s-%s", interface,
              option);
 
     if ((node = cfg_getnode(buffer)))
@@ -204,7 +204,7 @@ struct cfgnode **einit_module_network_v2_get_multiple_options(char
     struct cfgnode *node = NULL;
     struct cfgnode **rv = NULL;
 
-    esprintf(buffer, BUFFERSIZE, INTERFACES_PREFIX "-%s-%s", interface,
+    snprintf(buffer, BUFFERSIZE, INTERFACES_PREFIX "-%s-%s", interface,
              option);
 
     struct cfgnode **st = cfg_match(buffer);
@@ -242,7 +242,7 @@ struct stree *einit_module_network_v2_get_all_addresses(char *interface)
     char buffer[BUFFERSIZE];
     struct stree *rv = NULL;
 
-    esprintf(buffer, BUFFERSIZE, INTERFACES_PREFIX "-%s-address-",
+    snprintf(buffer, BUFFERSIZE, INTERFACES_PREFIX "-%s-address-",
              interface);
 
     struct cfgnode **st = cfg_prefix(buffer);
@@ -685,11 +685,11 @@ void einit_module_network_v2_scanmodules(struct einit_event *ev)
                 if ((sm = emalloc(sizeof(struct smodule)))) {
                     memset(sm, 0, sizeof(struct smodule));
 
-                    esprintf(buffer, BUFFERSIZE, "interface-carrier-%s",
+                    snprintf(buffer, BUFFERSIZE, "interface-carrier-%s",
                              interfaces[i]);
                     sm->rid = (char *) str_stabilise(buffer);
 
-                    esprintf(buffer, BUFFERSIZE,
+                    snprintf(buffer, BUFFERSIZE,
                              "Network Interface Carrier (%s)",
                              interfaces[i]);
                     sm->name = (char *) str_stabilise(buffer);
@@ -699,7 +699,7 @@ void einit_module_network_v2_scanmodules(struct einit_event *ev)
                     sm->version = 1;
                     sm->mode = einit_module | einit_module_fork_actions;
 
-                    esprintf(buffer, BUFFERSIZE, "carrier-%s",
+                    snprintf(buffer, BUFFERSIZE, "carrier-%s",
                              interfaces[i]);
                     sm->si.provides = set_str_add(NULL, buffer);
 
@@ -718,11 +718,11 @@ void einit_module_network_v2_scanmodules(struct einit_event *ev)
                 if ((sm = emalloc(sizeof(struct smodule)))) {
                     memset(sm, 0, sizeof(struct smodule));
 
-                    esprintf(buffer, BUFFERSIZE, "interface-v2-%s",
+                    snprintf(buffer, BUFFERSIZE, "interface-v2-%s",
                              interfaces[i]);
                     sm->rid = (char *) str_stabilise(buffer);
 
-                    esprintf(buffer, BUFFERSIZE, "Network Interface (%s)",
+                    snprintf(buffer, BUFFERSIZE, "Network Interface (%s)",
                              interfaces[i]);
                     sm->name = (char *) str_stabilise(buffer);
 
@@ -731,9 +731,9 @@ void einit_module_network_v2_scanmodules(struct einit_event *ev)
                     sm->version = 1;
                     sm->mode = einit_module | einit_module_fork_actions;
 
-                    esprintf(buffer, BUFFERSIZE, "net-%s", interfaces[i]);
+                    snprintf(buffer, BUFFERSIZE, "net-%s", interfaces[i]);
                     sm->si.provides = set_str_add(NULL, buffer);
-                    esprintf(buffer, BUFFERSIZE, "carrier-%s",
+                    snprintf(buffer, BUFFERSIZE, "carrier-%s",
                              interfaces[i]);
                     sm->si.requires = set_str_add(NULL, buffer);
 
@@ -778,7 +778,7 @@ void einit_module_network_v2_scanmodules(struct einit_event *ev)
                     && cn->flag) {
                     char buffer[BUFFERSIZE];
 
-                    esprintf(buffer, BUFFERSIZE, "net-%s", interfaces[i]);
+                    snprintf(buffer, BUFFERSIZE, "net-%s", interfaces[i]);
 
                     automatic = set_str_add(automatic, buffer);
                 }
@@ -1102,7 +1102,7 @@ char *einit_module_network_v2_generate_defer_fs(char **tmpxt)
     }
 
     if (tmpx) {
-        esprintf(tmp, BUFFERSIZE, "^fs-(root|%s)$", tmpx);
+        snprintf(tmp, BUFFERSIZE, "^fs-(root|%s)$", tmpx);
         efree(tmpx);
     }
 

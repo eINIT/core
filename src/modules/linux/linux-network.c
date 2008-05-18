@@ -124,7 +124,7 @@ char linux_network_has_carrier(char *interface)
 {
     char buffer[BUFFERSIZE], rv = 0;
 
-    esprintf(buffer, BUFFERSIZE, "/sys/class/net/%s/carrier", interface);
+    snprintf(buffer, BUFFERSIZE, "/sys/class/net/%s/carrier", interface);
 
     FILE *f = fopen(buffer, "r");
     if (f) {
@@ -147,7 +147,7 @@ int linux_network_get_link_speed(char *interface)
     char buffer[BUFFERSIZE];
     int rv = 0;
 
-    esprintf(buffer, BUFFERSIZE, "/sys/class/net/%s/device/rate",
+    snprintf(buffer, BUFFERSIZE, "/sys/class/net/%s/device/rate",
              interface);
 
     FILE *f = fopen(buffer, "r");
@@ -174,7 +174,7 @@ void linux_network_interface_construct(struct einit_event *ev)
         if (node && node->svalue) {
             char buffer[BUFFERSIZE];
 
-            esprintf(buffer, BUFFERSIZE, "kern-%s", ev->string);
+            snprintf(buffer, BUFFERSIZE, "kern-%s", ev->string);
 
             if (!d->static_descriptor->si.requires
                 || !inset((const void **) d->static_descriptor->si.
@@ -189,11 +189,11 @@ void linux_network_interface_construct(struct einit_event *ev)
 
             memset(&newnode, 0, sizeof(struct cfgnode));
 
-            esprintf(buffer, BUFFERSIZE, "configuration-kernel-modules-%s",
+            snprintf(buffer, BUFFERSIZE, "configuration-kernel-modules-%s",
                      ev->string);
             newnode.id = (char *) str_stabilise(buffer);
 
-            esprintf(buffer, BUFFERSIZE, "kernel-module-%s", ev->string);
+            snprintf(buffer, BUFFERSIZE, "kernel-module-%s", ev->string);
             newnode.arbattrs =
                 set_str_add_stable(newnode.arbattrs, (void *) "id");
             newnode.arbattrs =
@@ -261,18 +261,18 @@ void linux_network_interface_prepare(struct einit_event *ev)
 
             if (user) {
                 if (clone_device) {
-                    esprintf(buffer, BUFFERSIZE,
+                    snprintf(buffer, BUFFERSIZE,
                              "tunctl -u %s -t %s -f %s", user, ev->string,
                              clone_device);
                 } else {
-                    esprintf(buffer, BUFFERSIZE, "tunctl -u %s -t %s",
+                    snprintf(buffer, BUFFERSIZE, "tunctl -u %s -t %s",
                              user, ev->string);
                 }
             } else if (clone_device) {
-                esprintf(buffer, BUFFERSIZE, "tunctl -t %s -f %s",
+                snprintf(buffer, BUFFERSIZE, "tunctl -t %s -f %s",
                          ev->string, clone_device);
             } else {
-                esprintf(buffer, BUFFERSIZE, "tunctl -t %s", ev->string);
+                snprintf(buffer, BUFFERSIZE, "tunctl -t %s", ev->string);
             }
         } else {
             fprintf(stdout,
@@ -303,7 +303,7 @@ void linux_network_interface_prepare(struct einit_event *ev)
             efree(ip_binary);
 
             if (d->action == interface_up) {
-                esprintf(buffer, BUFFERSIZE, "ip link set %s up",
+                snprintf(buffer, BUFFERSIZE, "ip link set %s up",
                          ev->string);
             }
         } else {
@@ -313,7 +313,7 @@ void linux_network_interface_prepare(struct einit_event *ev)
              */
 
             if (d->action == interface_up) {
-                esprintf(buffer, BUFFERSIZE, "ifconfig %s up", ev->string);
+                snprintf(buffer, BUFFERSIZE, "ifconfig %s up", ev->string);
             }
         }
 
@@ -345,7 +345,7 @@ void linux_network_interface_done(struct einit_event *ev)
             efree(ip_binary);
 
             if (d->action == interface_down) {
-                esprintf(buffer, BUFFERSIZE, "ip link set %s down",
+                snprintf(buffer, BUFFERSIZE, "ip link set %s down",
                          ev->string);
             }
         } else {
@@ -355,7 +355,7 @@ void linux_network_interface_done(struct einit_event *ev)
              */
 
             if (d->action == interface_down) {
-                esprintf(buffer, BUFFERSIZE, "ifconfig %s down",
+                snprintf(buffer, BUFFERSIZE, "ifconfig %s down",
                          ev->string);
             }
         }
@@ -377,7 +377,7 @@ void linux_network_interface_done(struct einit_event *ev)
                     }
                 }
 
-                esprintf(buffer, BUFFERSIZE, "resolvconf -d %s",
+                snprintf(buffer, BUFFERSIZE, "resolvconf -d %s",
                          ev->string);
             }
         }
@@ -405,30 +405,30 @@ void linux_network_interface_done(struct einit_event *ev)
                     int j = 0;
                     for (; dns[i]->arbattrs[j]; j += 2) {
                         if (strmatch(dns[i]->arbattrs[j], "address")) {
-                            esprintf(buffer, BUFFERSIZE, "nameserver %s",
+                            snprintf(buffer, BUFFERSIZE, "nameserver %s",
                                      dns[i]->arbattrs[j + 1]);
                             resolv_conf_data =
                                 set_str_add(resolv_conf_data, buffer);
                         } else
                             if (strmatch(dns[i]->arbattrs[j], "options")) {
-                            esprintf(buffer, BUFFERSIZE, "options %s",
+                                snprintf(buffer, BUFFERSIZE, "options %s",
                                      dns[i]->arbattrs[j + 1]);
                             resolv_conf_data =
                                 set_str_add(resolv_conf_data, buffer);
                         } else
                             if (strmatch(dns[i]->arbattrs[j], "sortlist"))
                         {
-                            esprintf(buffer, BUFFERSIZE, "sortlist %s",
+                            snprintf(buffer, BUFFERSIZE, "sortlist %s",
                                      dns[i]->arbattrs[j + 1]);
                             resolv_conf_data =
                                 set_str_add(resolv_conf_data, buffer);
                         } else if (strmatch(dns[i]->arbattrs[j], "search")) {
-                            esprintf(buffer, BUFFERSIZE, "search %s",
+                            snprintf(buffer, BUFFERSIZE, "search %s",
                                      dns[i]->arbattrs[j + 1]);
                             resolv_conf_data =
                                 set_str_add(resolv_conf_data, buffer);
                         } else if (strmatch(dns[i]->arbattrs[j], "domain")) {
-                            esprintf(buffer, BUFFERSIZE, "domain %s",
+                            snprintf(buffer, BUFFERSIZE, "domain %s",
                                      dns[i]->arbattrs[j + 1]);
                             resolv_conf_data =
                                 set_str_add(resolv_conf_data, buffer);
@@ -455,7 +455,7 @@ void linux_network_interface_done(struct einit_event *ev)
                     fprintf(stdout,
                             "updating resolv.conf using resolvconf\n");
 
-                    esprintf(buffer, BUFFERSIZE, "resolvconf -a %s",
+                    snprintf(buffer, BUFFERSIZE, "resolvconf -a %s",
                              ev->string);
 
                     unlink("/etc/resolv.conf");
@@ -497,10 +497,10 @@ void linux_network_interface_done(struct einit_event *ev)
                 }
 
                 if (clone_device) {
-                    esprintf(buffer, BUFFERSIZE, "tunctl -d %s -f %s",
+                    snprintf(buffer, BUFFERSIZE, "tunctl -d %s -f %s",
                              ev->string, clone_device);
                 } else {
-                    esprintf(buffer, BUFFERSIZE, "tunctl -d %s",
+                    snprintf(buffer, BUFFERSIZE, "tunctl -d %s",
                              ev->string);
                 }
             } else {
@@ -573,44 +573,44 @@ void linux_network_address_static(struct einit_event *ev)
                          * re-add it 
                          */
                         if (strmatch(cur->key, "ipv4")) {
-                            esprintf(buffer, BUFFERSIZE,
+                            snprintf(buffer, BUFFERSIZE,
                                      "ip -f inet addr delete local %s dev %s",
                                      address, ev->string);
                             pexec(buffer, NULL, 0, 0, NULL, NULL, NULL,
                                   d->feedback);
-                            esprintf(buffer, BUFFERSIZE,
+                            snprintf(buffer, BUFFERSIZE,
                                      "ip -f inet addr add local %s dev %s",
                                      address, ev->string);
                         } else if (strmatch(cur->key, "ipv6")) {
-                            esprintf(buffer, BUFFERSIZE,
+                            snprintf(buffer, BUFFERSIZE,
                                      "ip -f inet6 addr delete local %s dev %s",
                                      address, ev->string);
                             pexec(buffer, NULL, 0, 0, NULL, NULL, NULL,
                                   d->feedback);
-                            esprintf(buffer, BUFFERSIZE,
+                            snprintf(buffer, BUFFERSIZE,
                                      "ip -f inet6 addr add local %s dev %s",
                                      address, ev->string);
                         } else {
-                            esprintf(buffer, BUFFERSIZE,
+                            snprintf(buffer, BUFFERSIZE,
                                      "ip -f %s addr delete local %s dev %s",
                                      cur->key, address, ev->string);
                             pexec(buffer, NULL, 0, 0, NULL, NULL, NULL,
                                   d->feedback);
-                            esprintf(buffer, BUFFERSIZE,
+                            snprintf(buffer, BUFFERSIZE,
                                      "ip -f %s addr add local %s dev %s",
                                      cur->key, address, ev->string);
                         }
                     } else if (d->action == interface_down) {
                         if (strmatch(cur->key, "ipv4")) {
-                            esprintf(buffer, BUFFERSIZE,
+                            snprintf(buffer, BUFFERSIZE,
                                      "ip -f inet addr delete local %s dev %s",
                                      address, ev->string);
                         } else if (strmatch(cur->key, "ipv6")) {
-                            esprintf(buffer, BUFFERSIZE,
+                            snprintf(buffer, BUFFERSIZE,
                                      "ip -f inet6 addr delete local %s dev %s",
                                      address, ev->string);
                         } else {
-                            esprintf(buffer, BUFFERSIZE,
+                            snprintf(buffer, BUFFERSIZE,
                                      "ip -f %s addr delete local %s dev %s",
                                      cur->key, address, ev->string);
                         }
@@ -622,15 +622,15 @@ void linux_network_address_static(struct einit_event *ev)
                      */
                     if (d->action == interface_up) {
                         if (strmatch(cur->key, "ipv4"))
-                            esprintf(buffer, BUFFERSIZE,
+                            snprintf(buffer, BUFFERSIZE,
                                      "ifconfig %s inet %s", ev->string,
                                      address);
                         else if (strmatch(cur->key, "ipv6"))
-                            esprintf(buffer, BUFFERSIZE,
+                            snprintf(buffer, BUFFERSIZE,
                                      "ifconfig %s inet6 add %s",
                                      ev->string, address);
                         else
-                            esprintf(buffer, BUFFERSIZE,
+                            snprintf(buffer, BUFFERSIZE,
                                      "ifconfig %s %s add %s", ev->string,
                                      cur->key, address);
                     } else if (d->action == interface_down) {
@@ -639,7 +639,7 @@ void linux_network_address_static(struct einit_event *ev)
                          * interfaces like this 
                          */
                         if (strmatch(cur->key, "ipv6")) {
-                            esprintf(buffer, BUFFERSIZE,
+                            snprintf(buffer, BUFFERSIZE,
                                      "ifconfig %s inet6 del %s",
                                      ev->string, address);
                         }
@@ -690,62 +690,62 @@ void linux_network_address_static(struct einit_event *ev)
                         if (gateway) {
                             if (network) {
                                 if (ip_binary) {
-                                    esprintf(buffer, BUFFERSIZE,
+                                    snprintf(buffer, BUFFERSIZE,
                                              "ip route del %s via %s dev %s",
                                              network, gateway, ev->string);
                                     pexec(buffer, NULL, 0, 0, NULL, NULL,
                                           NULL, d->feedback);
-                                    esprintf(buffer, BUFFERSIZE,
+                                    snprintf(buffer, BUFFERSIZE,
                                              "ip route add %s via %s dev %s",
                                              network, gateway, ev->string);
                                 } else {
-                                    esprintf(buffer, BUFFERSIZE,
+                                    snprintf(buffer, BUFFERSIZE,
                                              "route del -net %s gw %s dev %s",
                                              network, gateway, ev->string);
                                     pexec(buffer, NULL, 0, 0, NULL, NULL,
                                           NULL, d->feedback);
-                                    esprintf(buffer, BUFFERSIZE,
+                                    snprintf(buffer, BUFFERSIZE,
                                              "route add -net %s gw %s dev %s",
                                              network, gateway, ev->string);
                                 }
                             } else {
                                 if (ip_binary) {
-                                    esprintf(buffer, BUFFERSIZE,
+                                    snprintf(buffer, BUFFERSIZE,
                                              "ip route del via %s dev %s",
                                              gateway, ev->string);
                                     pexec(buffer, NULL, 0, 0, NULL, NULL,
                                           NULL, d->feedback);
-                                    esprintf(buffer, BUFFERSIZE,
+                                    snprintf(buffer, BUFFERSIZE,
                                              "ip route add via %s dev %s",
                                              gateway, ev->string);
                                 } else {
-                                    esprintf(buffer, BUFFERSIZE,
+                                    snprintf(buffer, BUFFERSIZE,
                                              "route del -net default gw %s dev %s",
                                              gateway, ev->string);
                                     pexec(buffer, NULL, 0, 0, NULL, NULL,
                                           NULL, d->feedback);
-                                    esprintf(buffer, BUFFERSIZE,
+                                    snprintf(buffer, BUFFERSIZE,
                                              "route add -net default gw %s dev %s",
                                              gateway, ev->string);
                                 }
                             }
                         } else if (network) {
                             if (ip_binary) {
-                                esprintf(buffer, BUFFERSIZE,
+                                snprintf(buffer, BUFFERSIZE,
                                          "ip route del %s dev %s", network,
                                          ev->string);
                                 pexec(buffer, NULL, 0, 0, NULL, NULL, NULL,
                                       d->feedback);
-                                esprintf(buffer, BUFFERSIZE,
+                                snprintf(buffer, BUFFERSIZE,
                                          "ip route add %s dev %s", network,
                                          ev->string);
                             } else {
-                                esprintf(buffer, BUFFERSIZE,
+                                snprintf(buffer, BUFFERSIZE,
                                          "route del -net %s dev %s",
                                          network, ev->string);
                                 pexec(buffer, NULL, 0, 0, NULL, NULL, NULL,
                                       d->feedback);
-                                esprintf(buffer, BUFFERSIZE,
+                                snprintf(buffer, BUFFERSIZE,
                                          "route add -net %s dev %s",
                                          network, ev->string);
                             }
@@ -765,32 +765,32 @@ void linux_network_address_static(struct einit_event *ev)
                         if (gateway) {
                             if (network) {
                                 if (ip_binary) {
-                                    esprintf(buffer, BUFFERSIZE,
+                                    snprintf(buffer, BUFFERSIZE,
                                              "ip route del %s via %s dev %s",
                                              network, gateway, ev->string);
                                 } else {
-                                    esprintf(buffer, BUFFERSIZE,
+                                    snprintf(buffer, BUFFERSIZE,
                                              "route del -net %s gw %s dev %s",
                                              network, gateway, ev->string);
                                 }
                             } else {
                                 if (ip_binary) {
-                                    esprintf(buffer, BUFFERSIZE,
+                                    snprintf(buffer, BUFFERSIZE,
                                              "ip route del via %s dev %s",
                                              gateway, ev->string);
                                 } else {
-                                    esprintf(buffer, BUFFERSIZE,
+                                    snprintf(buffer, BUFFERSIZE,
                                              "route del -net default gw %s dev %s",
                                              gateway, ev->string);
                                 }
                             }
                         } else if (network) {
                             if (ip_binary) {
-                                esprintf(buffer, BUFFERSIZE,
+                                snprintf(buffer, BUFFERSIZE,
                                          "ip route del %s dev %s", network,
                                          ev->string);
                             } else {
-                                esprintf(buffer, BUFFERSIZE,
+                                snprintf(buffer, BUFFERSIZE,
                                          "route del -net %s dev %s",
                                          network, ev->string);
                             }

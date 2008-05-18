@@ -194,7 +194,7 @@ void module_group_node_callback(struct cfgnode *node)
             } else {
                 char *member_string = set2str('|', (const char **) group);
 
-                esprintf(t, BUFFERSIZE, "^(%s)$", member_string);
+                snprintf(t, BUFFERSIZE, "^(%s)$", member_string);
 
                 after = set_str_add(after, t);
 
@@ -209,14 +209,14 @@ void module_group_node_callback(struct cfgnode *node)
             struct smodule *sm = emalloc(sizeof(struct smodule));
             memset(sm, 0, sizeof(struct smodule));
 
-            esprintf(t, BUFFERSIZE, "group-%s",
+            snprintf(t, BUFFERSIZE, "group-%s",
                      node->id + MODULES_PREFIX_SIZE);
             sm->rid = (char *) str_stabilise(t);
             sm->configure = module_group_module_configure;
 
             struct lmodule *lm = NULL;
 
-            esprintf(t, BUFFERSIZE, "Group (%s)",
+            snprintf(t, BUFFERSIZE, "Group (%s)",
                      node->id + MODULES_PREFIX_SIZE);
             sm->name = (char *) str_stabilise(t);
             sm->si.requires = requires;

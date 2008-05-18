@@ -100,7 +100,7 @@ void linux_network_wpa_supplicant_interface_construct(struct einit_event
                 }
             }
 
-            esprintf(buffer, BUFFERSIZE, "wpa-supplicant-%s", ev->string);
+            snprintf(buffer, BUFFERSIZE, "wpa-supplicant-%s", ev->string);
 
             if (!inset
                 ((const void **) d->static_descriptor->si.requires, buffer,
@@ -113,11 +113,11 @@ void linux_network_wpa_supplicant_interface_construct(struct einit_event
 
             memset(&newnode, 0, sizeof(struct cfgnode));
 
-            esprintf(buffer, BUFFERSIZE, "configuration-wpa-supplicant-%s",
+            snprintf(buffer, BUFFERSIZE, "configuration-wpa-supplicant-%s",
                      ev->string);
             newnode.id = (char *) str_stabilise(buffer);
 
-            esprintf(buffer, BUFFERSIZE, "wpa-supplicant-%s", ev->string);
+            snprintf(buffer, BUFFERSIZE, "wpa-supplicant-%s", ev->string);
             newnode.arbattrs =
                 set_str_add_stable(newnode.arbattrs, (void *) "id");
             newnode.arbattrs =
@@ -147,7 +147,7 @@ char **linux_network_wpa_supplicant_get_as_option_set(char *interface,
 {
     char command[BUFFERSIZE];
 
-    esprintf(command, BUFFERSIZE, "wpa_cli -i%s %s", interface,
+    snprintf(command, BUFFERSIZE, "wpa_cli -i%s %s", interface,
              wpa_command);
 
     char **pr = pget(command);
@@ -254,7 +254,7 @@ int linux_network_wpa_supplicant_module_configure(struct lmodule *this)
 
     char buffer[BUFFERSIZE];
 
-    esprintf(buffer, BUFFERSIZE, MPREFIX "%s", this->module->rid + 21);
+    snprintf(buffer, BUFFERSIZE, MPREFIX "%s", this->module->rid + 21);
 
     struct cfgnode *node = cfg_getnode(buffer);
 
@@ -280,7 +280,7 @@ int linux_network_wpa_supplicant_module_configure(struct lmodule *this)
 
         interface_daemon->id = this->module->rid;
 
-        esprintf(buffer, BUFFERSIZE,
+        snprintf(buffer, BUFFERSIZE,
                  "wpa_supplicant -i%s -D%s -C/var/run/wpa_supplicant -c%s",
                  (this->module->rid + 21), driver, configuration_file);
 
@@ -329,7 +329,7 @@ void linux_network_wpa_supplicant_node_callback(struct cfgnode *node)
     struct lmodule *m;
     struct smodule *sm;
 
-    esprintf(tmp, BUFFERSIZE, "linux-wpa-supplicant-%s", interface);
+    snprintf(tmp, BUFFERSIZE, "linux-wpa-supplicant-%s", interface);
 
     if ((m = mod_lookup_rid(tmp))) {
         mod_update(m);
@@ -341,7 +341,7 @@ void linux_network_wpa_supplicant_node_callback(struct cfgnode *node)
 
     sm->rid = (char *) str_stabilise(tmp);
 
-    esprintf(tmp, BUFFERSIZE, "WPA Supplicant Supervisor (%s)", interface);
+    snprintf(tmp, BUFFERSIZE, "WPA Supplicant Supervisor (%s)", interface);
     sm->name = (char *) str_stabilise(tmp);
 
     sm->eiversion = EINIT_VERSION;
@@ -349,7 +349,7 @@ void linux_network_wpa_supplicant_node_callback(struct cfgnode *node)
     sm->mode =
         einit_module | einit_feedback_job | einit_module_fork_actions;
 
-    esprintf(tmp, BUFFERSIZE, "wpa-supplicant-%s", interface);
+    snprintf(tmp, BUFFERSIZE, "wpa-supplicant-%s", interface);
     sm->si.provides = set_str_add(sm->si.provides, tmp);
 
     /*
