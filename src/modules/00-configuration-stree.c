@@ -76,42 +76,9 @@ module_register(einit_configuration_stree_self);
 
 char *cmode = SUPERMODE;
 
-struct {
-    void **chunks;
-} cfg_stree_garbage = {
-.chunks = NULL};
-
 struct stree *configuration_by_mode = NULL;
 
 struct stree *einit_configuration_stree_callbacks = NULL;
-
-void cfg_stree_garbage_add_chunk(void *chunk)
-{
-    if (!chunk)
-        return;
-    if (!cfg_stree_garbage.chunks
-        ||
-        (!inset
-         ((const void **) cfg_stree_garbage.chunks, chunk, SET_NOALLOC)))
-        cfg_stree_garbage.chunks =
-            set_noa_add(cfg_stree_garbage.chunks, chunk);
-}
-
-void cfg_stree_garbage_free()
-{
-    if (cfg_stree_garbage.chunks) {
-        int i = 0;
-
-        for (; cfg_stree_garbage.chunks[i]; i++) {
-            efree(cfg_stree_garbage.chunks[i]);
-        }
-
-        efree(cfg_stree_garbage.chunks);
-        cfg_stree_garbage.chunks = NULL;
-    }
-}
-
-time_t einit_configuration_stree_garbage_free_timer = 0;
 
 void cfg_run_callbacks_for_node(struct cfgnode *node)
 {
@@ -234,7 +201,6 @@ int cfg_addnode(struct cfgnode *node)
     }
 
     struct stree *cur;
-    char doop = 1;
 
     /*
      * look for other definitions that are exactly the same, only
@@ -272,22 +238,18 @@ int cfg_addnode(struct cfgnode *node)
             // id_match);
             // fflush (stderr);
 
-            cfg_stree_garbage_add_chunk(cur->luggage);
-            cfg_stree_garbage_add_chunk(vnode->arbattrs);
+            if (vnode->arbattrs) efree (vnode->arbattrs);
 
             vnode->arbattrs = node->arbattrs;
-            cur->luggage = node->arbattrs;
 
             vnode->flag = node->flag;
             vnode->value = node->value;
             vnode->svalue = node->svalue;
             vnode->idattr = node->idattr;
 
-            doop = 0;
-
             cfg_run_callbacks_for_node(cur->value);
 
-            break;
+            return 0;
         } else
             // if (allow_multi || node->idattr) {
             // cur = streenext (cur);
@@ -295,15 +257,12 @@ int cfg_addnode(struct cfgnode *node)
         // }
     }
 
-    if (doop) {
-        ptree =
-            streeadd(ptree, node->id, node, sizeof(struct cfgnode),
-                     node->arbattrs);
+    ptree =
+        streeadd(ptree, node->id, node, sizeof(struct cfgnode), NULL);
 
-        einit_new_node = 1;
+    einit_new_node = 1;
 
-        cfg_run_callbacks_for_node(node);
-    }
+    cfg_run_callbacks_for_node(node);
 
     return 0;
 }
