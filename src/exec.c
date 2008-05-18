@@ -360,7 +360,6 @@ pid_t einit_exec(struct einit_exec_data * x)
                  * return 0, like fork() would 
                  */
                 if (environment) efree (environment);
-                if (c) efree (c);
                 return 0;
             } else {
                 execve(c[0], c, environment);
@@ -421,7 +420,6 @@ pid_t einit_exec(struct einit_exec_data * x)
     einit_ping_core();
 
     if (environment) efree (environment);
-    if (c) efree (c);
 
     return p;
 }
