@@ -449,6 +449,7 @@ void einit_jobs_update()
             while ((s = einit_read_sexp_from_fd_reader(r)) != sexp_bad) {
                 if (s) {
                     einit_job_add_or_update(s);
+                    einit_sexp_destroy(s);
                 }
             }
         }

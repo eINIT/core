@@ -226,6 +226,8 @@ char einit_ipx_sexp_handle_fd(struct einit_sexp_fd_reader *rd)
                 einit_ipc_handle_sexp_event(sexp->secundus);
             }
         }
+
+        einit_sexp_destroy (sexp);
     }
 
     // fprintf (stderr, "no sexp ready\n");
